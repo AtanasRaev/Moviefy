@@ -1,0 +1,71 @@
+package com.watchitnow.service.impl;
+
+import com.watchitnow.config.ApiConfig;
+import com.watchitnow.databse.model.dto.GenreResponseApiDTO;
+import com.watchitnow.databse.model.entity.MovieGenre;
+import com.watchitnow.databse.model.entity.SeriesGenre;
+import com.watchitnow.databse.repository.MovieGenreRepository;
+import com.watchitnow.service.MovieGenreService;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class MovieGenreServiceImpl implements MovieGenreService {
+    private final MovieGenreRepository genreRepository;
+    private final ModelMapper modelMapper;
+    private final ApiConfig apiConfig;
+    private final RestClient restClient;
+
+    public MovieGenreServiceImpl(MovieGenreRepository genreRepository,
+                                 ModelMapper modelMapper,
+                                 ApiConfig apiConfig,
+                                 RestClient restClient
+    ) {
+        this.genreRepository = genreRepository;
+        this.modelMapper = modelMapper;
+        this.apiConfig = apiConfig;
+        this.restClient = restClient;
+    }
+
+
+    @Override
+    public void fetchGenres() {
+        GenreResponseApiDTO response = getResponse();
+        List<MovieGenre> genres = response
+                .getGenres()
+                .stream()
+                .map(dto -> new MovieGenre(dto.getName(), dto.getId()))
+                .toList();
+        this.genreRepository.saveAll(genres);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return this.genreRepository.count() == 0;
+    }
+
+    @Override
+    public List<MovieGenre> getAllGenresByApiIds(List<Long> genreIds) {
+        List<MovieGenre> genresList = new ArrayList<>();
+        for (Long genre : genreIds) {
+            Optional<MovieGenre> optional = this.genreRepository.findByApiId(genre);
+            optional.ifPresent(genresList::add);
+        }
+        return genresList;
+    }
+
+    private GenreResponseApiDTO getResponse() {
+        String url = this.apiConfig.getUrl() + "/genre/movie/list?api_key=" + this.apiConfig.getKey();
+
+        return this.restClient
+                .get()
+                .uri(url)
+                .retrieve()
+                .body(GenreResponseApiDTO.class);
+    }
+}
