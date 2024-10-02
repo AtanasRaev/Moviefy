@@ -1,20 +1,31 @@
-package com.watchitnow.databse.model.dto;
+package com.watchitnow.database.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
-public class SeasonDTO {
+@Entity
+@Table(name = "seasons")
+public class SeasonTvSeries {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonProperty("air_date")
+    @Column
     private LocalDate airDate;
 
-    @JsonProperty("episode_count")
+    @Column
     private Integer episodeCount;
 
-    @JsonProperty("season_number")
+    @Column
     private Integer seasonNumber;
+
+    @ManyToOne
+    @JoinColumn(name = "tv_series_id")
+    private TvSeries tvSeries;
+
+    @Column(name = "api_id")
+    private Long apiId;
 
     public Long getId() {
         return id;
@@ -46,5 +57,21 @@ public class SeasonDTO {
 
     public void setSeasonNumber(Integer seasonNumber) {
         this.seasonNumber = seasonNumber;
+    }
+
+    public TvSeries getTvSeries() {
+        return tvSeries;
+    }
+
+    public void setTvSeries(TvSeries tvSeries) {
+        this.tvSeries = tvSeries;
+    }
+
+    public Long getApiId() {
+        return apiId;
+    }
+
+    public void setApiId(Long apiId) {
+        this.apiId = apiId;
     }
 }

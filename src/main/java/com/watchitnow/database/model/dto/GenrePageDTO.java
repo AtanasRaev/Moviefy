@@ -1,4 +1,4 @@
-package com.watchitnow.databse.model.dto;
+package com.watchitnow.database.model.dto;
 
 public class GenrePageDTO {
     private String name;

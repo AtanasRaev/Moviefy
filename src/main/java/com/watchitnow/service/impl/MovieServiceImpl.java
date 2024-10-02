@@ -1,11 +1,11 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
-import com.watchitnow.databse.model.dto.MovieApiDTO;
-import com.watchitnow.databse.model.dto.MoviePageDTO;
-import com.watchitnow.databse.model.dto.MovieResponseApiDTO;
-import com.watchitnow.databse.model.entity.Movie;
-import com.watchitnow.databse.repository.MovieRepository;
+import com.watchitnow.database.model.dto.MovieApiDTO;
+import com.watchitnow.database.model.dto.MoviePageDTO;
+import com.watchitnow.database.model.dto.MovieResponseApiDTO;
+import com.watchitnow.database.model.entity.Movie;
+import com.watchitnow.database.repository.MovieRepository;
 import com.watchitnow.service.MovieGenreService;
 import com.watchitnow.service.MovieService;
 import com.watchitnow.utils.DatePaginationUtil;
@@ -13,12 +13,14 @@ import com.watchitnow.utils.DateRange;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +45,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
 
-    @Scheduled(fixedDelay = 120000)
+//    @Scheduled(fixedDelay = 5000)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
         int year = LocalDate.now().getYear();

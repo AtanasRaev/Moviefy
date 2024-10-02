@@ -1,6 +1,6 @@
-package com.watchitnow.databse.repository;
+package com.watchitnow.database.repository;
 
-import com.watchitnow.databse.model.entity.MovieGenre;
+import com.watchitnow.database.model.entity.MovieGenre;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

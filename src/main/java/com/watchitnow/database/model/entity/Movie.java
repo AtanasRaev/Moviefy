@@ -1,37 +1,65 @@
-package com.watchitnow.databse.model.dto;
+package com.watchitnow.database.model.entity;
+
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public class MovieDTO {
-    private Long id;
+@Entity
+@Table(name = "movies")
+public class Movie {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
 
-    private List<GenreDTO> genres;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "movie_genre",
+            joinColumns = @JoinColumn(name = "movie_id"),
+            inverseJoinColumns = @JoinColumn(name = "genre_id")
+    )
+    private List<MovieGenre> genres;
 
+    @Column(name = "api_id", unique = true)
+    private Long apiId;
+
+    @Column
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String overview;
 
+    @Column
     private Double popularity;
 
+    @Column(name = "poster_path")
     private String posterPath;
 
+    @Column(name = "release_date")
     private LocalDate releaseDate;
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(long id) {
         this.id = id;
     }
 
-    public List<GenreDTO> getGenres() {
+    public List<MovieGenre> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<GenreDTO> genres) {
+    public void setGenres(List<MovieGenre> genres) {
         this.genres = genres;
+    }
+
+    public Long getApiId() {
+        return apiId;
+    }
+
+    public void setApiId(Long apiId) {
+        this.apiId = apiId;
     }
 
     public String getTitle() {

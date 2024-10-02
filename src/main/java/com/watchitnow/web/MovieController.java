@@ -1,6 +1,6 @@
 package com.watchitnow.web;
 
-import com.watchitnow.databse.model.dto.MoviePageDTO;
+import com.watchitnow.database.model.dto.MoviePageDTO;
 import com.watchitnow.service.MovieService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;

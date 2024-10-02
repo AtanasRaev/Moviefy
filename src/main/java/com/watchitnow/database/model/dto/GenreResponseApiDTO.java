@@ -1,4 +1,4 @@
-package com.watchitnow.databse.model.dto;
+package com.watchitnow.database.model.dto;
 
 import java.util.List;
 

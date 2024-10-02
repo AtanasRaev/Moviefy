@@ -1,8 +1,6 @@
 package com.watchitnow.service;
 
-import com.watchitnow.databse.model.dto.MoviePageDTO;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.watchitnow.database.model.dto.MoviePageDTO;
 
 import java.util.List;
 import java.util.Set;

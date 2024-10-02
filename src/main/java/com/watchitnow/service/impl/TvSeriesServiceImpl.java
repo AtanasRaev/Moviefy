@@ -1,28 +1,26 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
-import com.watchitnow.databse.model.dto.SeasonDTO;
-import com.watchitnow.databse.model.dto.SeasonTvSeriesResponseApiDTO;
-import com.watchitnow.databse.model.dto.TvSeriesApiDTO;
-import com.watchitnow.databse.model.dto.TvSeriesResponseApiDTO;
-import com.watchitnow.databse.model.entity.SeasonTvSeries;
-import com.watchitnow.databse.model.entity.TvSeries;
-import com.watchitnow.databse.repository.SeasonTvSeriesRepository;
-import com.watchitnow.databse.repository.TvSeriesRepository;
+import com.watchitnow.database.model.dto.SeasonDTO;
+import com.watchitnow.database.model.dto.SeasonTvSeriesResponseApiDTO;
+import com.watchitnow.database.model.dto.TvSeriesApiDTO;
+import com.watchitnow.database.model.dto.TvSeriesResponseApiDTO;
+import com.watchitnow.database.model.entity.SeasonTvSeries;
+import com.watchitnow.database.model.entity.TvSeries;
+import com.watchitnow.database.repository.SeasonTvSeriesRepository;
+import com.watchitnow.database.repository.TvSeriesRepository;
 import com.watchitnow.service.SeriesGenreService;
 import com.watchitnow.service.TvSeriesService;
 import com.watchitnow.utils.DatePaginationUtil;
 import com.watchitnow.utils.DateRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
@@ -45,7 +43,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.restClient = restClient;
     }
 
-    @Scheduled(fixedDelay = 120000)
+//    @Scheduled(fixedDelay = 5000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
         int year = LocalDate.now().getYear();

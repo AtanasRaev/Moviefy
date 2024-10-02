@@ -1,6 +1,6 @@
 package com.watchitnow.service;
 
-import com.watchitnow.databse.model.entity.SeriesGenre;
+import com.watchitnow.database.model.entity.SeriesGenre;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.watchitnow.databse.model.entity;
+package com.watchitnow.database.model.entity;
 
 import jakarta.persistence.*;
 
@@ -6,25 +6,25 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Entity
-@Table(name = "movies")
-public class Movie {
+@Table(name = "tv_series")
+public class TvSeries {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-            name = "movie_genre",
-            joinColumns = @JoinColumn(name = "movie_id"),
+            name = "series_genre",
+            joinColumns = @JoinColumn(name = "series_id"),
             inverseJoinColumns = @JoinColumn(name = "genre_id")
     )
-    private List<MovieGenre> genres;
+    private List<SeriesGenre> genres;
 
     @Column(name = "api_id", unique = true)
     private Long apiId;
 
     @Column
-    private String title;
+    private String name;
 
     @Column(columnDefinition = "TEXT")
     private String overview;
@@ -35,22 +35,25 @@ public class Movie {
     @Column(name = "poster_path")
     private String posterPath;
 
-    @Column(name = "release_date")
-    private LocalDate releaseDate;
+    @Column(name = "first_air_date")
+    private LocalDate firstAirDate;
 
-    public long getId() {
+    @OneToMany(mappedBy = "tvSeries", fetch = FetchType.LAZY)
+    private List<SeasonTvSeries> seasons;
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public List<MovieGenre> getGenres() {
+    public List<SeriesGenre> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<MovieGenre> genres) {
+    public void setGenres(List<SeriesGenre> genres) {
         this.genres = genres;
     }
 
@@ -62,12 +65,12 @@ public class Movie {
         this.apiId = apiId;
     }
 
-    public String getTitle() {
-        return title;
+    public String getName() {
+        return name;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getOverview() {
@@ -94,11 +97,19 @@ public class Movie {
         this.posterPath = posterPath;
     }
 
-    public LocalDate getReleaseDate() {
-        return releaseDate;
+    public LocalDate getFirstAirDate() {
+        return firstAirDate;
     }
 
-    public void setReleaseDate(LocalDate releaseDate) {
-        this.releaseDate = releaseDate;
+    public void setFirstAirDate(LocalDate firstAirDate) {
+        this.firstAirDate = firstAirDate;
+    }
+
+    public List<SeasonTvSeries> getSeasons() {
+        return seasons;
+    }
+
+    public void setSeasons(List<SeasonTvSeries> seasons) {
+        this.seasons = seasons;
     }
 }

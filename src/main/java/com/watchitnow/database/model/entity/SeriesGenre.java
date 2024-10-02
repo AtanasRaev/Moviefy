@@ -1,28 +1,28 @@
-package com.watchitnow.databse.model.entity;
+package com.watchitnow.database.model.entity;
 
 import jakarta.persistence.*;
 
 import java.util.List;
 
 @Entity
-@Table(name = "movies_genres")
-public class MovieGenre {
+@Table(name = "series_genres")
+public class SeriesGenre {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column
     private String name;
 
-    @Column(name = "api_id")
+    @Column
     private Long apiId;
 
     @ManyToMany(mappedBy = "genres", fetch = FetchType.LAZY)
-    private List<Movie> movies;
+    private List<TvSeries> tvSeries;
 
-    public MovieGenre() {}
+    public SeriesGenre() {}
 
-    public MovieGenre(String name, Long apiId) {
+    public SeriesGenre(String name, Long apiId) {
         this.name = name;
         this.apiId = apiId;
     }
@@ -51,11 +51,11 @@ public class MovieGenre {
         this.apiId = apiId;
     }
 
-    public List<Movie> getMovies() {
-        return movies;
+    public List<TvSeries> getTvSeries() {
+        return tvSeries;
     }
 
-    public void setMovies(List<Movie> movies) {
-        this.movies = movies;
+    public void setTvSeries(List<TvSeries> tvSeries) {
+        this.tvSeries = tvSeries;
     }
 }
