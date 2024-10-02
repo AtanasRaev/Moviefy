@@ -1,4 +1,4 @@
-package com.watchitnow.database.model.dto;
+package com.watchitnow.database.model.dto.databaseDto;
 
 public class GenreDTO {
     private Long id;

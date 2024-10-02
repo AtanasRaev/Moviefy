@@ -1,17 +1,17 @@
-package com.watchitnow.database.model.dto;
+package com.watchitnow.database.model.dto.apiDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public class TvSeriesApiDTO {
+public class MovieApiDTO {
     private Long id;
 
     @JsonProperty("genre_ids")
     private List<Long> genres;
 
-    private String name;
+    private String title;
 
     private String overview;
 
@@ -20,8 +20,11 @@ public class TvSeriesApiDTO {
     @JsonProperty("poster_path")
     private String posterPath;
 
-    @JsonProperty("first_air_date")
-    private LocalDate firstAirDate;
+    @JsonProperty("release_date")
+    private LocalDate releaseDate;
+
+    public MovieApiDTO() {
+    }
 
     public Long getId() {
         return id;
@@ -39,12 +42,12 @@ public class TvSeriesApiDTO {
         this.genres = genres;
     }
 
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getOverview() {
@@ -71,11 +74,11 @@ public class TvSeriesApiDTO {
         this.posterPath = posterPath;
     }
 
-    public LocalDate getFirstAirDate() {
-        return firstAirDate;
+    public LocalDate getReleaseDate() {
+        return releaseDate;
     }
 
-    public void setFirstAirDate(LocalDate firstAirDate) {
-        this.firstAirDate = firstAirDate;
+    public void setReleaseDate(LocalDate releaseDate) {
+        this.releaseDate = releaseDate;
     }
 }

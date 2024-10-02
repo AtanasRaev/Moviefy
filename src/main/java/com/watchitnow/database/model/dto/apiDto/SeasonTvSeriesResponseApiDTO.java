@@ -1,4 +1,6 @@
-package com.watchitnow.database.model.dto;
+package com.watchitnow.database.model.dto.apiDto;
+
+import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 
 import java.util.List;
 

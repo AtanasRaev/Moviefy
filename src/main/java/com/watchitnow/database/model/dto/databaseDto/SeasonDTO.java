@@ -1,4 +1,4 @@
-package com.watchitnow.database.model.dto;
+package com.watchitnow.database.model.dto.databaseDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

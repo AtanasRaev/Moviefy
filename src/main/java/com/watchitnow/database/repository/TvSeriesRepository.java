@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,4 +17,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     List<TvSeries> findOldestTvSeries();
 
     Optional<TvSeries> findByApiId(Long id);
+
+    @Query("SELECT DISTINCT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres WHERE tv.firstAirDate BETWEEN :startDate AND :endDate")
+    List<TvSeries> findByFirstAirDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

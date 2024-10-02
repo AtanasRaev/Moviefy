@@ -1,4 +1,4 @@
-package com.watchitnow.database.model.dto;
+package com.watchitnow.database.model.dto.databaseDto;
 
 import java.time.LocalDate;
 import java.util.List;

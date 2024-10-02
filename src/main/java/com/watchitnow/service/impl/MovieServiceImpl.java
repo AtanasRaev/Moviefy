@@ -1,13 +1,14 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
-import com.watchitnow.database.model.dto.MovieApiDTO;
-import com.watchitnow.database.model.dto.MoviePageDTO;
-import com.watchitnow.database.model.dto.MovieResponseApiDTO;
+import com.watchitnow.database.model.dto.apiDto.MovieApiDTO;
+import com.watchitnow.database.model.dto.apiDto.MovieResponseApiDTO;
+import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.entity.Movie;
 import com.watchitnow.database.repository.MovieRepository;
 import com.watchitnow.service.MovieGenreService;
 import com.watchitnow.service.MovieService;
+import com.watchitnow.utils.ContentRetrievalUtil;
 import com.watchitnow.utils.DatePaginationUtil;
 import com.watchitnow.utils.DateRange;
 import org.modelmapper.ModelMapper;
@@ -17,11 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class MovieServiceImpl implements MovieService {
@@ -30,22 +28,34 @@ public class MovieServiceImpl implements MovieService {
     private final ApiConfig apiConfig;
     private final RestClient restClient;
     private final ModelMapper modelMapper;
+    private final ContentRetrievalUtil contentRetrievalUtil;
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
 
     public MovieServiceImpl(MovieRepository movieRepository,
                             MovieGenreService genreService,
                             ApiConfig apiConfig,
                             RestClient restClient,
-                            ModelMapper modelMapper) {
+                            ModelMapper modelMapper,
+                            ContentRetrievalUtil contentRetrievalUtil) {
         this.movieRepository = movieRepository;
         this.genreService = genreService;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
         this.modelMapper = modelMapper;
+        this.contentRetrievalUtil = contentRetrievalUtil;
     }
 
+    @Override
+    public Set<MoviePageDTO> getMoviesFromCurrentMonth(int targetCount) {
+        return contentRetrievalUtil.fetchContentFromDateRange(
+                targetCount,
+                dateRange -> movieRepository.findByReleaseDateBetweenWithGenres(dateRange.start(), dateRange.end()),
+                movie -> modelMapper.map(movie, MoviePageDTO.class),
+                MoviePageDTO::getPosterPath
+        );
+    }
 
-//    @Scheduled(fixedDelay = 5000)
+    //    @Scheduled(fixedDelay = 5000)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
         int year = LocalDate.now().getYear();
@@ -119,46 +129,5 @@ public class MovieServiceImpl implements MovieService {
                 .uri(url)
                 .retrieve()
                 .body(MovieResponseApiDTO.class);
-    }
-
-    @Override
-    public List<MoviePageDTO> getAllByDiapason(int startYear, int endYear) {
-        return this.movieRepository.findAllByReleaseDate(startYear, endYear).stream().map(movie -> this.modelMapper.map(movie, MoviePageDTO.class)).toList();
-    }
-
-    @Override
-    public Set<MoviePageDTO> getMoviesFromCurrentMonth(int targetCount) {
-        if (isEmpty()) {
-            throw new IllegalStateException("Movies list is empty");
-        }
-
-        Set<MoviePageDTO> movies = new LinkedHashSet<>();
-        LocalDate currentDate = LocalDate.now();
-        int emptyCount = 0;
-
-        while (movies.size() < targetCount) {
-            LocalDate endDate = currentDate.withDayOfMonth(1);
-
-            List<Movie> fetchedMovies = movieRepository.findByReleaseDateBetweenWithGenres(endDate, currentDate);
-            fetchedMovies.sort(Comparator.comparing(Movie::getReleaseDate).reversed());
-
-            List<MoviePageDTO> mappedMovies = fetchedMovies.stream()
-                    .map(movie -> modelMapper.map(movie, MoviePageDTO.class))
-                    .toList();
-
-            mappedMovies = mappedMovies.stream().filter(movie -> movie.getPosterPath() != null && !movie.getPosterPath().isEmpty()).toList();
-
-            if (mappedMovies.isEmpty()) {
-                emptyCount++;
-            }
-
-            if (emptyCount == 12) {
-                break;
-            }
-
-            movies.addAll(mappedMovies);
-            currentDate = endDate.minusDays(1);
-        }
-        return movies.stream().limit(targetCount).collect(Collectors.toSet());
     }
 }

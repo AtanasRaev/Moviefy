@@ -1,18 +1,21 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
-import com.watchitnow.database.model.dto.SeasonDTO;
-import com.watchitnow.database.model.dto.SeasonTvSeriesResponseApiDTO;
-import com.watchitnow.database.model.dto.TvSeriesApiDTO;
-import com.watchitnow.database.model.dto.TvSeriesResponseApiDTO;
+import com.watchitnow.database.model.dto.apiDto.SeasonTvSeriesResponseApiDTO;
+import com.watchitnow.database.model.dto.apiDto.TvSeriesApiDTO;
+import com.watchitnow.database.model.dto.apiDto.TvSeriesResponseApiDTO;
+import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
+import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.SeasonTvSeries;
 import com.watchitnow.database.model.entity.TvSeries;
 import com.watchitnow.database.repository.SeasonTvSeriesRepository;
 import com.watchitnow.database.repository.TvSeriesRepository;
 import com.watchitnow.service.SeriesGenreService;
 import com.watchitnow.service.TvSeriesService;
+import com.watchitnow.utils.ContentRetrievalUtil;
 import com.watchitnow.utils.DatePaginationUtil;
 import com.watchitnow.utils.DateRange;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import org.springframework.web.client.RestClient;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
@@ -29,18 +33,34 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final SeasonTvSeriesRepository seasonTvSeriesRepository;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
+    private final ModelMapper modelMapper;
+    private final ContentRetrievalUtil contentRetrievalUtil;
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
 
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
                                SeriesGenreService seriesGenreService,
                                SeasonTvSeriesRepository seasonTvSeriesRepository,
                                ApiConfig apiConfig,
-                               RestClient restClient) {
+                               RestClient restClient,
+                               ModelMapper modelMapper,
+                               ContentRetrievalUtil contentRetrievalUtil) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.seriesGenreService = seriesGenreService;
         this.seasonTvSeriesRepository = seasonTvSeriesRepository;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
+        this.modelMapper = modelMapper;
+        this.contentRetrievalUtil = contentRetrievalUtil;
+    }
+
+    @Override
+    public Set<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(int targetCount) {
+        return contentRetrievalUtil.fetchContentFromDateRange(
+                targetCount,
+                dateRange -> tvSeriesRepository.findByFirstAirDateBetweenWithGenres(dateRange.start(), dateRange.end()),
+                tvSeries -> modelMapper.map(tvSeries, TvSeriesPageDTO.class),
+                TvSeriesPageDTO::getPosterPath
+        );
     }
 
 //    @Scheduled(fixedDelay = 5000)
