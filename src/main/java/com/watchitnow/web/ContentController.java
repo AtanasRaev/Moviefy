@@ -28,10 +28,9 @@ public class ContentController {
     @GetMapping("/{type}/latest")
     public ResponseEntity<Map<String, Object>> getLatestContent(
             @PathVariable String type,
-            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Pageable pageable = PageRequest.of(page - 1, size);
+        Pageable pageable = PageRequest.of(0, size);
         Page<?> contentPage;
 
         if ("movies".equalsIgnoreCase(type)) {

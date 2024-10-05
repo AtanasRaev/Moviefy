@@ -19,6 +19,7 @@ public class ContentRetrievalUtil {
                                                    Function<T, R> mapFunction,
                                                    Function<R, String> posterPathExtractor) {
         Set<R> content = new LinkedHashSet<>();
+        //TODO: Decide from which date to start(consider that there is not video player for each movie/tv-series)
         LocalDate currentDate = LocalDate.now().minusDays(7);
         int emptyCount = 0;
 

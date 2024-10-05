@@ -1,11 +1,15 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
+import com.watchitnow.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.watchitnow.database.model.dto.apiDto.MovieApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MovieResponseApiDTO;
+import com.watchitnow.database.model.dto.apiDto.ProductionApiDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.entity.Movie;
+import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.repository.MovieRepository;
+import com.watchitnow.database.repository.ProductionCompanyRepository;
 import com.watchitnow.service.MovieGenreService;
 import com.watchitnow.service.MovieService;
 import com.watchitnow.utils.ContentRetrievalUtil;
@@ -14,17 +18,18 @@ import com.watchitnow.utils.DateRange;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class MovieServiceImpl implements MovieService {
     private final MovieRepository movieRepository;
     private final MovieGenreService genreService;
+    private final ProductionCompanyRepository productionCompanyRepository;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
     private final ModelMapper modelMapper;
@@ -33,12 +38,14 @@ public class MovieServiceImpl implements MovieService {
 
     public MovieServiceImpl(MovieRepository movieRepository,
                             MovieGenreService genreService,
+                            ProductionCompanyRepository productionCompanyRepository,
                             ApiConfig apiConfig,
                             RestClient restClient,
                             ModelMapper modelMapper,
                             ContentRetrievalUtil contentRetrievalUtil) {
         this.movieRepository = movieRepository;
         this.genreService = genreService;
+        this.productionCompanyRepository = productionCompanyRepository;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
         this.modelMapper = modelMapper;
@@ -53,6 +60,61 @@ public class MovieServiceImpl implements MovieService {
                 movie -> modelMapper.map(movie, MoviePageDTO.class),
                 MoviePageDTO::getPosterPath
         );
+    }
+
+    @Scheduled(fixedDelay = 100000)
+    private void updateMovies() {
+        long end = this.movieRepository.count();
+        long id = 92789;
+
+        for (long i = 92789; i < end; i++) {
+            Optional<Movie> movieOptional = this.movieRepository.findById(id);
+
+            if (movieOptional.isPresent()) {
+                MovieApiByIdResponseDTO responseById = getResponseById(movieOptional.get().getApiId());
+
+                if (responseById != null) {
+                    Set<ProductionCompany> productionCompanies = new HashSet<>();
+                    Set<ProductionCompany> productionCompaniesToSave = new HashSet<>();
+
+                    for (ProductionApiDTO company : responseById.getProductionCompanies()) {
+                        List<Long> list = productionCompanies.stream().map(ProductionCompany::getApiId).toList();
+                        if (list.contains(company.getId())) {
+                            continue;
+                        }
+                        Optional<ProductionCompany> byApiId = this.productionCompanyRepository.findByApiId(company.getId());
+                        if (byApiId.isEmpty()) {
+                            ProductionCompany productionCompany = new ProductionCompany();
+
+                            productionCompany.setApiId(company.getId());
+                            productionCompany.setName(company.getName());
+                            productionCompany.setLogoPath(company.getLogoPath());
+                            productionCompany.getMovies().add(movieOptional.get());
+
+                            productionCompanies.add(productionCompany);
+                            productionCompaniesToSave.add(productionCompany);
+                        } else {
+                            productionCompanies.add(byApiId.get());
+                        }
+                    }
+
+                    if (!productionCompaniesToSave.isEmpty()) {
+                        this.productionCompanyRepository.saveAll(productionCompanies);
+                    }
+
+                    movieOptional.get().setRuntime(responseById.getRuntime());
+                    movieOptional.get().setVoteAverage(responseById.getVoteAverage());
+                    movieOptional.get().setProductionCompanies(productionCompanies);
+
+                    this.movieRepository.save(movieOptional.get());
+
+                } else {
+                    this.movieRepository.delete(movieOptional.get());
+                    System.out.printf("Movie not found in external API, deleting movie %s\n", movieOptional.get().getTitle());
+                }
+            }
+            id++;
+        }
     }
 
     //    @Scheduled(fixedDelay = 5000)
@@ -83,7 +145,7 @@ public class MovieServiceImpl implements MovieService {
         for (int i = 0; i < 40; i++) {
             logger.info("Fetching page {} of date range {} to {}", page, startDate, endDate);
 
-            MovieResponseApiDTO response = getResponse(page, startDate, endDate);
+            MovieResponseApiDTO response = getResponseByDate(page, startDate, endDate);
             totalPages = response.getTotalPages();
 
             for (MovieApiDTO dto : response.getResults()) {
@@ -118,16 +180,29 @@ public class MovieServiceImpl implements MovieService {
         return this.movieRepository.count() == 0;
     }
 
-    private MovieResponseApiDTO getResponse(int page, LocalDate startDate, LocalDate endDate) {
+    private MovieResponseApiDTO getResponseByDate(int page, LocalDate startDate, LocalDate endDate) {
         String url = String.format(this.apiConfig.getUrl()
-                        + "/discover/movie?page=%d&primary_release_date.gte=%s&primary_release_date.lte=%s&api_key="
-                        + this.apiConfig.getKey()
-                , page, startDate, endDate);
+                + "/discover/movie?page=%d&primary_release_date.gte=%s&primary_release_date.lte=%s&api_key="
+                + this.apiConfig.getKey(), page, startDate, endDate);
 
         return this.restClient
                 .get()
                 .uri(url)
                 .retrieve()
                 .body(MovieResponseApiDTO.class);
+    }
+
+    private MovieApiByIdResponseDTO getResponseById(Long apiId) {
+        String url = String.format(this.apiConfig.getUrl() + "/movie/%d?api_key=" + this.apiConfig.getKey(), apiId);
+        try {
+            return this.restClient
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .body(MovieApiByIdResponseDTO.class);
+        } catch (Exception e) {
+            System.err.println("Error fetching movie with ID: " + apiId + " - " + e.getMessage());
+            return null;
+        }
     }
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "movies")
@@ -37,6 +38,20 @@ public class Movie {
 
     @Column(name = "release_date")
     private LocalDate releaseDate;
+
+    @Column(name = "vote_average")
+    private Double voteAverage;
+
+    @Column
+    private Integer runtime;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "movie_production",
+            joinColumns = @JoinColumn(name = "movie_id"),
+            inverseJoinColumns = @JoinColumn(name = "production_id")
+    )
+    Set<ProductionCompany> productionCompanies;
 
     public long getId() {
         return id;
@@ -100,5 +115,29 @@ public class Movie {
 
     public void setReleaseDate(LocalDate releaseDate) {
         this.releaseDate = releaseDate;
+    }
+
+    public Double getVoteAverage() {
+        return voteAverage;
+    }
+
+    public void setVoteAverage(Double voteAverage) {
+        this.voteAverage = voteAverage;
+    }
+
+    public Integer getRuntime() {
+        return runtime;
+    }
+
+    public void setRuntime(Integer runtime) {
+        this.runtime = runtime;
+    }
+
+    public Set<ProductionCompany> getProductionCompanies() {
+        return productionCompanies;
+    }
+
+    public void setProductionCompanies(Set<ProductionCompany> productionCompanies) {
+        this.productionCompanies = productionCompanies;
     }
 }
