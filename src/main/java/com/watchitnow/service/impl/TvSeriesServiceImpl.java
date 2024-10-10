@@ -21,7 +21,6 @@ import com.watchitnow.utils.DateRange;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -68,10 +67,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         );
     }
 
-//    @Scheduled(fixedDelay = 100000)
+    //@Scheduled(fixedDelay = 100000)
     //TODO
     private void updateTvSeries() {
-        long end = 109639;
+        long end = this.tvSeriesRepository.findTopByOrderByIdDesc().getId();
         for (long i = 109592; i <= end; i++) {
             Optional<TvSeries> tvSeriesOptional = this.tvSeriesRepository.findById(i);
 
@@ -93,7 +92,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
     }
 
-//    @Scheduled(fixedDelay = 500000)
+    //@Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 
@@ -101,6 +100,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         int page = 1;
         int totalPages;
         int savedSeriesCount = 0;
+
         LocalDate startDate = LocalDate.of(year, 12, 1);
         LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
@@ -108,13 +108,20 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             List<TvSeries> oldestTvSeries = this.tvSeriesRepository.findOldestTvSeries();
             if (!oldestTvSeries.isEmpty()) {
                 TvSeries oldestTV = oldestTvSeries.get(0);
+
                 year = oldestTV.getFirstAirDate().getYear();
                 startDate = LocalDate.of(year, oldestTV.getFirstAirDate().getMonthValue(), oldestTV.getFirstAirDate().getDayOfMonth());
+
                 long tvSeriesByYearAndMonth = this.tvSeriesRepository.countTvSeriesInDateRange(oldestTV.getFirstAirDate().getYear(), oldestTV.getFirstAirDate().getMonthValue());
+
                 if (tvSeriesByYearAndMonth > 20) {
                     page = (int) ((tvSeriesByYearAndMonth / 20) + 1);
                 }
             }
+        }
+
+        if (year == 1999) {
+            return;
         }
 
         for (int i = 0; i < 40; i++) {
@@ -132,7 +139,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     }
 
                     SeasonTvSeriesResponseApiDTO seasonsResponse = getSeasonsResponse(dto.getId());
-                    TvSeries tvSeries = getTvSeries(dto, responseById);
+                    TvSeries tvSeries = mapToTvSeries(dto, responseById);
 
                     Map<String, Set<ProductionCompany>> productionCompaniesMap = productionCompanyService.getProductionCompaniesFromResponse(responseById, tvSeries);
                     tvSeries.setProductionCompanies(productionCompaniesMap.get("all"));
@@ -141,7 +148,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                         this.productionCompanyService.saveAllProductionCompanies(productionCompaniesMap.get("toSave"));
                     }
 
-                    List<SeasonTvSeries> seasons = getSeasonTvSeries(seasonsResponse, tvSeries);
+                    List<SeasonTvSeries> seasons = mapSeasonsFromResponse(seasonsResponse, tvSeries);
                     tvSeries.setSeasons(seasons);
 
                     this.tvSeriesRepository.save(tvSeries);
@@ -150,16 +157,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     logger.info("Saved tv series: {}", tvSeries.getName());
                 }
             }
+
             DateRange result = DatePaginationUtil.updatePageAndDate(page, totalPages, i, savedSeriesCount, startDate, endDate, year);
             page = result.getPage();
             startDate = result.getStartDate();
             endDate = result.getEndDate();
             year = result.getYear();
         }
+
         logger.info("Finished fetching tvSeries.");
     }
 
-    private List<SeasonTvSeries> getSeasonTvSeries(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
+    private List<SeasonTvSeries> mapSeasonsFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
         List<SeasonTvSeries> seasons = new ArrayList<>();
 
         for (SeasonDTO seasonDTO : seasonsResponse.getSeasons()) {
@@ -176,7 +185,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return seasons;
     }
 
-    private TvSeries getTvSeries(TvSeriesApiDTO dto, TvSeriesApiByIdResponseDTO responseById) {
+    private TvSeries mapToTvSeries(TvSeriesApiDTO dto, TvSeriesApiByIdResponseDTO responseById) {
         TvSeries tvSeries = new TvSeries();
 
         tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));

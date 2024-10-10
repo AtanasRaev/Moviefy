@@ -64,10 +64,10 @@ public class MovieServiceImpl implements MovieService {
         );
     }
 
-    @Scheduled(fixedDelay = 100000)
+    //@Scheduled(fixedDelay = 100000)
     //TODO
     private void updateMovies() {
-        long end = 363870;
+        long end = this.movieRepository.findTopByOrderByIdDesc().getId();
 
         for (long i = 182542; i <= end; i++) {
             Optional<Movie> movieOptional = this.movieRepository.findById(i);
@@ -90,27 +90,36 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
-//    @Scheduled(fixedDelay = 5000000)
+    //    @Scheduled(fixedDelay = 5000000)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
         int year = LocalDate.now().getYear();
         int page = 1;
         int savedMoviesCount = 0;
-        LocalDate startDate = LocalDate.of(year, 12, 1);        int totalPages;
+        int totalPages;
+
+        LocalDate startDate = LocalDate.of(year, 12, 1);
         LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
         if (!isEmpty()) {
             List<Movie> oldestMovies = this.movieRepository.findOldestMovie();
             if (!oldestMovies.isEmpty()) {
                 Movie oldestMovie = oldestMovies.get(0);
+
                 year = oldestMovie.getReleaseDate().getYear();
                 startDate = LocalDate.of(year, oldestMovie.getReleaseDate().getMonthValue(), oldestMovie.getReleaseDate().getDayOfMonth());
+
                 long moviesByYearAndMonth = this.movieRepository.countMoviesInDateRange(oldestMovie.getReleaseDate().getYear(), oldestMovie.getReleaseDate().getMonthValue());
+
                 if (moviesByYearAndMonth > 20) {
                     page = (int) ((moviesByYearAndMonth / 20) + 1);
                 }
             }
+        }
+
+        if (year == 2005) {
+            return;
         }
 
         for (int i = 0; i < 40; i++) {
@@ -139,6 +148,7 @@ public class MovieServiceImpl implements MovieService {
                     this.movieRepository.save(movie);
 
                     savedMoviesCount++;
+
                     logger.info("Saved movie: {}", movie.getTitle());
                 }
             }
