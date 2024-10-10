@@ -42,7 +42,10 @@ public class TvSeries {
     @Column(name = "vote_average")
     private Double voteAverage;
 
-    @OneToMany(mappedBy = "tvSeries", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "tvSeries",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<SeasonTvSeries> seasons;
 
     @Column(name = "episode_run_time")

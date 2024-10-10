@@ -4,14 +4,13 @@ import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.watchitnow.database.model.dto.apiDto.MovieApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MovieResponseApiDTO;
-import com.watchitnow.database.model.dto.apiDto.ProductionApiDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.entity.Movie;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.repository.MovieRepository;
-import com.watchitnow.database.repository.ProductionCompanyRepository;
 import com.watchitnow.service.MovieGenreService;
 import com.watchitnow.service.MovieService;
+import com.watchitnow.service.ProductionCompanyService;
 import com.watchitnow.utils.ContentRetrievalUtil;
 import com.watchitnow.utils.DatePaginationUtil;
 import com.watchitnow.utils.DateRange;
@@ -23,13 +22,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class MovieServiceImpl implements MovieService {
     private final MovieRepository movieRepository;
     private final MovieGenreService genreService;
-    private final ProductionCompanyRepository productionCompanyRepository;
+    private final ProductionCompanyService productionCompanyService;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
     private final ModelMapper modelMapper;
@@ -38,14 +40,14 @@ public class MovieServiceImpl implements MovieService {
 
     public MovieServiceImpl(MovieRepository movieRepository,
                             MovieGenreService genreService,
-                            ProductionCompanyRepository productionCompanyRepository,
+                            ProductionCompanyService productionCompanyService,
                             ApiConfig apiConfig,
                             RestClient restClient,
                             ModelMapper modelMapper,
                             ContentRetrievalUtil contentRetrievalUtil) {
         this.movieRepository = movieRepository;
         this.genreService = genreService;
-        this.productionCompanyRepository = productionCompanyRepository;
+        this.productionCompanyService = productionCompanyService;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
         this.modelMapper = modelMapper;
@@ -62,67 +64,42 @@ public class MovieServiceImpl implements MovieService {
         );
     }
 
-    @Scheduled(fixedDelay = 100000)
+    //    @Scheduled(fixedDelay = 100000)
+    //TODO
     private void updateMovies() {
-        long end = this.movieRepository.count();
-        long id = 92789;
+        long end = 363870;
 
-        for (long i = 92789; i < end; i++) {
-            Optional<Movie> movieOptional = this.movieRepository.findById(id);
+        for (long i = 182542; i <= end; i++) {
+            Optional<Movie> movieOptional = this.movieRepository.findById(i);
 
-            if (movieOptional.isPresent()) {
-                MovieApiByIdResponseDTO responseById = getResponseById(movieOptional.get().getApiId());
-
-                if (responseById != null) {
-                    Set<ProductionCompany> productionCompanies = new HashSet<>();
-                    Set<ProductionCompany> productionCompaniesToSave = new HashSet<>();
-
-                    for (ProductionApiDTO company : responseById.getProductionCompanies()) {
-                        List<Long> list = productionCompanies.stream().map(ProductionCompany::getApiId).toList();
-                        if (list.contains(company.getId())) {
-                            continue;
-                        }
-                        Optional<ProductionCompany> byApiId = this.productionCompanyRepository.findByApiId(company.getId());
-                        if (byApiId.isEmpty()) {
-                            ProductionCompany productionCompany = new ProductionCompany();
-
-                            productionCompany.setApiId(company.getId());
-                            productionCompany.setName(company.getName());
-                            productionCompany.setLogoPath(company.getLogoPath());
-                            productionCompany.getMovies().add(movieOptional.get());
-
-                            productionCompanies.add(productionCompany);
-                            productionCompaniesToSave.add(productionCompany);
-                        } else {
-                            productionCompanies.add(byApiId.get());
-                        }
-                    }
-
-                    if (!productionCompaniesToSave.isEmpty()) {
-                        this.productionCompanyRepository.saveAll(productionCompanies);
-                    }
-
-                    movieOptional.get().setRuntime(responseById.getRuntime());
-                    movieOptional.get().setVoteAverage(responseById.getVoteAverage());
-                    movieOptional.get().setProductionCompanies(productionCompanies);
-
-                    this.movieRepository.save(movieOptional.get());
-
-                } else {
-                    this.movieRepository.delete(movieOptional.get());
-                    System.out.printf("Movie not found in external API, deleting movie %s\n", movieOptional.get().getTitle());
-                }
+            if (movieOptional.isEmpty()) {
+                continue;
             }
-            id++;
+
+            MovieApiByIdResponseDTO responseById = getResponseById(movieOptional.get().getApiId());
+
+            if (responseById == null) {
+                this.movieRepository.delete(movieOptional.get());
+                System.out.printf("Movie not found in external API, deleting movie %s\n", movieOptional.get().getTitle());
+                continue;
+            }
+
+            movieOptional.get().setRuntime(responseById.getRuntime());
+            movieOptional.get().setVoteAverage(responseById.getVoteAverage());
+
+            this.movieRepository.save(movieOptional.get());
         }
     }
 
-    //    @Scheduled(fixedDelay = 5000)
+//    @Scheduled(fixedDelay = 5000000)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
+
         int year = LocalDate.now().getYear();
-        LocalDate startDate = LocalDate.of(year, 12, 1);
         int page = 1;
+        int savedMoviesCount = 0;
+        LocalDate startDate = LocalDate.of(year, 12, 1);        int totalPages;
+        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
         if (!isEmpty()) {
             List<Movie> oldestMovies = this.movieRepository.findOldestMovie();
@@ -137,11 +114,6 @@ public class MovieServiceImpl implements MovieService {
             }
         }
 
-        int totalPages;
-        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
-
-        int savedMoviesCount = 0;
-
         for (int i = 0; i < 40; i++) {
             logger.info("Fetching page {} of date range {} to {}", page, startDate, endDate);
 
@@ -150,17 +122,23 @@ public class MovieServiceImpl implements MovieService {
 
             for (MovieApiDTO dto : response.getResults()) {
                 if (this.movieRepository.findByApiId(dto.getId()).isEmpty()) {
-                    Movie movie = new Movie();
+                    MovieApiByIdResponseDTO responseById = getResponseById(dto.getId());
 
-                    movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
-                    movie.setApiId(dto.getId());
-                    movie.setTitle(dto.getTitle());
-                    movie.setOverview(dto.getOverview());
-                    movie.setPopularity(dto.getPopularity());
-                    movie.setPosterPath(dto.getPosterPath());
-                    movie.setReleaseDate(dto.getReleaseDate());
+                    if (responseById == null) {
+                        continue;
+                    }
+
+                    Movie movie = mapToMovie(dto, responseById);
+
+                    Map<String, Set<ProductionCompany>> productionCompanyMap = productionCompanyService.getProductionCompaniesFromResponse(responseById, movie);
+                    movie.setProductionCompanies(productionCompanyMap.get("all"));
+
+                    if (!productionCompanyMap.get("toSave").isEmpty()) {
+                        this.productionCompanyService.saveAllProductionCompanies(productionCompanyMap.get("toSave"));
+                    }
 
                     this.movieRepository.save(movie);
+
                     savedMoviesCount++;
                     logger.info("Saved movie: {}", movie.getTitle());
                 }
@@ -174,6 +152,22 @@ public class MovieServiceImpl implements MovieService {
         }
 
         logger.info("Finished fetching movies.");
+    }
+
+    private Movie mapToMovie(MovieApiDTO dto, MovieApiByIdResponseDTO responseById) {
+        Movie movie = new Movie();
+
+        movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
+        movie.setApiId(dto.getId());
+        movie.setTitle(dto.getTitle());
+        movie.setOverview(dto.getOverview());
+        movie.setPopularity(dto.getPopularity());
+        movie.setPosterPath(dto.getPosterPath());
+        movie.setReleaseDate(dto.getReleaseDate());
+        movie.setRuntime(responseById.getRuntime());
+        movie.setVoteAverage(responseById.getVoteAverage());
+
+        return movie;
     }
 
     private boolean isEmpty() {

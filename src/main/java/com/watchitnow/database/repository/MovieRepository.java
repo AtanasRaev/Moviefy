@@ -20,6 +20,9 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m WHERE m.releaseDate = (SELECT MIN(m2.releaseDate) FROM Movie m2)")
     List<Movie> findOldestMovie();
 
+    @Query("SELECT m FROM Movie m ORDER BY m.id DESC")
+    Movie findTopByOrderByIdDesc();
+
     @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres WHERE m.releaseDate BETWEEN :startDate AND :endDate")
     List<Movie> findByReleaseDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

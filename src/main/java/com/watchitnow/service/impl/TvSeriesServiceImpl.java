@@ -1,15 +1,18 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
-import com.watchitnow.database.model.dto.apiDto.*;
+import com.watchitnow.database.model.dto.apiDto.SeasonTvSeriesResponseApiDTO;
+import com.watchitnow.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
+import com.watchitnow.database.model.dto.apiDto.TvSeriesApiDTO;
+import com.watchitnow.database.model.dto.apiDto.TvSeriesResponseApiDTO;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.SeasonTvSeries;
 import com.watchitnow.database.model.entity.TvSeries;
-import com.watchitnow.database.repository.ProductionCompanyRepository;
 import com.watchitnow.database.repository.SeasonTvSeriesRepository;
 import com.watchitnow.database.repository.TvSeriesRepository;
+import com.watchitnow.service.ProductionCompanyService;
 import com.watchitnow.service.SeriesGenreService;
 import com.watchitnow.service.TvSeriesService;
 import com.watchitnow.utils.ContentRetrievalUtil;
@@ -30,7 +33,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final TvSeriesRepository tvSeriesRepository;
     private final SeriesGenreService seriesGenreService;
     private final SeasonTvSeriesRepository seasonTvSeriesRepository;
-    private final ProductionCompanyRepository productionCompanyRepository;
+    private final ProductionCompanyService productionCompanyService;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
     private final ModelMapper modelMapper;
@@ -40,7 +43,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
                                SeriesGenreService seriesGenreService,
                                SeasonTvSeriesRepository seasonTvSeriesRepository,
-                               ProductionCompanyRepository productionCompanyRepository,
+                               ProductionCompanyService productionCompanyService,
                                ApiConfig apiConfig,
                                RestClient restClient,
                                ModelMapper modelMapper,
@@ -48,7 +51,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.tvSeriesRepository = tvSeriesRepository;
         this.seriesGenreService = seriesGenreService;
         this.seasonTvSeriesRepository = seasonTvSeriesRepository;
-        this.productionCompanyRepository = productionCompanyRepository;
+        this.productionCompanyService = productionCompanyService;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
         this.modelMapper = modelMapper;
@@ -65,72 +68,42 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         );
     }
 
-    @Scheduled(fixedDelay = 100000)
+//    @Scheduled(fixedDelay = 100000)
+    //TODO
     private void updateTvSeries() {
-        long end = this.tvSeriesRepository.count();
-        long id = 47025;
+        long end = 109639;
+        for (long i = 109592; i <= end; i++) {
+            Optional<TvSeries> tvSeriesOptional = this.tvSeriesRepository.findById(i);
 
-        for (long i = 47025; i < end; i++) {
-            Optional<TvSeries> tvSeriesOptional = this.tvSeriesRepository.findById(id);
-
-            if (tvSeriesOptional.isPresent()) {
-                TvSeriesApiByIdResponseDTO responseById = getResponseById(tvSeriesOptional.get().getApiId());
-
-                if (responseById != null) {
-                    Set<ProductionCompany> productionCompanies = new HashSet<>();
-                    Set<ProductionCompany> productionCompaniesToSave = new HashSet<>();
-
-                    for (ProductionApiDTO company : responseById.getProductionCompanies()) {
-                        List<Long> list = productionCompanies.stream().map(ProductionCompany::getApiId).toList();
-                        if (list.contains(company.getId())) {
-                            continue;
-                        }
-                        Optional<ProductionCompany> byApiId = this.productionCompanyRepository.findByApiId(company.getId());
-                        if (byApiId.isEmpty()) {
-                            ProductionCompany productionCompany = new ProductionCompany();
-
-                            productionCompany.setApiId(company.getId());
-                            productionCompany.setName(company.getName());
-                            productionCompany.setLogoPath(company.getLogoPath());
-                            productionCompany.getTvSeries().add(tvSeriesOptional.get());
-
-                            productionCompanies.add(productionCompany);
-                            productionCompaniesToSave.add(productionCompany);
-                        } else {
-                            productionCompanies.add(byApiId.get());
-                        }
-                    }
-
-                    if (!productionCompaniesToSave.isEmpty()) {
-                        this.productionCompanyRepository.saveAll(productionCompaniesToSave);
-                    }
-
-                    if (responseById.getEpisodeRuntime() == null || responseById.getEpisodeRuntime().isEmpty()) {
-                        tvSeriesOptional.get().setEpisodeRunTime(0);
-                    } else {
-                        tvSeriesOptional.get().setEpisodeRunTime(responseById.getEpisodeRuntime().get(0));
-                    }
-
-                    tvSeriesOptional.get().setVoteAverage(responseById.getVoteAverage());
-                    tvSeriesOptional.get().setProductionCompanies(productionCompanies);
-
-                    this.tvSeriesRepository.save(tvSeriesOptional.get());
-
-                } else {
-                    this.tvSeriesRepository.delete(tvSeriesOptional.get());
-                    System.out.printf("Tv-Series not found in external API, deleting tv-series %s\n", tvSeriesOptional.get().getName());
-                }
+            if (tvSeriesOptional.isEmpty()) {
+                continue;
             }
-            id++;
+
+            TvSeriesApiByIdResponseDTO responseById = getResponseById(tvSeriesOptional.get().getApiId());
+
+            if (responseById == null) {
+                this.tvSeriesRepository.delete(tvSeriesOptional.get());
+                System.out.printf("Tv-Series not found in external API, deleting tv-series %s\n", tvSeriesOptional.get().getName());
+                continue;
+            }
+
+            tvSeriesOptional.get().setEpisodeRunTime(getEpisodeRunTime(responseById));
+            tvSeriesOptional.get().setVoteAverage(responseById.getVoteAverage());
+
+            this.tvSeriesRepository.save(tvSeriesOptional.get());
         }
     }
 
-    //    @Scheduled(fixedDelay = 5000)
+//    @Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
+
         int year = LocalDate.now().getYear();
-        LocalDate startDate = LocalDate.of(year, 12, 1);
         int page = 1;
+        int totalPages;
+        int savedSeriesCount = 0;
+        LocalDate startDate = LocalDate.of(year, 12, 1);
+        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
         if (!isEmpty()) {
             List<TvSeries> oldestTvSeries = this.tvSeriesRepository.findOldestTvSeries();
@@ -145,11 +118,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             }
         }
 
-        int totalPages;
-        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
-
-        int savedSeriesCount = 0;
-
         for (int i = 0; i < 40; i++) {
             logger.info("Fetching page {} of date range {} to {}", page, startDate, endDate);
 
@@ -159,32 +127,24 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             for (TvSeriesApiDTO dto : response.getResults()) {
                 if (this.tvSeriesRepository.findByApiId(dto.getId()).isEmpty()) {
 
-                    SeasonTvSeriesResponseApiDTO seasonsResponse = getSeasonsResponse(dto.getId());
-                    TvSeries tvSeries = new TvSeries();
-
-                    tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));
-                    tvSeries.setApiId(dto.getId());
-                    tvSeries.setName(dto.getName());
-                    tvSeries.setOverview(dto.getOverview());
-                    tvSeries.setPopularity(dto.getPopularity());
-                    tvSeries.setPosterPath(dto.getPosterPath());
-                    tvSeries.setFirstAirDate(dto.getFirstAirDate());
-
-                    List<SeasonTvSeries> seasons = new ArrayList<>();
-
-                    for (SeasonDTO seasonDTO : seasonsResponse.getSeasons()) {
-                        if (this.seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).isEmpty()) {
-                            SeasonTvSeries season = new SeasonTvSeries();
-                            season.setApiId(seasonDTO.getId());
-                            season.setSeasonNumber(seasonDTO.getSeasonNumber());
-                            season.setAirDate(seasonDTO.getAirDate());
-                            season.setEpisodeCount(seasonDTO.getEpisodeCount());
-                            season.setTvSeries(tvSeries);
-                            seasons.add(season);
-                        }
+                    TvSeriesApiByIdResponseDTO responseById = getResponseById(dto.getId());
+                    if (responseById == null) {
+                        continue;
                     }
 
+                    SeasonTvSeriesResponseApiDTO seasonsResponse = getSeasonsResponse(dto.getId());
+                    TvSeries tvSeries = getTvSeries(dto, responseById);
+
+                    Map<String, Set<ProductionCompany>> productionCompaniesMap = productionCompanyService.getProductionCompaniesFromResponse(responseById, tvSeries);
+                    tvSeries.setProductionCompanies(productionCompaniesMap.get("all"));
+
+                    if (!productionCompaniesMap.get("toSave").isEmpty()) {
+                        this.productionCompanyService.saveAllProductionCompanies(productionCompaniesMap.get("toSave"));
+                    }
+
+                    List<SeasonTvSeries> seasons = getSeasonTvSeries(seasonsResponse, tvSeries);
                     tvSeries.setSeasons(seasons);
+
                     this.tvSeriesRepository.save(tvSeries);
                     this.seasonTvSeriesRepository.saveAll(seasons);
                     savedSeriesCount++;
@@ -198,6 +158,39 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             year = result.getYear();
         }
         logger.info("Finished fetching tvSeries.");
+    }
+
+    private List<SeasonTvSeries> getSeasonTvSeries(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
+        List<SeasonTvSeries> seasons = new ArrayList<>();
+
+        for (SeasonDTO seasonDTO : seasonsResponse.getSeasons()) {
+            if (this.seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).isEmpty()) {
+                SeasonTvSeries season = new SeasonTvSeries();
+                season.setApiId(seasonDTO.getId());
+                season.setSeasonNumber(seasonDTO.getSeasonNumber());
+                season.setAirDate(seasonDTO.getAirDate());
+                season.setEpisodeCount(seasonDTO.getEpisodeCount());
+                season.setTvSeries(tvSeries);
+                seasons.add(season);
+            }
+        }
+        return seasons;
+    }
+
+    private TvSeries getTvSeries(TvSeriesApiDTO dto, TvSeriesApiByIdResponseDTO responseById) {
+        TvSeries tvSeries = new TvSeries();
+
+        tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));
+        tvSeries.setApiId(dto.getId());
+        tvSeries.setName(dto.getName());
+        tvSeries.setOverview(dto.getOverview());
+        tvSeries.setPopularity(dto.getPopularity());
+        tvSeries.setPosterPath(dto.getPosterPath());
+        tvSeries.setFirstAirDate(dto.getFirstAirDate());
+        tvSeries.setVoteAverage(responseById.getVoteAverage());
+        tvSeries.setEpisodeRunTime(getEpisodeRunTime(responseById));
+
+        return tvSeries;
     }
 
     private boolean isEmpty() {
@@ -238,5 +231,9 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             System.err.println("Error fetching tv-series with ID: " + apiId + " - " + e.getMessage());
             return null;
         }
+    }
+
+    private static int getEpisodeRunTime(TvSeriesApiByIdResponseDTO responseById) {
+        return (responseById.getEpisodeRuntime() == null || responseById.getEpisodeRuntime().isEmpty()) ? 0 : responseById.getEpisodeRuntime().get(0);
     }
 }
