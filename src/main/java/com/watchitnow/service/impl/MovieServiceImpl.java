@@ -64,7 +64,7 @@ public class MovieServiceImpl implements MovieService {
         );
     }
 
-    //    @Scheduled(fixedDelay = 100000)
+    @Scheduled(fixedDelay = 100000)
     //TODO
     private void updateMovies() {
         long end = 363870;
@@ -79,7 +79,6 @@ public class MovieServiceImpl implements MovieService {
             MovieApiByIdResponseDTO responseById = getResponseById(movieOptional.get().getApiId());
 
             if (responseById == null) {
-                this.movieRepository.delete(movieOptional.get());
                 System.out.printf("Movie not found in external API, deleting movie %s\n", movieOptional.get().getTitle());
                 continue;
             }

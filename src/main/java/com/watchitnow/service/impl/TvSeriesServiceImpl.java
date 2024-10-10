@@ -82,7 +82,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             TvSeriesApiByIdResponseDTO responseById = getResponseById(tvSeriesOptional.get().getApiId());
 
             if (responseById == null) {
-                this.tvSeriesRepository.delete(tvSeriesOptional.get());
                 System.out.printf("Tv-Series not found in external API, deleting tv-series %s\n", tvSeriesOptional.get().getName());
                 continue;
             }
