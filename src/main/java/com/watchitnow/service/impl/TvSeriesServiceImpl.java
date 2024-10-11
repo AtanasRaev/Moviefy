@@ -1,10 +1,7 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
-import com.watchitnow.database.model.dto.apiDto.SeasonTvSeriesResponseApiDTO;
-import com.watchitnow.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
-import com.watchitnow.database.model.dto.apiDto.TvSeriesApiDTO;
-import com.watchitnow.database.model.dto.apiDto.TvSeriesResponseApiDTO;
+import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
@@ -18,12 +15,16 @@ import com.watchitnow.service.TvSeriesService;
 import com.watchitnow.utils.ContentRetrievalUtil;
 import com.watchitnow.utils.DatePaginationUtil;
 import com.watchitnow.utils.DateRange;
+import com.watchitnow.utils.TrailerMappingUtil;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -35,6 +36,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final ProductionCompanyService productionCompanyService;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
+    private final TrailerMappingUtil trailerMappingUtil;
     private final ModelMapper modelMapper;
     private final ContentRetrievalUtil contentRetrievalUtil;
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesServiceImpl.class);
@@ -45,6 +47,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                                ProductionCompanyService productionCompanyService,
                                ApiConfig apiConfig,
                                RestClient restClient,
+                               TrailerMappingUtil trailerMappingUtil,
                                ModelMapper modelMapper,
                                ContentRetrievalUtil contentRetrievalUtil) {
         this.tvSeriesRepository = tvSeriesRepository;
@@ -53,6 +56,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.productionCompanyService = productionCompanyService;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
+        this.trailerMappingUtil = trailerMappingUtil;
         this.modelMapper = modelMapper;
         this.contentRetrievalUtil = contentRetrievalUtil;
     }
@@ -67,11 +71,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         );
     }
 
-    //@Scheduled(fixedDelay = 100000)
+    @Scheduled(fixedDelay = 10000)
     //TODO
     private void updateTvSeries() {
-        long end = this.tvSeriesRepository.findTopByOrderByIdDesc().getId();
-        for (long i = 109592; i <= end; i++) {
+        long end = 109654;
+        for (long i = 1; i <= end; i++) {
             Optional<TvSeries> tvSeriesOptional = this.tvSeriesRepository.findById(i);
 
             if (tvSeriesOptional.isEmpty()) {
@@ -85,8 +89,33 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 continue;
             }
 
-            tvSeriesOptional.get().setEpisodeRunTime(getEpisodeRunTime(responseById));
-            tvSeriesOptional.get().setVoteAverage(responseById.getVoteAverage());
+            TrailerResponseApiDTO responseTrailer = this.trailerMappingUtil.getTrailerResponseById(tvSeriesOptional.get().getApiId(),
+                    this.apiConfig.getUrl(),
+                    this.apiConfig.getKey(),
+                    "tv");
+
+            if (responseTrailer == null) {
+                continue;
+            }
+
+            BigDecimal popularity = BigDecimal.valueOf(responseById.getPopularity()).setScale(1, RoundingMode.HALF_UP);
+            BigDecimal voteAverage = BigDecimal.valueOf(responseById.getVoteAverage()).setScale(1, RoundingMode.HALF_UP);
+
+            tvSeriesOptional.get().setPopularity(popularity.doubleValue());
+            tvSeriesOptional.get().setVoteAverage(voteAverage.doubleValue());
+            tvSeriesOptional.get().setBackdropPath(responseById.getBackdropPath());
+
+            List<TrailerApiDTO> trailers = responseTrailer.getResults();
+
+            if (trailers.isEmpty()) {
+                return;
+            }
+
+            TrailerApiDTO selectedTrailer = this.trailerMappingUtil.getTrailer(trailers);
+
+            if (selectedTrailer != null) {
+                tvSeriesOptional.get().setTrailer(selectedTrailer.getKey());
+            }
 
             this.tvSeriesRepository.save(tvSeriesOptional.get());
         }

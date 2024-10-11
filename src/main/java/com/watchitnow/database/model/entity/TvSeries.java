@@ -42,6 +42,12 @@ public class TvSeries {
     @Column(name = "vote_average")
     private Double voteAverage;
 
+    @Column(name = "backdrop_path")
+    private String backdropPath;
+
+    @Column
+    private String trailer;
+
     @OneToMany(mappedBy = "tvSeries",
             fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
@@ -141,6 +147,22 @@ public class TvSeries {
 
     public List<SeasonTvSeries> getSeasons() {
         return seasons;
+    }
+
+    public String getBackdropPath() {
+        return backdropPath;
+    }
+
+    public void setBackdropPath(String backdropPath) {
+        this.backdropPath = backdropPath;
+    }
+
+    public String getTrailer() {
+        return trailer;
+    }
+
+    public void setTrailer(String trailer) {
+        this.trailer = trailer;
     }
 
     public void setSeasons(List<SeasonTvSeries> seasons) {

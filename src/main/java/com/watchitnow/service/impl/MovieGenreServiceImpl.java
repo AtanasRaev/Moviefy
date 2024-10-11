@@ -5,7 +5,6 @@ import com.watchitnow.database.model.dto.apiDto.GenreResponseApiDTO;
 import com.watchitnow.database.model.entity.MovieGenre;
 import com.watchitnow.database.repository.MovieGenreRepository;
 import com.watchitnow.service.MovieGenreService;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -16,17 +15,14 @@ import java.util.Optional;
 @Service
 public class MovieGenreServiceImpl implements MovieGenreService {
     private final MovieGenreRepository genreRepository;
-    private final ModelMapper modelMapper;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
 
     public MovieGenreServiceImpl(MovieGenreRepository genreRepository,
-                                 ModelMapper modelMapper,
                                  ApiConfig apiConfig,
                                  RestClient restClient
     ) {
         this.genreRepository = genreRepository;
-        this.modelMapper = modelMapper;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
     }

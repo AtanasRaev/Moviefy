@@ -45,6 +45,12 @@ public class Movie {
     @Column
     private Integer runtime;
 
+    @Column(name = "backdrop_path")
+    private String backdropPath;
+
+    @Column
+    private String trailer;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "movie_production",
@@ -133,8 +139,24 @@ public class Movie {
         this.runtime = runtime;
     }
 
+    public String getBackdropPath() {
+        return backdropPath;
+    }
+
+    public void setBackdropPath(String backdropPath) {
+        this.backdropPath = backdropPath;
+    }
+
     public Set<ProductionCompany> getProductionCompanies() {
         return productionCompanies;
+    }
+
+    public String getTrailer() {
+        return trailer;
+    }
+
+    public void setTrailer(String trailer) {
+        this.trailer = trailer;
     }
 
     public void setProductionCompanies(Set<ProductionCompany> productionCompanies) {
