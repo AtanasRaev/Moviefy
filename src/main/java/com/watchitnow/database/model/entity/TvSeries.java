@@ -8,7 +8,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "tv_series")
-public class TvSeries {
+public class TvSeries extends Media {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,32 +21,11 @@ public class TvSeries {
     )
     private List<SeriesGenre> genres;
 
-    @Column(name = "api_id", unique = true)
-    private Long apiId;
-
     @Column
     private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String overview;
-
-    @Column
-    private Double popularity;
-
-    @Column(name = "poster_path")
-    private String posterPath;
-
     @Column(name = "first_air_date")
     private LocalDate firstAirDate;
-
-    @Column(name = "vote_average")
-    private Double voteAverage;
-
-    @Column(name = "backdrop_path")
-    private String backdropPath;
-
-    @Column
-    private String trailer;
 
     @OneToMany(mappedBy = "tvSeries",
             fetch = FetchType.LAZY,
@@ -81,14 +60,6 @@ public class TvSeries {
         this.genres = genres;
     }
 
-    public Long getApiId() {
-        return apiId;
-    }
-
-    public void setApiId(Long apiId) {
-        this.apiId = apiId;
-    }
-
     public String getName() {
         return name;
     }
@@ -97,44 +68,12 @@ public class TvSeries {
         this.name = name;
     }
 
-    public String getOverview() {
-        return overview;
-    }
-
-    public void setOverview(String overview) {
-        this.overview = overview;
-    }
-
-    public Double getPopularity() {
-        return popularity;
-    }
-
-    public void setPopularity(Double popularity) {
-        this.popularity = popularity;
-    }
-
-    public String getPosterPath() {
-        return posterPath;
-    }
-
-    public void setPosterPath(String posterPath) {
-        this.posterPath = posterPath;
-    }
-
     public LocalDate getFirstAirDate() {
         return firstAirDate;
     }
 
     public void setFirstAirDate(LocalDate firstAirDate) {
         this.firstAirDate = firstAirDate;
-    }
-
-    public Double getVoteAverage() {
-        return voteAverage;
-    }
-
-    public void setVoteAverage(Double voteAverage) {
-        this.voteAverage = voteAverage;
     }
 
     public Integer getEpisodeRunTime() {
@@ -147,22 +86,6 @@ public class TvSeries {
 
     public List<SeasonTvSeries> getSeasons() {
         return seasons;
-    }
-
-    public String getBackdropPath() {
-        return backdropPath;
-    }
-
-    public void setBackdropPath(String backdropPath) {
-        this.backdropPath = backdropPath;
-    }
-
-    public String getTrailer() {
-        return trailer;
-    }
-
-    public void setTrailer(String trailer) {
-        this.trailer = trailer;
     }
 
     public void setSeasons(List<SeasonTvSeries> seasons) {

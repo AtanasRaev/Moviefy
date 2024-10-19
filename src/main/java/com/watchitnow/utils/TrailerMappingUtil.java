@@ -46,8 +46,10 @@ public class TrailerMappingUtil {
                         .orElse(null);
             }
         }
+
         return selectedTrailer;
     }
+
     public TrailerResponseApiDTO getTrailerResponseById(Long apiId, String apiUrl, String apiKey, String type) {
         String url = String.format(apiUrl + "/%s/%d/videos?api_key=" + apiKey, type, apiId);
         try {

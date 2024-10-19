@@ -1,7 +1,10 @@
 package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
-import com.watchitnow.database.model.dto.apiDto.*;
+import com.watchitnow.database.model.dto.apiDto.MovieApiByIdResponseDTO;
+import com.watchitnow.database.model.dto.apiDto.MovieApiDTO;
+import com.watchitnow.database.model.dto.apiDto.MovieResponseApiDTO;
+import com.watchitnow.database.model.dto.apiDto.TrailerResponseApiDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.entity.Movie;
 import com.watchitnow.database.model.entity.ProductionCompany;
@@ -9,11 +12,7 @@ import com.watchitnow.database.repository.MovieRepository;
 import com.watchitnow.service.MovieGenreService;
 import com.watchitnow.service.MovieService;
 import com.watchitnow.service.ProductionCompanyService;
-import com.watchitnow.utils.ContentRetrievalUtil;
-import com.watchitnow.utils.DatePaginationUtil;
-import com.watchitnow.utils.DateRange;
-import com.watchitnow.utils.TrailerMappingUtil;
-import org.jetbrains.annotations.Nullable;
+import com.watchitnow.utils.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,39 +20,42 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class MovieServiceImpl implements MovieService {
     private final MovieRepository movieRepository;
-    private final MovieGenreService genreService;
+    private final MovieGenreService movieGenreService;
     private final ProductionCompanyService productionCompanyService;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
     private final ModelMapper modelMapper;
     private final TrailerMappingUtil trailerMappingUtil;
     private final ContentRetrievalUtil contentRetrievalUtil;
+    private final MovieMapper movieMapper;
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
 
     public MovieServiceImpl(MovieRepository movieRepository,
-                            MovieGenreService genreService,
+                            MovieGenreService movieGenreService,
                             ProductionCompanyService productionCompanyService,
                             ApiConfig apiConfig,
                             RestClient restClient,
                             ModelMapper modelMapper,
                             TrailerMappingUtil trailerMappingUtil,
-                            ContentRetrievalUtil contentRetrievalUtil) {
+                            ContentRetrievalUtil contentRetrievalUtil,
+                            MovieMapper movieMapper) {
         this.movieRepository = movieRepository;
-        this.genreService = genreService;
+        this.movieGenreService = movieGenreService;
         this.productionCompanyService = productionCompanyService;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
         this.modelMapper = modelMapper;
         this.trailerMappingUtil = trailerMappingUtil;
         this.contentRetrievalUtil = contentRetrievalUtil;
+        this.movieMapper = movieMapper;
     }
 
     @Override
@@ -66,57 +68,12 @@ public class MovieServiceImpl implements MovieService {
         );
     }
 
-    @Scheduled(fixedDelay = 10000)
+    //    @Scheduled(fixedDelay = 10000)
     //TODO
     private void updateMovies() {
-        long end = 363899;
-
-        for (long i = 1; i <= end; i++) {
-            Optional<Movie> movieOptional = this.movieRepository.findById(i);
-
-            if (movieOptional.isEmpty()) {
-                continue;
-            }
-
-            MovieApiByIdResponseDTO responseById = getMovieResponseById(movieOptional.get().getApiId());
-
-            if (responseById == null) {
-                continue;
-            }
-
-            TrailerResponseApiDTO responseTrailer = trailerMappingUtil.getTrailerResponseById(movieOptional.get().getApiId(),
-                    this.apiConfig.getUrl(),
-                    this.apiConfig.getKey(),
-                    "movie");
-
-            if (responseTrailer == null) {
-                continue;
-            }
-
-            BigDecimal popularity = BigDecimal.valueOf(responseById.getPopularity()).setScale(1, RoundingMode.HALF_UP);
-            BigDecimal voteAverage = BigDecimal.valueOf(responseById.getVoteAverage()).setScale(1, RoundingMode.HALF_UP);
-
-            movieOptional.get().setPopularity(popularity.doubleValue());
-            movieOptional.get().setVoteAverage(voteAverage.doubleValue());
-            movieOptional.get().setBackdropPath(responseById.getBackdropPath());
-
-            List<TrailerApiDTO> trailers = responseTrailer.getResults();
-
-            if (trailers.isEmpty()) {
-                return;
-            }
-
-            TrailerApiDTO selectedTrailer = this.trailerMappingUtil.getTrailer(trailers);
-
-            if (selectedTrailer != null) {
-                movieOptional.get().setTrailer(selectedTrailer.getKey());
-            }
-
-            this.movieRepository.save(movieOptional.get());
-        }
     }
 
-    //    @Scheduled(fixedDelay = 5000000)
+//    @Scheduled(fixedDelay = 5000000)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
@@ -126,7 +83,6 @@ public class MovieServiceImpl implements MovieService {
         int totalPages;
 
         LocalDate startDate = LocalDate.of(year, 12, 1);
-        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
         if (!isEmpty()) {
             List<Movie> oldestMovies = this.movieRepository.findOldestMovie();
@@ -143,6 +99,8 @@ public class MovieServiceImpl implements MovieService {
                 }
             }
         }
+
+        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
         if (year == 2005) {
             return;
@@ -162,7 +120,12 @@ public class MovieServiceImpl implements MovieService {
                         continue;
                     }
 
-                    Movie movie = mapToMovie(dto, responseById);
+                    TrailerResponseApiDTO responseTrailer = trailerMappingUtil.getTrailerResponseById(dto.getId(),
+                            this.apiConfig.getUrl(),
+                            this.apiConfig.getKey(),
+                            "movie");
+
+                    Movie movie = movieMapper.mapToMovie(dto, responseById, responseTrailer);
 
                     Map<String, Set<ProductionCompany>> productionCompanyMap = productionCompanyService.getProductionCompaniesFromResponse(responseById, movie);
                     movie.setProductionCompanies(productionCompanyMap.get("all"));
@@ -187,22 +150,6 @@ public class MovieServiceImpl implements MovieService {
         }
 
         logger.info("Finished fetching movies.");
-    }
-
-    private Movie mapToMovie(MovieApiDTO dto, MovieApiByIdResponseDTO responseById) {
-        Movie movie = new Movie();
-
-        movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
-        movie.setApiId(dto.getId());
-        movie.setTitle(dto.getTitle());
-        movie.setOverview(dto.getOverview());
-        movie.setPopularity(dto.getPopularity());
-        movie.setPosterPath(dto.getPosterPath());
-        movie.setReleaseDate(dto.getReleaseDate());
-        movie.setRuntime(responseById.getRuntime());
-        movie.setVoteAverage(responseById.getVoteAverage());
-
-        return movie;
     }
 
     private boolean isEmpty() {

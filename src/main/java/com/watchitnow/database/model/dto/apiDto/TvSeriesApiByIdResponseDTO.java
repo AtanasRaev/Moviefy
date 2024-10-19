@@ -5,20 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class TvSeriesApiByIdResponseDTO {
-    //TODO
-//    @JsonProperty("production_companies")
+    @JsonProperty("production_companies")
     private List<ProductionApiDTO> productionCompanies;
 
     @JsonProperty("episode_run_time")
     private List<Integer> episodeRuntime;
-
-    @JsonProperty("vote_average")
-    private Double voteAverage;
-
-    private Double popularity;
-
-    @JsonProperty("backdrop_path")
-    private String backdropPath;
 
     public List<ProductionApiDTO> getProductionCompanies() {
         return productionCompanies;
@@ -34,29 +25,5 @@ public class TvSeriesApiByIdResponseDTO {
 
     public void setEpisodeRuntime(List<Integer> episodeRuntime) {
         this.episodeRuntime = episodeRuntime;
-    }
-
-    public Double getVoteAverage() {
-        return voteAverage;
-    }
-
-    public void setVoteAverage(Double voteAverage) {
-        this.voteAverage = voteAverage;
-    }
-
-    public Double getPopularity() {
-        return popularity;
-    }
-
-    public void setPopularity(Double popularity) {
-        this.popularity = popularity;
-    }
-
-    public String getBackdropPath() {
-        return backdropPath;
-    }
-
-    public void setBackdropPath(String backdropPath) {
-        this.backdropPath = backdropPath;
     }
 }
