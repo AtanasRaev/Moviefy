@@ -77,7 +77,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-    @Scheduled(fixedDelay = 500000)
+//    @Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 
@@ -88,21 +88,21 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
         LocalDate startDate = LocalDate.of(year, 12, 1);
 
-//        if (!isEmpty()) {
-//            List<TvSeries> oldestTvSeries = this.tvSeriesRepository.findOldestTvSeries();
-//            if (!oldestTvSeries.isEmpty()) {
-//                TvSeries oldestTV = oldestTvSeries.get(0);
-//
-//                year = oldestTV.getFirstAirDate().getYear();
-//                startDate = LocalDate.of(year, oldestTV.getFirstAirDate().getMonthValue(), oldestTV.getFirstAirDate().getDayOfMonth());
-//
-//                long tvSeriesByYearAndMonth = this.tvSeriesRepository.countTvSeriesInDateRange(oldestTV.getFirstAirDate().getYear(), oldestTV.getFirstAirDate().getMonthValue());
-//
-//                if (tvSeriesByYearAndMonth > 20) {
-//                    page = (int) ((tvSeriesByYearAndMonth / 20) + 1);
-//                }
-//            }
-//        }
+        if (!isEmpty()) {
+            List<TvSeries> oldestTvSeries = this.tvSeriesRepository.findOldestTvSeries();
+            if (!oldestTvSeries.isEmpty()) {
+                TvSeries oldestTV = oldestTvSeries.get(0);
+
+                year = oldestTV.getFirstAirDate().getYear();
+                startDate = LocalDate.of(year, oldestTV.getFirstAirDate().getMonthValue(), oldestTV.getFirstAirDate().getDayOfMonth());
+
+                long tvSeriesByYearAndMonth = this.tvSeriesRepository.countTvSeriesInDateRange(oldestTV.getFirstAirDate().getYear(), oldestTV.getFirstAirDate().getMonthValue());
+
+                if (tvSeriesByYearAndMonth > 20) {
+                    page = (int) ((tvSeriesByYearAndMonth / 20) + 1);
+                }
+            }
+        }
 
         LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
