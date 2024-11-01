@@ -13,13 +13,13 @@ public class TvSeries extends Media {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "series_genre",
             joinColumns = @JoinColumn(name = "series_id"),
             inverseJoinColumns = @JoinColumn(name = "genre_id")
     )
-    private List<SeriesGenre> genres;
+    private Set<SeriesGenre> genres;
 
     @Column
     private String name;
@@ -31,12 +31,12 @@ public class TvSeries extends Media {
             fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
             orphanRemoval = true)
-    private List<SeasonTvSeries> seasons;
+    private Set<SeasonTvSeries> seasons;
 
     @Column(name = "episode_run_time")
     private Integer episodeRunTime;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "tv_series_production",
             joinColumns = @JoinColumn(name = "series_id"),
@@ -52,11 +52,11 @@ public class TvSeries extends Media {
         this.id = id;
     }
 
-    public List<SeriesGenre> getGenres() {
+    public Set<SeriesGenre> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<SeriesGenre> genres) {
+    public void setGenres(Set<SeriesGenre> genres) {
         this.genres = genres;
     }
 
@@ -84,11 +84,11 @@ public class TvSeries extends Media {
         this.episodeRunTime = episodeRunTime;
     }
 
-    public List<SeasonTvSeries> getSeasons() {
+    public Set<SeasonTvSeries> getSeasons() {
         return seasons;
     }
 
-    public void setSeasons(List<SeasonTvSeries> seasons) {
+    public void setSeasons(Set<SeasonTvSeries> seasons) {
         this.seasons = seasons;
     }
 

@@ -2,9 +2,9 @@ package com.watchitnow.database.model.dto.apiDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.List;
+import java.util.Set;
 
-public class MediaApiDTO {
+public abstract class MediaApiDTO {
     private Long id;
 
     private String overview;
@@ -12,7 +12,7 @@ public class MediaApiDTO {
     private Double popularity;
 
     @JsonProperty("genre_ids")
-    private List<Long> genres;
+    private Set<Long> genres;
 
     @JsonProperty("poster_path")
     private String posterPath;
@@ -63,11 +63,11 @@ public class MediaApiDTO {
         this.backdropPath = backdropPath;
     }
 
-    public List<Long> getGenres() {
+    public Set<Long> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<Long> genres) {
+    public void setGenres(Set<Long> genres) {
         this.genres = genres;
     }
 

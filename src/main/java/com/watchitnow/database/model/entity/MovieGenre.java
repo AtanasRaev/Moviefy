@@ -3,6 +3,7 @@ package com.watchitnow.database.model.entity;
 import jakarta.persistence.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "movies_genres")
@@ -20,7 +21,8 @@ public class MovieGenre {
     @ManyToMany(mappedBy = "genres", fetch = FetchType.LAZY)
     private List<Movie> movies;
 
-    public MovieGenre() {}
+    public MovieGenre() {
+    }
 
     public MovieGenre(String name, Long apiId) {
         this.name = name;

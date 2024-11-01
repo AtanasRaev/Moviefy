@@ -3,7 +3,6 @@ package com.watchitnow.database.model.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -19,7 +18,7 @@ public class Movie extends Media {
             joinColumns = @JoinColumn(name = "movie_id"),
             inverseJoinColumns = @JoinColumn(name = "genre_id")
     )
-    private List<MovieGenre> genres;
+    private Set<MovieGenre> genres;
 
     @Column
     private String title;
@@ -46,14 +45,13 @@ public class Movie extends Media {
         this.id = id;
     }
 
-    public List<MovieGenre> getGenres() {
+    public Set<MovieGenre> getGenres() {
         return genres;
     }
 
-    public void setGenres(List<MovieGenre> genres) {
+    public void setGenres(Set<MovieGenre> genres) {
         this.genres = genres;
     }
-
 
     public String getTitle() {
         return title;

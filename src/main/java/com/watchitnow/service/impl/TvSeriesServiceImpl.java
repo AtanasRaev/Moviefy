@@ -3,6 +3,8 @@ package com.watchitnow.service.impl;
 import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
+import com.watchitnow.database.model.dto.detailsDto.SeasonTvSeriesDTO;
+import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.SeasonTvSeries;
@@ -16,15 +18,12 @@ import com.watchitnow.utils.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
@@ -72,7 +71,20 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         );
     }
 
-//    @Scheduled(fixedDelay = 10000)
+    @Override
+    public TvSeriesDetailsDTO getTvSeriesById(long id) {
+        TvSeriesDetailsDTO tv = this.modelMapper.map(this.tvSeriesRepository.findTvSeriesById(id), TvSeriesDetailsDTO.class);
+        if (tv == null) {
+            return null;
+        }
+        tv.setSeasons(tv.getSeasons().stream()
+                .sorted(Comparator.comparingInt(SeasonTvSeriesDTO::getSeasonNumber))
+                .collect(Collectors.toCollection(LinkedHashSet::new)));
+
+        return tv;
+    }
+
+    //    @Scheduled(fixedDelay = 10000)
     //TODO
     private void updateTvSeries() {
     }
@@ -139,7 +151,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                         this.productionCompanyService.saveAllProductionCompanies(productionCompaniesMap.get("toSave"));
                     }
 
-                    List<SeasonTvSeries> seasons = mapSeasonsFromResponse(seasonsResponse, tvSeries);
+                    Set<SeasonTvSeries> seasons = mapSeasonsFromResponse(seasonsResponse, tvSeries);
                     tvSeries.setSeasons(seasons);
 
                     this.tvSeriesRepository.save(tvSeries);
@@ -159,8 +171,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         logger.info("Finished fetching tvSeries.");
     }
 
-    private List<SeasonTvSeries> mapSeasonsFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
-        List<SeasonTvSeries> seasons = new ArrayList<>();
+    private Set<SeasonTvSeries> mapSeasonsFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
+        Set<SeasonTvSeries> seasons = new HashSet<>();
 
         for (SeasonDTO seasonDTO : seasonsResponse.getSeasons()) {
             if (this.seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).isEmpty()) {

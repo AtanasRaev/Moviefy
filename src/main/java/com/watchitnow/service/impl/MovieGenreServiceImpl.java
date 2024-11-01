@@ -8,9 +8,7 @@ import com.watchitnow.service.MovieGenreService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class MovieGenreServiceImpl implements MovieGenreService {
@@ -45,8 +43,8 @@ public class MovieGenreServiceImpl implements MovieGenreService {
     }
 
     @Override
-    public List<MovieGenre> getAllGenresByApiIds(List<Long> genreIds) {
-        List<MovieGenre> genresList = new ArrayList<>();
+    public Set<MovieGenre> getAllGenresByApiIds(Set<Long> genreIds) {
+        Set<MovieGenre> genresList = new HashSet<>();
         for (Long genre : genreIds) {
             Optional<MovieGenre> optional = this.genreRepository.findByApiId(genre);
             optional.ifPresent(genresList::add);

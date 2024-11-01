@@ -5,6 +5,7 @@ import com.watchitnow.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.watchitnow.database.model.dto.apiDto.MovieApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MovieResponseApiDTO;
 import com.watchitnow.database.model.dto.apiDto.TrailerResponseApiDTO;
+import com.watchitnow.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.entity.Movie;
 import com.watchitnow.database.model.entity.ProductionCompany;
@@ -16,7 +17,6 @@ import com.watchitnow.utils.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -66,6 +66,11 @@ public class MovieServiceImpl implements MovieService {
                 movie -> modelMapper.map(movie, MoviePageDTO.class),
                 MoviePageDTO::getPosterPath
         );
+    }
+
+    @Override
+    public MovieDetailsDTO getMovieById(long id) {
+        return this.modelMapper.map(this.movieRepository.findMovieById(id), MovieDetailsDTO.class);
     }
 
     //    @Scheduled(fixedDelay = 10000)

@@ -25,6 +25,7 @@ public class MovieMapper extends MediaMapper {
         movie.setReleaseDate(dto.getReleaseDate());
         movie.setRuntime(responseById.getRuntime());
         movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
+        movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
 
         return movie;
     }

@@ -1,5 +1,6 @@
 package com.watchitnow.web;
 
+import com.watchitnow.database.model.dto.detailsDto.MediaDetailsDTO;
 import com.watchitnow.service.MovieService;
 import com.watchitnow.service.impl.TvSeriesServiceImpl;
 import org.springframework.data.domain.Page;
@@ -12,15 +13,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @RestController
-public class ContentController {
+public class MediaController {
     private final MovieService movieService;
     private final TvSeriesServiceImpl tvSeriesService;
 
-    public ContentController(MovieService movieService,
-                             TvSeriesServiceImpl tvSeriesService) {
+    public MediaController(MovieService movieService,
+                           TvSeriesServiceImpl tvSeriesService) {
         this.movieService = movieService;
         this.tvSeriesService = tvSeriesService;
     }
@@ -33,9 +36,9 @@ public class ContentController {
         Pageable pageable = PageRequest.of(0, size);
         Page<?> contentPage;
 
-        if ("movies".equalsIgnoreCase(type)) {
+        if ("movie".equalsIgnoreCase(type)) {
             contentPage = new PageImpl<>(new ArrayList<>(movieService.getMoviesFromCurrentMonth(size)), pageable, size);
-        } else if ("tv-series".equalsIgnoreCase(type)) {
+        } else if ("tv".equalsIgnoreCase(type)) {
             contentPage = new PageImpl<>(new ArrayList<>(tvSeriesService.getTvSeriesFromCurrentMonth(size)), pageable, size);
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + type));
@@ -49,5 +52,27 @@ public class ContentController {
         response.put(type, contentPage.getContent());
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{type}/{id}")
+    public ResponseEntity<Object> getMediaById(
+            @PathVariable String type,
+            @PathVariable Long id)  {
+
+        MediaDetailsDTO media;
+
+        if ("movie".equalsIgnoreCase(type)) {
+            media = movieService.getMovieById(id);
+        } else if ("tv".equalsIgnoreCase(type)) {
+            media = tvSeriesService.getTvSeriesById(id);
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + type));
+        }
+
+        if (media == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid id: " + id));
+        }
+
+        return ResponseEntity.ok(media);
     }
 }
