@@ -18,6 +18,7 @@ import com.watchitnow.utils.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -89,7 +90,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-//    @Scheduled(fixedDelay = 500000)
+    //@Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 

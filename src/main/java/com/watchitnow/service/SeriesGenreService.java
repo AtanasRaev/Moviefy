@@ -1,9 +1,8 @@
 package com.watchitnow.service;
 
-import com.watchitnow.database.model.entity.SeriesGenre;
-
-import java.util.List;
 import java.util.Set;
+
+import com.watchitnow.database.model.entity.SeriesGenre;
 
 public interface SeriesGenreService {
     void fetchGenres();
