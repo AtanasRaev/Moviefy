@@ -2,12 +2,15 @@ package com.watchitnow.service;
 
 import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Set;
 
 public interface TvSeriesService {
-    Set<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(int targetCount);
+    Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable);
 
     TvSeriesDetailsDTO getTvSeriesById(long id);
 
+    Set<TvSeriesPageDTO> getTvSeriesByGenre(String genreType);
 }

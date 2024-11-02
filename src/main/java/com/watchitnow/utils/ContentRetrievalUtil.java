@@ -2,28 +2,30 @@ package com.watchitnow.utils;
 
 import com.watchitnow.database.model.entity.Movie;
 import com.watchitnow.database.model.entity.TvSeries;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 public class ContentRetrievalUtil {
-    public <T, R> Set<R> fetchContentFromDateRange(int targetCount,
-                                                   Function<LocalDateRange, List<T>> fetchFunction,
-                                                   Function<T, R> mapFunction,
-                                                   Function<R, String> posterPathExtractor) {
-        Set<R> content = new LinkedHashSet<>();
-        //TODO: Decide from which date to start(consider that there is not video player for each movie/tv-series)
-        LocalDate currentDate = LocalDate.now().minusDays(7);
+    private static final int MAX_EMPTY_MONTHS = 12;
+    private static final int DAYS_OFFSET = 7;
+    private static final int MAX_ITEMS = 100;
+
+    public <T, R> Page<R> fetchContentFromDateRange(Pageable pageable,
+                                                    Function<LocalDateRange, List<T>> fetchFunction,
+                                                    Function<T, R> mapFunction,
+                                                    Function<R, String> posterPathExtractor) {
+        List<R> allContent = new ArrayList<>();
+        LocalDate currentDate = LocalDate.now().minusDays(DAYS_OFFSET);
         int emptyCount = 0;
 
-        while (content.size() < targetCount) {
+        while (emptyCount < MAX_EMPTY_MONTHS && allContent.size() < MAX_ITEMS) {
             LocalDate endDate = currentDate.withDayOfMonth(1);
             LocalDateRange dateRange = new LocalDateRange(endDate, currentDate);
 
@@ -32,25 +34,48 @@ public class ContentRetrievalUtil {
 
             List<R> mappedContent = fetchedContent.stream()
                     .map(mapFunction)
-                    .toList();
-
-            mappedContent = mappedContent.stream()
-                    .filter(item -> posterPathExtractor.apply(item) != null && !posterPathExtractor.apply(item).isEmpty())
+                    .filter(item -> isValidPosterPath(posterPathExtractor.apply(item)))
+                    .limit(MAX_ITEMS - allContent.size())
                     .toList();
 
             if (mappedContent.isEmpty()) {
                 emptyCount++;
+            } else {
+                allContent.addAll(mappedContent);
             }
 
-            if (emptyCount == 12) {
+            if (hasEnoughContentForPage(allContent.size(), pageable)) {
                 break;
             }
 
-            content.addAll(mappedContent);
             currentDate = endDate.minusDays(1);
         }
 
-        return content.stream().limit(targetCount).collect(Collectors.toSet());
+        return createPageFromContent(allContent, pageable);
+    }
+
+    private boolean isValidPosterPath(String posterPath) {
+        return posterPath != null && !posterPath.isEmpty();
+    }
+
+    private boolean hasEnoughContentForPage(int contentSize, Pageable pageable) {
+        return contentSize >= (pageable.getPageNumber() + 1) * pageable.getPageSize() ||
+                contentSize >= MAX_ITEMS;
+    }
+
+    private <R> Page<R> createPageFromContent(List<R> content, Pageable pageable) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min(Math.min(start + pageable.getPageSize(), content.size()), MAX_ITEMS);
+
+        List<R> pageContent = start < end
+                ? content.subList(start, end)
+                : Collections.emptyList();
+
+        return new PageImpl<>(
+                pageContent,
+                pageable,
+                Math.min(content.size(), MAX_ITEMS)
+        );
     }
 
     private LocalDate getDate(Object content) {
@@ -59,6 +84,6 @@ public class ContentRetrievalUtil {
         } else if (content instanceof TvSeries) {
             return ((TvSeries) content).getFirstAirDate();
         }
-        throw new IllegalArgumentException("Unknown content type");
+        throw new IllegalArgumentException("Unknown content type: " + content.getClass());
     }
 }

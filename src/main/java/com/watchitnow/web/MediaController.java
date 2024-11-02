@@ -2,18 +2,20 @@ package com.watchitnow.web;
 
 import com.watchitnow.database.model.dto.detailsDto.MediaDetailsDTO;
 import com.watchitnow.service.MovieService;
+import com.watchitnow.service.impl.MovieGenreServiceImpl;
+import com.watchitnow.service.impl.SeriesGenreServiceImpl;
 import com.watchitnow.service.impl.TvSeriesServiceImpl;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -21,27 +23,34 @@ import java.util.Map;
 public class MediaController {
     private final MovieService movieService;
     private final TvSeriesServiceImpl tvSeriesService;
+    private final MovieGenreServiceImpl movieGenreService;
+    private final SeriesGenreServiceImpl seriesGenreService;
 
-    public MediaController(MovieService movieService,
-                           TvSeriesServiceImpl tvSeriesService) {
+    public MediaController(MovieService movieService, TvSeriesServiceImpl tvSeriesService,
+                           MovieGenreServiceImpl movieGenreService, SeriesGenreServiceImpl seriesGenreService) {
         this.movieService = movieService;
         this.tvSeriesService = tvSeriesService;
+        this.movieGenreService = movieGenreService;
+        this.seriesGenreService = seriesGenreService;
     }
 
-    @GetMapping("/{type}/latest")
-    public ResponseEntity<Map<String, Object>> getLatestContent(
-            @PathVariable String type,
-            @RequestParam(defaultValue = "20") int size) {
+    @GetMapping("/{mediaType}/latest")
+    public ResponseEntity<Map<String, Object>> getLatestMedia(
+            @PathVariable String mediaType,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
 
-        Pageable pageable = PageRequest.of(0, size);
+        if (isMediaTypeInvalid(mediaType)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + mediaType));
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
         Page<?> contentPage;
 
-        if ("movie".equalsIgnoreCase(type)) {
-            contentPage = new PageImpl<>(new ArrayList<>(movieService.getMoviesFromCurrentMonth(size)), pageable, size);
-        } else if ("tv".equalsIgnoreCase(type)) {
-            contentPage = new PageImpl<>(new ArrayList<>(tvSeriesService.getTvSeriesFromCurrentMonth(size)), pageable, size);
+        if ("movie".equalsIgnoreCase(mediaType)) {
+            contentPage = movieService.getMoviesFromCurrentMonth(pageable);
         } else {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + type));
+            contentPage = tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
         }
 
         Map<String, Object> response = new LinkedHashMap<>();
@@ -49,24 +58,26 @@ public class MediaController {
         response.put("total_items", contentPage.getTotalElements());
         response.put("total_pages", contentPage.getTotalPages());
         response.put("current_page", contentPage.getNumber() + 1);
-        response.put(type, contentPage.getContent());
+        response.put(mediaType, contentPage.getContent());
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{type}/{id}")
+    @GetMapping("/{mediaType}/{id}")
     public ResponseEntity<Object> getMediaById(
-            @PathVariable String type,
-            @PathVariable Long id)  {
+            @PathVariable String mediaType,
+            @PathVariable Long id) {
 
         MediaDetailsDTO media;
 
-        if ("movie".equalsIgnoreCase(type)) {
+        if (isMediaTypeInvalid(mediaType)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + mediaType));
+        }
+
+        if ("movie".equalsIgnoreCase(mediaType)) {
             media = movieService.getMovieById(id);
-        } else if ("tv".equalsIgnoreCase(type)) {
-            media = tvSeriesService.getTvSeriesById(id);
         } else {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + type));
+            media = tvSeriesService.getTvSeriesById(id);
         }
 
         if (media == null) {
@@ -74,5 +85,9 @@ public class MediaController {
         }
 
         return ResponseEntity.ok(media);
+    }
+
+    private boolean isMediaTypeInvalid(String mediaType) {
+        return !"movie".equalsIgnoreCase(mediaType) && !"tv".equalsIgnoreCase(mediaType);
     }
 }

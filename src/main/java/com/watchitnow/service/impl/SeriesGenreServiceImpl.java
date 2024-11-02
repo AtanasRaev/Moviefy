@@ -60,4 +60,7 @@ public class SeriesGenreServiceImpl implements SeriesGenreService {
                 .retrieve()
                 .body(GenreResponseApiDTO.class);
     }
+    public SeriesGenre getGenreByName(String genreType) {
+        return this.genreRepository.findByName(genreType).orElse(null);
+    }
 }

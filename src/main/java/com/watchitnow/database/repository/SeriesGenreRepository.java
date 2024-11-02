@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface SeriesGenreRepository extends JpaRepository<SeriesGenre, Long> {
     Optional<SeriesGenre> findByApiId(Long genre);
+
+    Optional<SeriesGenre> findByName(String genreType);
 }

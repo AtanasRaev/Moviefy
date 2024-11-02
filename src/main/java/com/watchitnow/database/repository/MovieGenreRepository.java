@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface MovieGenreRepository extends JpaRepository<MovieGenre, Long> {
     Optional<MovieGenre> findByApiId(Long genre);
+
+    Optional<MovieGenre> findByName(String genreType);
 }

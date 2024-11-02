@@ -5,6 +5,7 @@ import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 import com.watchitnow.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
+import com.watchitnow.database.model.dto.pageDto.MediaPageDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.SeasonTvSeries;
@@ -18,6 +19,8 @@ import com.watchitnow.utils.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -63,9 +66,9 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public Set<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(int targetCount) {
+    public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable) {
         return contentRetrievalUtil.fetchContentFromDateRange(
-                targetCount,
+                pageable,
                 dateRange -> tvSeriesRepository.findByFirstAirDateBetweenWithGenres(dateRange.start(), dateRange.end()),
                 tvSeries -> modelMapper.map(tvSeries, TvSeriesPageDTO.class),
                 TvSeriesPageDTO::getPosterPath
@@ -83,6 +86,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .collect(Collectors.toCollection(LinkedHashSet::new)));
 
         return tv;
+    }
+
+    @Override
+    public Set<TvSeriesPageDTO> getTvSeriesByGenre(String genreType) {
+        return this.tvSeriesRepository.findByGenreName(genreType)
+                .stream()
+                .map(tvSeries -> modelMapper.map(tvSeries, TvSeriesPageDTO.class))
+                .collect(Collectors.toSet());
     }
 
     //    @Scheduled(fixedDelay = 10000)

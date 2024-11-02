@@ -23,4 +23,8 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT DISTINCT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres WHERE tv.firstAirDate BETWEEN :startDate AND :endDate")
     List<TvSeries> findByFirstAirDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres g WHERE g.name = :genreName")
+    List<TvSeries> findByGenreName(@Param("genreName") String genreName);
+
 }

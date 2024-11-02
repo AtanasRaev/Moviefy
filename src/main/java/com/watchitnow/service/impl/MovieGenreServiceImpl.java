@@ -61,4 +61,9 @@ public class MovieGenreServiceImpl implements MovieGenreService {
                 .retrieve()
                 .body(GenreResponseApiDTO.class);
     }
+
+
+    public MovieGenre getGenreByName(String genreType) {
+        return this.genreRepository.findByName(genreType).orElse(null);
+    }
 }
