@@ -5,7 +5,6 @@ import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 import com.watchitnow.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
-import com.watchitnow.database.model.dto.pageDto.MediaPageDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.SeasonTvSeries;
@@ -21,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -101,7 +99,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-    //@Scheduled(fixedDelay = 500000)
+//    @Scheduled(fixedDelay = 500)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 

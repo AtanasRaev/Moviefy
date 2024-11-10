@@ -87,6 +87,35 @@ public class MediaController {
         return ResponseEntity.ok(media);
     }
 
+//    @GetMapping("/{mediaType}/genre/{genreType}")
+//    public ResponseEntity<Map<String, Object>> getGenres(
+//        @PathVariable String mediaType,
+//        @PathVariable String genreType,
+//        @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+//        @RequestParam(defaultValue = "1") @Min(1) int page) {
+//
+//        if (isMediaTypeInvalid(mediaType)) {
+//            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + mediaType));
+//        }
+//
+//        Pageable pageable = PageRequest.of(page - 1, size);
+//        Page<?> contentPage;
+//
+//        if (isMediaTypeInvalid(mediaType)) {
+//            return ResponseEntity.badRequest().body(Map.of("error", String.format("Invalid type: %s or genre: %s", mediaType, genreType)));
+//        }
+//
+//        if (movieGenreService.getGenreByName(genreType) != null) {
+//            media = movieService.getMoviesByGenre(genreType);
+//        } else if (seriesGenreService.getGenreByName(genreType) != null) {
+//            media = tvSeriesService.getTvSeriesByGenre(genreType);
+//        } else {
+//            return ResponseEntity.badRequest().body(Map.of("error", String.format("Invalid type: %s or genre: %s", mediaType, genreType)));
+//        }
+//
+//        return ResponseEntity.ok(media);
+//    }
+
     private boolean isMediaTypeInvalid(String mediaType) {
         return !"movie".equalsIgnoreCase(mediaType) && !"tv".equalsIgnoreCase(mediaType);
     }

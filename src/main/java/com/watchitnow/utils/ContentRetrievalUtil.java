@@ -18,9 +18,9 @@ public class ContentRetrievalUtil {
     private static final int MAX_ITEMS = 100;
 
     public <T, R> Page<R> fetchContentFromDateRange(Pageable pageable,
-                                                    Function<LocalDateRange, List<T>> fetchFunction,
-                                                    Function<T, R> mapFunction,
-                                                    Function<R, String> posterPathExtractor) {
+                                                          Function<LocalDateRange, List<T>> fetchFunction,
+                                                          Function<T, R> mapFunction,
+                                                          Function<R, String> posterPathExtractor) {
         List<R> allContent = new ArrayList<>();
         LocalDate currentDate = LocalDate.now().minusDays(DAYS_OFFSET);
         int emptyCount = 0;

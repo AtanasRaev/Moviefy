@@ -1,12 +1,10 @@
 package com.watchitnow.database.repository;
 
 import com.watchitnow.database.model.entity.Movie;
-import jakarta.persistence.QueryHint;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -14,17 +12,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hibernate.jpa.HibernateHints.HINT_CACHEABLE;
-import static org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE;
-import static org.hibernate.jpa.QueryHints.HINT_READONLY;
-
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
-    @QueryHints(value = {
-            @QueryHint(name = HINT_FETCH_SIZE, value = "50"),
-            @QueryHint(name = HINT_READONLY, value = "true"),
-            @QueryHint(name = HINT_CACHEABLE, value = "true")
-    })
 
     Optional<Movie> findByApiId(Long apiId);
 
@@ -37,11 +26,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres LEFT JOIN FETCH m.productionCompanies WHERE m.id = :id")
     Optional<Movie> findMovieById(@Param("id") Long id);
 
-    @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres WHERE m.releaseDate BETWEEN :startDate AND :endDate")
+    @Query("SELECT DISTINCT m FROM Movie m JOIN FETCH m.genres WHERE m.releaseDate BETWEEN :startDate AND :endDate")
     List<Movie> findByReleaseDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-//    @Query("SELECT DISTINCT m FROM Movie m JOIN FETCH m.genres WHERE m.releaseDate BETWEEN :startDate AND :endDate")
-//    List<Movie> findByReleaseDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    List<Movie> findAllByPosterPathIsNull();
 
     @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.genres g WHERE g.name = :genreName")
     List<Movie> findByGenreName(@Param("genreName") String genreName);
