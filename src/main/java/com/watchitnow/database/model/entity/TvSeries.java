@@ -49,6 +49,9 @@ public class TvSeries extends Media {
     @Column(name = "episode_run_time")
     private Integer episodeRunTime;
 
+    @Column
+    private String status;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "tv_series_production",
@@ -103,6 +106,14 @@ public class TvSeries extends Media {
 
     public void setEpisodeRunTime(Integer episodeRunTime) {
         this.episodeRunTime = episodeRunTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Set<SeasonTvSeries> getSeasons() {

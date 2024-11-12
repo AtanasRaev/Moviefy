@@ -52,10 +52,6 @@ public class ContentRetrievalUtil {
         return createPageFromContent(allContent, pageable);
     }
 
-    private boolean isValidPosterPath(String posterPath) {
-        return posterPath != null && !posterPath.isEmpty();
-    }
-
     private boolean hasEnoughContentForPage(int contentSize, Pageable pageable) {
         return contentSize >= (pageable.getPageNumber() + 1) * pageable.getPageSize() ||
                 contentSize >= MAX_ITEMS;

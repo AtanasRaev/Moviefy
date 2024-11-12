@@ -10,6 +10,8 @@ public class TvSeriesApiDTO extends MediaApiDTO{
     @JsonProperty("original_name")
     private String originalName;
 
+    private String status;
+
     @JsonProperty("first_air_date")
     private LocalDate firstAirDate;
 
@@ -27,6 +29,14 @@ public class TvSeriesApiDTO extends MediaApiDTO{
 
     public void setOriginalName(String originalName) {
         this.originalName = originalName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public LocalDate getFirstAirDate() {

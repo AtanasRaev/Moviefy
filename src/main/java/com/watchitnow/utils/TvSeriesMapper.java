@@ -26,6 +26,7 @@ public class TvSeriesMapper extends MediaMapper {
         tvSeries.setFirstAirDate(dto.getFirstAirDate());
         tvSeries.setEpisodeRunTime(getEpisodeRunTime(responseById));
         tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));
+        tvSeries.setStatus(dto.getStatus());
 
         return tvSeries;
     }
