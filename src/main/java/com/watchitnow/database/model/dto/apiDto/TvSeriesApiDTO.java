@@ -7,6 +7,9 @@ import java.time.LocalDate;
 public class TvSeriesApiDTO extends MediaApiDTO{
     private String name;
 
+    @JsonProperty("original_name")
+    private String originalName;
+
     @JsonProperty("first_air_date")
     private LocalDate firstAirDate;
 
@@ -16,6 +19,14 @@ public class TvSeriesApiDTO extends MediaApiDTO{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
     }
 
     public LocalDate getFirstAirDate() {

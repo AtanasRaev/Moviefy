@@ -7,6 +7,9 @@ import java.time.LocalDate;
 public class MovieApiDTO extends MediaApiDTO{
     private String title;
 
+    @JsonProperty("original_title")
+    private String originalTitle;
+
     @JsonProperty("release_date")
     private LocalDate releaseDate;
 
@@ -19,6 +22,14 @@ public class MovieApiDTO extends MediaApiDTO{
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getOriginalTitle() {
+        return originalTitle;
+    }
+
+    public void setOriginalTitle(String originalTitle) {
+        this.originalTitle = originalTitle;
     }
 
     public LocalDate getReleaseDate() {

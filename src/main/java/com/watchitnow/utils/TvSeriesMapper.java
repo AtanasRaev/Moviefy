@@ -22,6 +22,7 @@ public class TvSeriesMapper extends MediaMapper {
         mapCommonFields(tvSeries, dto, responseTrailer);
 
         tvSeries.setName(dto.getName());
+        tvSeries.setOriginalName(!dto.getOriginalName().equals(dto.getName()) ? dto.getOriginalName() : null);
         tvSeries.setFirstAirDate(dto.getFirstAirDate());
         tvSeries.setEpisodeRunTime(getEpisodeRunTime(responseById));
         tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));

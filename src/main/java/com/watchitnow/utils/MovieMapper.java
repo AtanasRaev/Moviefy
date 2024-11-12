@@ -22,6 +22,7 @@ public class MovieMapper extends MediaMapper {
         mapCommonFields(movie, dto, responseTrailer);
 
         movie.setTitle(dto.getTitle());
+        movie.setOriginalTitle(!dto.getOriginalTitle().equals(dto.getTitle()) ? dto.getOriginalTitle() : null);
         movie.setReleaseDate(dto.getReleaseDate());
         movie.setRuntime(responseById.getRuntime());
         movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));

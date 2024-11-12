@@ -23,6 +23,9 @@ public class Movie extends Media {
     @Column
     private String title;
 
+    @Column
+    private String originalTitle;
+
     @Column(name = "release_date")
     private LocalDate releaseDate;
 
@@ -59,6 +62,14 @@ public class Movie extends Media {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getOriginalTitle() {
+        return originalTitle;
+    }
+
+    public void setOriginalTitle(String originalTitle) {
+        this.originalTitle = originalTitle;
     }
 
     public LocalDate getReleaseDate() {

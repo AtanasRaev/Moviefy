@@ -68,8 +68,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return contentRetrievalUtil.fetchContentFromDateRange(
                 pageable,
                 dateRange -> tvSeriesRepository.findByFirstAirDateBetweenWithGenres(dateRange.start(), dateRange.end()),
-                tvSeries -> modelMapper.map(tvSeries, TvSeriesPageDTO.class),
-                TvSeriesPageDTO::getPosterPath
+                tvSeries -> modelMapper.map(tvSeries, TvSeriesPageDTO.class)
         );
     }
 
@@ -139,6 +138,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             totalPages = response.getTotalPages();
 
             for (TvSeriesApiDTO dto : response.getResults()) {
+
+                if (dto.getPosterPath() == null) {
+                    continue;
+                }
+
                 if (this.tvSeriesRepository.findByApiId(dto.getId()).isEmpty()) {
                     TvSeriesApiByIdResponseDTO responseById = getResponseById(dto.getId());
                     if (responseById == null) {

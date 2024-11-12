@@ -11,7 +11,7 @@ public abstract class Media {
     @Column(columnDefinition = "TEXT")
     private String overview;
 
-    @Column(name = "poster_path")
+    @Column(name = "poster_path", nullable = false)
     private String posterPath;
 
     @Column(name = "backdrop_path")

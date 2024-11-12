@@ -34,6 +34,9 @@ public class TvSeries extends Media {
     @Column
     private String name;
 
+    @Column
+    private String originalName;
+
     @Column(name = "first_air_date")
     private LocalDate firstAirDate;
 
@@ -76,6 +79,14 @@ public class TvSeries extends Media {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
     }
 
     public LocalDate getFirstAirDate() {

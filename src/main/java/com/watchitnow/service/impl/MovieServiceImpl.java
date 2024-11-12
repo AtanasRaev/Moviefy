@@ -68,8 +68,7 @@ public class MovieServiceImpl implements MovieService {
         return contentRetrievalUtil.fetchContentFromDateRange(
                 pageable,
                 dateRange -> movieRepository.findByReleaseDateBetweenWithGenres(dateRange.start(), dateRange.end()),
-                movie -> modelMapper.map(movie, MoviePageDTO.class),
-                MoviePageDTO::getPosterPath
+                movie -> modelMapper.map(movie, MoviePageDTO.class)
         );
     }
 
@@ -132,6 +131,11 @@ public class MovieServiceImpl implements MovieService {
             totalPages = response.getTotalPages();
 
             for (MovieApiDTO dto : response.getResults()) {
+
+                if (dto.getPosterPath() == null) {
+                    continue;
+                }
+
                 if (this.movieRepository.findByApiId(dto.getId()).isEmpty()) {
                     MovieApiByIdResponseDTO responseById = getMovieResponseById(dto.getId());
 

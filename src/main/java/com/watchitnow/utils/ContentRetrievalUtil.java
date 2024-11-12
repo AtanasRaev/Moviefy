@@ -19,8 +19,7 @@ public class ContentRetrievalUtil {
 
     public <T, R> Page<R> fetchContentFromDateRange(Pageable pageable,
                                                           Function<LocalDateRange, List<T>> fetchFunction,
-                                                          Function<T, R> mapFunction,
-                                                          Function<R, String> posterPathExtractor) {
+                                                          Function<T, R> mapFunction) {
         List<R> allContent = new ArrayList<>();
         LocalDate currentDate = LocalDate.now().minusDays(DAYS_OFFSET);
         int emptyCount = 0;
@@ -34,7 +33,6 @@ public class ContentRetrievalUtil {
 
             List<R> mappedContent = fetchedContent.stream()
                     .map(mapFunction)
-                    .filter(item -> isValidPosterPath(posterPathExtractor.apply(item)))
                     .limit(MAX_ITEMS - allContent.size())
                     .toList();
 
