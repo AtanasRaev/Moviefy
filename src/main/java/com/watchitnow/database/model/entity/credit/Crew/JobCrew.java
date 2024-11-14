@@ -9,7 +9,7 @@ public class JobCrew {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column
+    @Column(unique = true, nullable = false)
     private String job;
 
     public JobCrew(String job) {

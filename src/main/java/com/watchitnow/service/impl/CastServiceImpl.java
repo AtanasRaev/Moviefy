@@ -46,7 +46,7 @@ public class CastServiceImpl implements CastService {
                 castDto,
                 cast -> this.castMapper.mapToCast(cast, movie),
                 CreditApiDTO::getId,
-                Credit::getId,
+                Credit::getApiId,
                 this::findAllByApiId,
                 savedCast -> {
                     this.saveAll(savedCast);
@@ -59,7 +59,7 @@ public class CastServiceImpl implements CastService {
     public List<CastApiApiDTO> filterCastApiDto(MediaResponseCreditsDTO creditsById) {
         return creditsById.getCast()
                 .stream()
-                .filter(crew -> crew.getName() != null && !crew.getName().isBlank())
+                .filter(cast -> cast.getName() != null && !cast.getName().isBlank() && cast.getCharacter() != null && !cast.getCharacter().isBlank())
                 .sorted(Comparator.comparing(CastApiApiDTO::getOrder))
                 .limit(10)
                 .toList();

@@ -14,6 +14,7 @@ import com.watchitnow.utils.CreditRetrievalUtil;
 import com.watchitnow.utils.CrewMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -50,7 +51,7 @@ public class CrewServiceImpl implements CrewService {
                 crewDto,
                 crew -> this.crewMapper.mapToCrew(crew, movie),
                 CreditApiDTO::getId,
-                Credit::getId,
+                Credit::getApiId,
                 this::findAllByApiId,
                 savedCrew -> {
                     this.saveAll(savedCrew);
@@ -63,6 +64,7 @@ public class CrewServiceImpl implements CrewService {
     public List<CrewApiApiDTO> filterCrewApiDto(MediaResponseCreditsDTO creditsById) {
         return creditsById.getCrew()
                 .stream()
+                .sorted(Comparator.comparing(CrewApiApiDTO::getPopularity).reversed())
                 .filter(crew ->
                         (crew.getJob() != null &&
                                 (crew.getJob().equals("Director")

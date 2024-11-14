@@ -123,7 +123,7 @@ public class MovieServiceImpl implements MovieService {
 
             BigDecimal popularity = BigDecimal.valueOf(dtoMovieById.getPopularity()).setScale(1, RoundingMode.HALF_UP);
             movie.setPopularity(popularity.doubleValue());
-            movie.setOriginalTitle(!dtoMovieById.getOriginalTitle().equals(movie.getTitle()) && !dtoMovieById.getOriginalTitle().isBlank()? dtoMovieById.getOriginalTitle() : null);
+            movie.setOriginalTitle(!dtoMovieById.getOriginalTitle().equals(movie.getTitle()) && !dtoMovieById.getOriginalTitle().isBlank() ? dtoMovieById.getOriginalTitle() : null);
 
             MediaResponseCreditsDTO creditsById = getCreditsById(movie.getApiId());
             if (creditsById == null) {
@@ -134,14 +134,17 @@ public class MovieServiceImpl implements MovieService {
             Set<Cast> castSet = this.castService.mapToSet(castDto, movie);
 
             castSet.forEach(cast -> {
-                CastMovie castMovie = new CastMovie();
-
-                castMovie.setMovie(movie);
-                castMovie.setCast(cast);
                 String character = castDto.stream().filter(dto -> dto.getId() == cast.getApiId()).toList().get(0).getCharacter();
-                castMovie.setCharacter(character == null || character.isBlank() ? null : character);
+                Optional<CastMovie> optional = this.castMovieRepository.findByMovieIdAndCastIdAndCharacter(movie.getId(), cast.getId(), character);
+                if (optional.isEmpty()) {
+                    CastMovie castMovie = new CastMovie();
 
-                castMovieRepository.save(castMovie);
+                    castMovie.setMovie(movie);
+                    castMovie.setCast(cast);
+                    castMovie.setCharacter(character == null || character.isBlank() ? null : character);
+
+                    castMovieRepository.save(castMovie);
+                }
             });
 
 
@@ -149,22 +152,25 @@ public class MovieServiceImpl implements MovieService {
             Set<Crew> crewSet = this.crewService.mapToSet(crewDto, movie);
 
             crewSet.forEach(crew -> {
-                CrewMovie crewMovie = new CrewMovie();
-
-                crewMovie.setMovie(movie);
-                crewMovie.setCrew(crew);
                 String job = crewDto.stream().filter(dto -> dto.getId() == crew.getApiId()).toList().get(0).getJob();
+                Optional<CrewMovie> optional = this.crewMovieRepository.findByMovieIdAndCrewIdAndJobJob(movie.getId(), crew.getId(), job);
+                if (optional.isEmpty()) {
+                    CrewMovie crewMovie = new CrewMovie();
 
-                JobCrew jobByName = this.crewService.findJobByName(job);
+                    crewMovie.setMovie(movie);
+                    crewMovie.setCrew(crew);
 
-                if (jobByName == null) {
-                    jobByName = new JobCrew(job);
-                    this.crewService.saveJob(jobByName);
+                    JobCrew jobByName = this.crewService.findJobByName(job);
+
+                    if (jobByName == null) {
+                        jobByName = new JobCrew(job);
+                        this.crewService.saveJob(jobByName);
+                    }
+
+                    crewMovie.setJob(jobByName);
+
+                    this.crewMovieRepository.save(crewMovie);
                 }
-
-                crewMovie.setJob(jobByName);
-
-                this.crewMovieRepository.save(crewMovie);
             });
 
             this.movieRepository.save(movie);
@@ -271,6 +277,7 @@ public class MovieServiceImpl implements MovieService {
                 .retrieve()
                 .body(MovieResponseApiDTO.class);
     }
+
     public MovieApiByIdResponseDTO getMediaResponseById(Long apiId) {
         String url = String.format(this.apiConfig.getUrl() + "/movie/%d?api_key=" + this.apiConfig.getKey(), apiId);
         try {
