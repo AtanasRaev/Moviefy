@@ -24,10 +24,4 @@ public class ApiConfig {
     public void setUrl(String url) {
         this.url = url;
     }
-
-    private static void verifyNotNullOrEmpty(String name, String value) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Property " + name + " cannot be empty.");
-        }
-    }
 }

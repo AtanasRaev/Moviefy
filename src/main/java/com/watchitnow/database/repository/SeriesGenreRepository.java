@@ -1,6 +1,6 @@
 package com.watchitnow.database.repository;
 
-import com.watchitnow.database.model.entity.SeriesGenre;
+import com.watchitnow.database.model.entity.genre.SeriesGenre;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

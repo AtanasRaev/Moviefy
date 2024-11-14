@@ -2,7 +2,7 @@ package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.GenreResponseApiDTO;
-import com.watchitnow.database.model.entity.SeriesGenre;
+import com.watchitnow.database.model.entity.genre.SeriesGenre;
 import com.watchitnow.database.repository.SeriesGenreRepository;
 import com.watchitnow.service.SeriesGenreService;
 import org.springframework.stereotype.Service;

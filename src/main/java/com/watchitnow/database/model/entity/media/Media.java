@@ -1,10 +1,13 @@
-package com.watchitnow.database.model.entity;
+package com.watchitnow.database.model.entity.media;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 
 @MappedSuperclass
 public abstract class Media {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+
     @Column(name = "api_id", unique = true)
     private Long apiId;
 
@@ -25,6 +28,14 @@ public abstract class Media {
 
     @Column
     private String trailer;
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public Long getApiId() {
         return apiId;

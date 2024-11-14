@@ -5,9 +5,23 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.LocalDate;
 
-@JsonPropertyOrder({ "title", "poster_path", "backdrop_path", "release_date", "overview", "trailer", "runtime", "vote_average", "api_id", "genres", "production_companies"})
+@JsonPropertyOrder({ "title",
+        "original_title",
+        "poster_path",
+        "backdrop_path",
+        "release_date",
+        "overview",
+        "trailer",
+        "runtime",
+        "vote_average",
+        "api_id",
+        "genres",
+        "production_companies"})
 public class MovieDetailsDTO extends MediaDetailsDTO {
     private String title;
+
+    @JsonProperty("original_title")
+    private String originalTitle;
 
     @JsonProperty("release_date")
     private LocalDate releaseDate;
@@ -20,6 +34,14 @@ public class MovieDetailsDTO extends MediaDetailsDTO {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getOriginalTitle() {
+        return originalTitle;
+    }
+
+    public void setOriginalTitle(String originalTitle) {
+        this.originalTitle = originalTitle;
     }
 
     public LocalDate getReleaseDate() {

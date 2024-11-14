@@ -1,5 +1,6 @@
-package com.watchitnow.database.model.entity;
+package com.watchitnow.database.model.entity.genre;
 
+import com.watchitnow.database.model.entity.media.TvSeries;
 import jakarta.persistence.*;
 
 import java.util.List;

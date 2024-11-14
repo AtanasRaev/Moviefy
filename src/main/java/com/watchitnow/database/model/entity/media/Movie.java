@@ -1,5 +1,7 @@
-package com.watchitnow.database.model.entity;
+package com.watchitnow.database.model.entity.media;
 
+import com.watchitnow.database.model.entity.ProductionCompany;
+import com.watchitnow.database.model.entity.genre.MovieGenre;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -8,10 +10,6 @@ import java.util.Set;
 @Entity
 @Table(name = "movies")
 public class Movie extends Media {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "movie_genre",
@@ -23,7 +21,7 @@ public class Movie extends Media {
     @Column
     private String title;
 
-    @Column
+    @Column(name = "original_title")
     private String originalTitle;
 
     @Column(name = "release_date")
@@ -39,14 +37,6 @@ public class Movie extends Media {
             inverseJoinColumns = @JoinColumn(name = "production_id")
     )
     Set<ProductionCompany> productionCompanies;
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public Set<MovieGenre> getGenres() {
         return genres;
@@ -87,7 +77,6 @@ public class Movie extends Media {
     public void setRuntime(Integer runtime) {
         this.runtime = runtime;
     }
-
 
     public Set<ProductionCompany> getProductionCompanies() {
         return productionCompanies;

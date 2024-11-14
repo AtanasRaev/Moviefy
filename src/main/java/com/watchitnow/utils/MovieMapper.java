@@ -3,7 +3,7 @@ package com.watchitnow.utils;
 import com.watchitnow.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.watchitnow.database.model.dto.apiDto.MovieApiDTO;
 import com.watchitnow.database.model.dto.apiDto.TrailerResponseApiDTO;
-import com.watchitnow.database.model.entity.Movie;
+import com.watchitnow.database.model.entity.media.Movie;
 import com.watchitnow.service.MovieGenreService;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +19,8 @@ public class MovieMapper extends MediaMapper {
 
     public Movie mapToMovie(MovieApiDTO dto, MovieApiByIdResponseDTO responseById, TrailerResponseApiDTO responseTrailer) {
         Movie movie = new Movie();
-        mapCommonFields(movie, dto, responseTrailer);
 
+        super.mapCommonFields(movie, dto, responseTrailer);
         movie.setTitle(dto.getTitle());
         movie.setOriginalTitle(!dto.getOriginalTitle().equals(dto.getTitle()) ? dto.getOriginalTitle() : null);
         movie.setReleaseDate(dto.getReleaseDate());

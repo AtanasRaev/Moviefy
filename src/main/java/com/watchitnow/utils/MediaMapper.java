@@ -3,13 +3,13 @@ package com.watchitnow.utils;
 import com.watchitnow.database.model.dto.apiDto.MediaApiDTO;
 import com.watchitnow.database.model.dto.apiDto.TrailerApiDTO;
 import com.watchitnow.database.model.dto.apiDto.TrailerResponseApiDTO;
-import com.watchitnow.database.model.entity.Media;
+import com.watchitnow.database.model.entity.media.Media;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-public class MediaMapper {
+public abstract class MediaMapper {
 
     private final TrailerMappingUtil trailerMappingUtil;
 

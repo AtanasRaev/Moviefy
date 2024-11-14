@@ -1,25 +1,35 @@
 package com.watchitnow.utils;
 
-import com.watchitnow.database.model.entity.Movie;
-import com.watchitnow.database.model.entity.TvSeries;
+import com.watchitnow.config.ApiConfig;
+import com.watchitnow.database.model.entity.media.Movie;
+import com.watchitnow.database.model.entity.media.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 
 @Component
-public class ContentRetrievalUtil {
+public class MediaRetrievalUtil {
+    private final RestClient restClient;
+    private final ApiConfig apiConfig;
     private static final int MAX_EMPTY_MONTHS = 12;
     private static final int DAYS_OFFSET = 7;
     private static final int MAX_ITEMS = 100;
 
+    public MediaRetrievalUtil(RestClient restClient,
+                              ApiConfig apiConfig) {
+        this.restClient = restClient;
+        this.apiConfig = apiConfig;
+    }
+
     public <T, R> Page<R> fetchContentFromDateRange(Pageable pageable,
-                                                          Function<LocalDateRange, List<T>> fetchFunction,
-                                                          Function<T, R> mapFunction) {
+                                                    Function<LocalDateRange, List<T>> fetchFunction,
+                                                    Function<T, R> mapFunction) {
         List<R> allContent = new ArrayList<>();
         LocalDate currentDate = LocalDate.now().minusDays(DAYS_OFFSET);
         int emptyCount = 0;

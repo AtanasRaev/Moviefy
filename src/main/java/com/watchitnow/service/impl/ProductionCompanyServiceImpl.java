@@ -3,9 +3,10 @@ package com.watchitnow.service.impl;
 import com.watchitnow.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.watchitnow.database.model.dto.apiDto.ProductionApiDTO;
 import com.watchitnow.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
-import com.watchitnow.database.model.entity.Movie;
+import com.watchitnow.database.model.entity.media.Media;
+import com.watchitnow.database.model.entity.media.Movie;
 import com.watchitnow.database.model.entity.ProductionCompany;
-import com.watchitnow.database.model.entity.TvSeries;
+import com.watchitnow.database.model.entity.media.TvSeries;
 import com.watchitnow.database.repository.ProductionCompanyRepository;
 import com.watchitnow.service.ProductionCompanyService;
 import org.springframework.stereotype.Service;
@@ -21,17 +22,19 @@ public class ProductionCompanyServiceImpl implements ProductionCompanyService {
     }
 
     @Override
-    public Map<String, Set<ProductionCompany>> getProductionCompaniesFromResponse(Object responseById, Object type) {
+    public Map<String, Set<ProductionCompany>> getProductionCompaniesFromResponse(Object responseById, Media type) {
         Map<String, Set<ProductionCompany>> productionCompaniesMap = new HashMap<>();
         productionCompaniesMap.put("all", new HashSet<>());
         productionCompaniesMap.put("toSave", new HashSet<>());
 
-        List<ProductionApiDTO> productionCompanies = new ArrayList<>();
+        List<ProductionApiDTO> productionCompanies;
 
-        if (getType(type).equals("movie")) {
+        if (type instanceof Movie) {
             productionCompanies = ((MovieApiByIdResponseDTO) responseById).getProductionCompanies();
-        } else if (getType(type).equals("tv-series")) {
+        } else if (type instanceof TvSeries) {
             productionCompanies = ((TvSeriesApiByIdResponseDTO) responseById).getProductionCompanies();
+        } else {
+            throw new IllegalArgumentException("Unknown content type");
         }
 
         for (ProductionApiDTO company : productionCompanies) {
@@ -51,11 +54,9 @@ public class ProductionCompanyServiceImpl implements ProductionCompanyService {
                 productionCompany.setName(company.getName());
                 productionCompany.setLogoPath(company.getLogoPath());
 
-                String typeStr = getType(type);
-
-                if (typeStr.equals("movie")) {
+                if (type instanceof Movie) {
                     productionCompany.getMovies().add((Movie) type);
-                } else if (typeStr.equals("tv-series")) {
+                } else {
                     productionCompany.getTvSeries().add((TvSeries) type);
                 }
 
@@ -72,16 +73,5 @@ public class ProductionCompanyServiceImpl implements ProductionCompanyService {
     @Override
     public void saveAllProductionCompanies(Set<ProductionCompany> productionCompanies) {
         this.productionCompanyRepository.saveAll(productionCompanies);
-    }
-
-    private String getType(Object type) {
-
-        if (type instanceof Movie) {
-            return "movie";
-        } else if (type instanceof TvSeries) {
-            return "tv-series";
-        }
-
-        throw new IllegalArgumentException("Unknown content type");
     }
 }

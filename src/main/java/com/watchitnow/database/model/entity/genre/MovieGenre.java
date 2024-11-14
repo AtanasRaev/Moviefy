@@ -1,7 +1,8 @@
-package com.watchitnow.database.model.entity;
+package com.watchitnow.database.model.entity.genre;
 
 import java.util.List;
 
+import com.watchitnow.database.model.entity.media.Movie;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

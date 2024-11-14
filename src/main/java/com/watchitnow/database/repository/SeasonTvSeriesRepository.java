@@ -1,6 +1,6 @@
 package com.watchitnow.database.repository;
 
-import com.watchitnow.database.model.entity.SeasonTvSeries;
+import com.watchitnow.database.model.entity.media.SeasonTvSeries;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

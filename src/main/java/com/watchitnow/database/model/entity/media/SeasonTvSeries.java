@@ -1,4 +1,4 @@
-package com.watchitnow.database.model.entity;
+package com.watchitnow.database.model.entity.media;
 
 import jakarta.persistence.*;
 

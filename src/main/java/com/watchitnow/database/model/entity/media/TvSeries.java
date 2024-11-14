@@ -1,28 +1,15 @@
-package com.watchitnow.database.model.entity;
+package com.watchitnow.database.model.entity.media;
+
+import com.watchitnow.database.model.entity.ProductionCompany;
+import com.watchitnow.database.model.entity.genre.SeriesGenre;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.util.Set;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-
 @Entity
 @Table(name = "tv_series")
 public class TvSeries extends Media {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "series_genre",
@@ -34,7 +21,7 @@ public class TvSeries extends Media {
     @Column
     private String name;
 
-    @Column
+    @Column(name = "original_name")
     private String originalName;
 
     @Column(name = "first_air_date")
@@ -49,8 +36,9 @@ public class TvSeries extends Media {
     @Column(name = "episode_run_time")
     private Integer episodeRunTime;
 
-    @Column
-    private String status;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", referencedColumnName = "id")
+    private StatusTvSeries statusTvSeries;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -59,14 +47,6 @@ public class TvSeries extends Media {
             inverseJoinColumns = @JoinColumn(name = "production_id")
     )
     private Set<ProductionCompany> productionCompanies;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public Set<SeriesGenre> getGenres() {
         return genres;
@@ -108,12 +88,12 @@ public class TvSeries extends Media {
         this.episodeRunTime = episodeRunTime;
     }
 
-    public String getStatus() {
-        return status;
+    public StatusTvSeries getStatusTvSeries() {
+        return statusTvSeries;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setStatusTvSeries(StatusTvSeries statusTvSeries) {
+        this.statusTvSeries = statusTvSeries;
     }
 
     public Set<SeasonTvSeries> getSeasons() {

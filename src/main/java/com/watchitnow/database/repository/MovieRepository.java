@@ -1,9 +1,7 @@
 package com.watchitnow.database.repository;
 
-import com.watchitnow.database.model.entity.Movie;
-import jakarta.transaction.Transactional;
+import com.watchitnow.database.model.entity.media.Movie;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,7 +12,6 @@ import java.util.Optional;
 
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
-
     Optional<Movie> findByApiId(Long apiId);
 
     @Query("SELECT COUNT(m) FROM Movie m WHERE EXTRACT(YEAR FROM m.releaseDate) = :year AND EXTRACT(MONTH FROM m.releaseDate) = :month")
@@ -29,8 +26,6 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT DISTINCT m FROM Movie m JOIN FETCH m.genres WHERE m.releaseDate BETWEEN :startDate AND :endDate")
     List<Movie> findByReleaseDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
-
     @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.genres g WHERE g.name = :genreName")
     List<Movie> findByGenreName(@Param("genreName") String genreName);
-
 }

@@ -6,9 +6,24 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.time.LocalDate;
 import java.util.Set;
 
-@JsonPropertyOrder({ "name", "poster_path", "backdrop_path", "first_air_date", "overview", "trailer", "episode_run_time", "vote_average", "api_id", "genres", "production_companies", "seasons"})
+@JsonPropertyOrder({ "name",
+        "original_name",
+        "poster_path",
+        "backdrop_path",
+        "first_air_date",
+        "overview",
+        "trailer",
+        "episode_run_time",
+        "vote_average",
+        "api_id",
+        "genres",
+        "production_companies",
+        "seasons"})
 public class TvSeriesDetailsDTO extends MediaDetailsDTO {
     private String name;
+
+    @JsonProperty("original_name")
+    private String originalName;
 
     @JsonProperty("first_air_date")
     private LocalDate firstAirDate;

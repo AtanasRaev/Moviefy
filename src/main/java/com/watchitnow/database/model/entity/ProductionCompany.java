@@ -1,5 +1,7 @@
 package com.watchitnow.database.model.entity;
 
+import com.watchitnow.database.model.entity.media.Movie;
+import com.watchitnow.database.model.entity.media.TvSeries;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;

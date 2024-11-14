@@ -1,6 +1,6 @@
 package com.watchitnow.database.repository;
 
-import com.watchitnow.database.model.entity.TvSeries;
+import com.watchitnow.database.model.entity.media.TvSeries;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,5 +26,4 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres g WHERE g.name = :genreName")
     List<TvSeries> findByGenreName(@Param("genreName") String genreName);
-
 }
