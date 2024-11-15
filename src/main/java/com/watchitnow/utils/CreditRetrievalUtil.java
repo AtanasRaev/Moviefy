@@ -5,6 +5,7 @@ import com.watchitnow.database.model.dto.apiDto.MediaResponseCreditsDTO;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,23 +26,25 @@ public class CreditRetrievalUtil {
     public <T, R> Set<R> creditRetrieval(List<T> dtoList,
                                          Function<T, R> mapFunction,
                                          Function<T, Long> dtoIdExtraction,
-                                         Function<R, Long> CreditIdExtraction,
+                                         Function<R, Long> CreditApiIdExtraction,
                                          Function<List<Long>, List<R>> findAllByApiId,
                                          Function<Set<R>, Void> saveCredit) {
-        List<Long> dtoIdsList = dtoList.stream().map(dtoIdExtraction).toList();
+        Set<Long> dtoIdsList = dtoList.stream().map(dtoIdExtraction).collect(Collectors.toSet());
 
-        List<R> creditList = findAllByApiId.apply(dtoIdsList);
+        Set<R> creditList = new LinkedHashSet<>(findAllByApiId.apply(dtoIdsList.stream().toList()));
 
         if (creditList.size() != dtoIdsList.size()) {
-            Set<Long> existingCreditIds = creditList.stream().map(CreditIdExtraction).collect(Collectors.toSet());
+            Set<Long> uniqueIds = new HashSet<>();
+            Set<Long> existingCreditIds = creditList.stream().map(CreditApiIdExtraction).collect(Collectors.toSet());
 
-            List<T> newCreditDto = dtoList.stream()
+            Set<T> newCreditDto = dtoList.stream()
                     .filter(item -> !existingCreditIds.contains(dtoIdExtraction.apply(item)))
-                    .toList();
+                    .filter(cast -> uniqueIds.add(dtoIdExtraction.apply(cast)))
+                    .collect(Collectors.toSet());
 
-            List<R> newCredit = newCreditDto.stream()
+            Set<R> newCredit = newCreditDto.stream()
                     .map(mapFunction)
-                    .toList();
+                    .collect(Collectors.toSet());
 
             creditList.addAll(newCredit);
 

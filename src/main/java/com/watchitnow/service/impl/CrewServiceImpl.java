@@ -14,9 +14,8 @@ import com.watchitnow.utils.CreditRetrievalUtil;
 import com.watchitnow.utils.CrewMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class CrewServiceImpl implements CrewService {
@@ -62,18 +61,27 @@ public class CrewServiceImpl implements CrewService {
 
     @Override
     public List<CrewApiApiDTO> filterCrewApiDto(MediaResponseCreditsDTO creditsById) {
+        Map<Long, String> uniqueIds = new HashMap<>();
         return creditsById.getCrew()
                 .stream()
                 .sorted(Comparator.comparing(CrewApiApiDTO::getPopularity).reversed())
                 .filter(crew ->
-                        (crew.getJob() != null &&
-                                (crew.getJob().equals("Director")
+                        (crew.getJob() != null
+                                && (crew.getJob().equals("Director")
                                         || crew.getJob().equals("Writer")
                                         || crew.getJob().equals("Novel")
                                         || crew.getJob().equals("Screenplay")
                                         || crew.getJob().equals("Producer")))
-                                && crew.getName() != null && !crew.getName().isBlank()
+                                && crew.getName() != null
+                                && !crew.getName().isBlank()
                 )
+                .filter(crew -> {
+                    if (uniqueIds.containsKey(crew.getId()) && uniqueIds.get(crew.getId()).equals(crew.getJob())) {
+                        return false;
+                    }
+                    uniqueIds.put(crew.getId(), crew.getJob());
+                    return true;
+                })
                 .limit(6)
                 .toList();
     }

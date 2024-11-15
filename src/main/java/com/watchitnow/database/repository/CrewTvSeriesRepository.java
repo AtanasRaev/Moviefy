@@ -10,6 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface CrewTvSeriesRepository extends JpaRepository<CrewTvSeries, Long> {
-    @Query("SELECT cm FROM CrewTvSeries cm WHERE cm.tvSeries.id = :tvSeriesId AND cm.crew.id = :crewId AND cm.job.job = :job")
-    Optional<CrewTvSeries> findByTvSeriesIdAndCrewIdAndJobJob(@Param("tvSeriesId") Long tvSeriesId, @Param("crewId") Long crewId, @Param("job") String job);
+    @Query("SELECT cm FROM CrewTvSeries cm WHERE cm.tvSeries.id = :tvSeriesId AND cm.crew.apiId = :crewApiId AND cm.job.job = :job")
+    Optional<CrewTvSeries> findByTvSeriesIdAndCrewApiIdAndJobJob(@Param("tvSeriesId") Long tvSeriesId, @Param("crewApiId") Long crewApiId, @Param("job") String job);
 }

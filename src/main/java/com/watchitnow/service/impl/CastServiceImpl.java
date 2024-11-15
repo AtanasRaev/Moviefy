@@ -12,9 +12,7 @@ import com.watchitnow.utils.CastMapper;
 import com.watchitnow.utils.CreditRetrievalUtil;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class CastServiceImpl implements CastService {
@@ -57,9 +55,18 @@ public class CastServiceImpl implements CastService {
 
     @Override
     public List<CastApiApiDTO> filterCastApiDto(MediaResponseCreditsDTO creditsById) {
+        Map<Long, String> uniqueIds = new HashMap<>();
         return creditsById.getCast()
                 .stream()
-                .filter(cast -> cast.getName() != null && !cast.getName().isBlank() && cast.getCharacter() != null && !cast.getCharacter().isBlank())
+                .filter(cast -> cast.getName() != null && !cast.getName().isBlank()
+                        && cast.getCharacter() != null && !cast.getCharacter().isBlank())
+                .filter(cast -> {
+                    if (uniqueIds.containsKey(cast.getId()) && uniqueIds.get(cast.getId()).equals(cast.getCharacter())) {
+                        return false;
+                    }
+                    uniqueIds.put(cast.getId(), cast.getCharacter());
+                    return true;
+                })
                 .sorted(Comparator.comparing(CastApiApiDTO::getOrder))
                 .limit(10)
                 .toList();

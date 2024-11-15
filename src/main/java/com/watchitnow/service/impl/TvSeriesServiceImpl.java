@@ -119,7 +119,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return this.statusTvSeriesRepository.findByStatus(name).orElse(null);
     }
 
-    @Scheduled(fixedDelay = 1000000)
+    @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateTvSeries() {
         for (long i = 1; i <= 109663; i++) {
@@ -133,6 +133,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             if (dtoTvSeriesById == null || tvSeries.getOverview().isBlank()) {
                 tvSeries.getGenres().clear();
                 tvSeries.getProductionCompanies().clear();
+                tvSeries.getSeasons().clear();
                 this.tvSeriesRepository.delete(tvSeries);
                 continue;
             }
@@ -152,13 +153,13 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             List<CrewApiApiDTO> crewDto = dtoTvSeriesById.getCrew().stream().limit(6).toList();
             Set<Crew> crewSet = this.crewService.mapToSet(crewDto, tvSeries);
-            crewSet.forEach(crew -> {
-                Optional<CrewTvSeries> optional = this.crewTvSeriesRepository.findByTvSeriesIdAndCrewIdAndJobJob(tvSeries.getId(), crew.getId(), "Creator");
+            crewDto.forEach(dto -> {
+                Optional<CrewTvSeries> optional = this.crewTvSeriesRepository.findByTvSeriesIdAndCrewApiIdAndJobJob(tvSeries.getId(), dto.getId(), "Creator");
                 if (optional.isEmpty()) {
                     CrewTvSeries crewTvSeries = new CrewTvSeries();
 
                     crewTvSeries.setTvSeries(tvSeries);
-                    crewTvSeries.setCrew(crew);
+                    crewTvSeries.setCrew(crewSet.stream().filter(crew -> crew.getApiId() == dto.getId()).toList().get(0));
 
                     JobCrew jobByName = this.crewService.findJobByName("Creator");
 
@@ -182,15 +183,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
             Set<Cast> castSet = this.castService.mapToSet(castDto, tvSeries);
 
-            castSet.forEach(cast -> {
-                String character = castDto.stream().filter(dto -> dto.getId() == cast.getApiId()).toList().get(0).getCharacter();
-                Optional<CastTvSeries> optional = this.castTvSeriesRepository.findByTvSeriesIdAndCastIdAndCharacter(tvSeries.getId(), cast.getId(), character);
+            castDto.forEach(dto -> {
+                Optional<CastTvSeries> optional = this.castTvSeriesRepository.findByTvSeriesIdAndCastApiIdAndCharacter(tvSeries.getId(), dto.getId(), dto.getCharacter());
                 if (optional.isEmpty()) {
                     CastTvSeries castTvSeries = new CastTvSeries();
 
                     castTvSeries.setTvSeries(tvSeries);
-                    castTvSeries.setCast(cast);
-                    castTvSeries.setCharacter(character == null || character.isBlank() ? null : character);
+                    castTvSeries.setCast(castSet.stream().filter(cast -> cast.getApiId() == dto.getId()).toList().get(0));
+                    castTvSeries.setCharacter(dto.getCharacter() == null || dto.getCharacter().isBlank() ? null : dto.getCharacter());
 
                     castTvSeriesRepository.save(castTvSeries);
                 }
