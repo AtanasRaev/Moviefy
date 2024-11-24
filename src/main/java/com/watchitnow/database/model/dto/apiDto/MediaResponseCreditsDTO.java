@@ -5,7 +5,7 @@ import java.util.Set;
 public class MediaResponseCreditsDTO {
     Set<CastApiApiDTO> cast;
 
-    Set<CrewApiApiDTO> crew;
+    Set<CrewApiDTO> crew;
 
     public Set<CastApiApiDTO> getCast() {
         return cast;
@@ -15,11 +15,11 @@ public class MediaResponseCreditsDTO {
         this.cast = cast;
     }
 
-    public Set<CrewApiApiDTO> getCrew() {
+    public Set<CrewApiDTO> getCrew() {
         return crew;
     }
 
-    public void setCrew(Set<CrewApiApiDTO> crew) {
+    public void setCrew(Set<CrewApiDTO> crew) {
         this.crew = crew;
     }
 }

@@ -13,6 +13,7 @@ import com.watchitnow.utils.CreditRetrievalUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.*;
 
 @Service
 public class CastServiceImpl implements CastService {
@@ -29,20 +30,10 @@ public class CastServiceImpl implements CastService {
     }
 
     @Override
-    public List<Cast> findAllByApiId(List<Long> apiIds) {
-        return this.castRepository.findAllByApiIds(apiIds);
-    }
-
-    @Override
-    public void saveAll(Set<Cast> cast) {
-        this.castRepository.saveAll(cast);
-    }
-
-    @Override
-    public Set<Cast> mapToSet(List<CastApiApiDTO> castDto, Media movie) {
+    public Set<Cast> mapToSet(List<CastApiApiDTO> castDto) {
         return creditRetrievalUtil.creditRetrieval(
                 castDto,
-                cast -> this.castMapper.mapToCast(cast, movie),
+                this.castMapper::mapToCast,
                 CreditApiDTO::getId,
                 Credit::getApiId,
                 this::findAllByApiId,
@@ -70,5 +61,58 @@ public class CastServiceImpl implements CastService {
                 .sorted(Comparator.comparing(CastApiApiDTO::getOrder))
                 .limit(10)
                 .toList();
+    }
+
+    @Override
+    public <T, E> void processCast(
+            List<CastApiApiDTO> castDto,
+            T parentEntity,
+            Function<CastApiApiDTO, Optional<E>> findFunction,
+            BiFunction<CastApiApiDTO, T, E> entityCreator,
+            Function<E, E> saveFunction
+    ) {
+        castDto.forEach(c -> {
+            Optional<E> optional = findFunction.apply(c);
+            if (optional.isEmpty()) {
+                E entity = entityCreator.apply(c, parentEntity);
+                saveFunction.apply(entity);
+            }
+        });
+    }
+
+    @Override
+    public <T, E> E createCastEntity(
+            CastApiApiDTO dto,
+            T parentEntity,
+            Set<Cast> castSet,
+            Supplier<E> entityCreator,
+            BiConsumer<E, T> setParentFunction,
+            BiConsumer<E, Cast> setCastFunction,
+            BiConsumer<E, String> setCharacterFunction
+    ) {
+        E entity = entityCreator.get(); // Use no-arg constructor
+        setParentFunction.accept(entity, parentEntity);
+
+        Cast cast = castSet.stream()
+                .filter(c -> c.getApiId() == dto.getId())
+                .findFirst()
+                .orElse(null);
+
+        setCastFunction.accept(entity, cast);
+        setCharacterFunction.accept(entity, sanitizeCharacter(dto.getCharacter()));
+
+        return entity;
+    }
+
+    private String sanitizeCharacter(String character) {
+        return (character == null || character.isBlank() || character.length() > 255) ? null : character;
+    }
+
+    private List<Cast> findAllByApiId(List<Long> apiIds) {
+        return this.castRepository.findAllByApiIds(apiIds);
+    }
+
+    private void saveAll(Set<Cast> cast) {
+        this.castRepository.saveAll(cast);
     }
 }

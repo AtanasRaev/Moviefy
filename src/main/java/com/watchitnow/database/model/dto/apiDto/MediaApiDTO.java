@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Set;
 
 public abstract class MediaApiDTO {
+    //TODO: validation
     private Long id;
 
     private String overview;

@@ -11,11 +11,12 @@ import com.watchitnow.database.model.entity.credit.Cast.Cast;
 import com.watchitnow.database.model.entity.credit.Cast.CastTvSeries;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
 import com.watchitnow.database.model.entity.credit.Crew.CrewTvSeries;
-import com.watchitnow.database.model.entity.credit.Crew.JobCrew;
 import com.watchitnow.database.model.entity.media.SeasonTvSeries;
-import com.watchitnow.database.model.entity.media.StatusTvSeries;
 import com.watchitnow.database.model.entity.media.TvSeries;
-import com.watchitnow.database.repository.*;
+import com.watchitnow.database.repository.CastTvSeriesRepository;
+import com.watchitnow.database.repository.CrewTvSeriesRepository;
+import com.watchitnow.database.repository.SeasonTvSeriesRepository;
+import com.watchitnow.database.repository.TvSeriesRepository;
 import com.watchitnow.service.*;
 import com.watchitnow.utils.*;
 import org.modelmapper.ModelMapper;
@@ -27,8 +28,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,7 +35,6 @@ import java.util.stream.Collectors;
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
     private final TvSeriesRepository tvSeriesRepository;
-    private final StatusTvSeriesRepository statusTvSeriesRepository;
     private final CrewTvSeriesRepository crewTvSeriesRepository;
     private final CastTvSeriesRepository castTvSeriesRepository;
     private final SeriesGenreService seriesGenreService;
@@ -54,7 +52,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
                                CrewTvSeriesRepository crewTvSeriesRepository,
-                               StatusTvSeriesRepository statusTvSeriesRepository,
                                CastTvSeriesRepository castTvSeriesRepository,
                                SeriesGenreService seriesGenreService,
                                CastService castService,
@@ -69,7 +66,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                                TvSeriesMapper tvSeriesMapper) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
-        this.statusTvSeriesRepository = statusTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;
         this.seriesGenreService = seriesGenreService;
         this.castService = castService;
@@ -114,93 +110,13 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .collect(Collectors.toSet());
     }
 
-    @Override
-    public StatusTvSeries findByName(String name) {
-        return this.statusTvSeriesRepository.findByStatus(name).orElse(null);
-    }
 
-    @Scheduled(fixedDelay = 100000000)
+    //     @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateTvSeries() {
-        for (long i = 1; i <= 109663; i++) {
-            Optional<TvSeries> tvSeriesOptional = this.tvSeriesRepository.findById(i);
-            if (tvSeriesOptional.isEmpty()) {
-                continue;
-            }
-            TvSeries tvSeries = tvSeriesOptional.get();
-            TvSeriesApiByIdResponseDTO dtoTvSeriesById = getTvSeriesResponseById(tvSeries.getApiId());
-
-            if (dtoTvSeriesById == null || tvSeries.getOverview().isBlank()) {
-                tvSeries.getGenres().clear();
-                tvSeries.getProductionCompanies().clear();
-                tvSeries.getSeasons().clear();
-                this.tvSeriesRepository.delete(tvSeries);
-                continue;
-            }
-
-            BigDecimal popularity = BigDecimal.valueOf(dtoTvSeriesById.getPopularity()).setScale(1, RoundingMode.HALF_UP);
-            tvSeries.setPopularity(popularity.doubleValue());
-            tvSeries.setOriginalName(!dtoTvSeriesById.getOriginalName().equals(tvSeries.getName()) && !dtoTvSeriesById.getOriginalName().isBlank() ? dtoTvSeriesById.getOriginalName() : null);
-            if (!dtoTvSeriesById.getStatus().isEmpty()) {
-                StatusTvSeries status = findByName(dtoTvSeriesById.getStatus());
-                if (status == null) {
-                    status = new StatusTvSeries(dtoTvSeriesById.getStatus());
-                    this.statusTvSeriesRepository.save(status);
-                }
-                tvSeries.setStatusTvSeries(status);
-            }
-
-
-            List<CrewApiApiDTO> crewDto = dtoTvSeriesById.getCrew().stream().limit(6).toList();
-            Set<Crew> crewSet = this.crewService.mapToSet(crewDto, tvSeries);
-            crewDto.forEach(dto -> {
-                Optional<CrewTvSeries> optional = this.crewTvSeriesRepository.findByTvSeriesIdAndCrewApiIdAndJobJob(tvSeries.getId(), dto.getId(), "Creator");
-                if (optional.isEmpty()) {
-                    CrewTvSeries crewTvSeries = new CrewTvSeries();
-
-                    crewTvSeries.setTvSeries(tvSeries);
-                    crewTvSeries.setCrew(crewSet.stream().filter(crew -> crew.getApiId() == dto.getId()).toList().get(0));
-
-                    JobCrew jobByName = this.crewService.findJobByName("Creator");
-
-                    if (jobByName == null) {
-                        jobByName = new JobCrew("Creator");
-                        this.crewService.saveJob(jobByName);
-                    }
-
-                    crewTvSeries.setJob(jobByName);
-
-                    this.crewTvSeriesRepository.save(crewTvSeries);
-                }
-            });
-
-            MediaResponseCreditsDTO creditsById = getCreditsById(tvSeries.getApiId());
-            if (creditsById == null) {
-                this.tvSeriesRepository.save(tvSeries);
-                continue;
-            }
-
-            List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
-            Set<Cast> castSet = this.castService.mapToSet(castDto, tvSeries);
-
-            castDto.forEach(dto -> {
-                Optional<CastTvSeries> optional = this.castTvSeriesRepository.findByTvSeriesIdAndCastApiIdAndCharacter(tvSeries.getId(), dto.getId(), dto.getCharacter());
-                if (optional.isEmpty()) {
-                    CastTvSeries castTvSeries = new CastTvSeries();
-
-                    castTvSeries.setTvSeries(tvSeries);
-                    castTvSeries.setCast(castSet.stream().filter(cast -> cast.getApiId() == dto.getId()).toList().get(0));
-                    castTvSeries.setCharacter(dto.getCharacter() == null || dto.getCharacter().isBlank() ? null : dto.getCharacter());
-
-                    castTvSeriesRepository.save(castTvSeries);
-                }
-            });
-
-            this.tvSeriesRepository.save(tvSeries);
-        }
     }
 
-    //    @Scheduled(fixedDelay = 500)
+//    @Scheduled(fixedDelay = 500)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 
@@ -241,7 +157,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             for (TvSeriesApiDTO dto : response.getResults()) {
 
-                if (dto.getPosterPath() == null) {
+                if ((dto.getPosterPath() == null || dto.getPosterPath().isBlank()) || (dto.getOverview() == null || dto.getOverview().isBlank())) {
                     continue;
                 }
 
@@ -274,6 +190,22 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     this.seasonTvSeriesRepository.saveAll(seasons);
                     savedSeriesCount++;
                     logger.info("Saved tv series: {}", tvSeries.getName());
+
+                    List<CrewApiDTO> crewDto = responseById.getCrew().stream().limit(6).toList();
+                    Set<Crew> crewSet = this.crewService.mapToSet(crewDto);
+
+                    processTvSeriesCrew(crewDto, tvSeries, crewSet);
+
+                    MediaResponseCreditsDTO creditsById = getCreditsById(tvSeries.getApiId());
+                    if (creditsById == null) {
+                        this.tvSeriesRepository.save(tvSeries);
+                        continue;
+                    }
+
+                    List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
+                    Set<Cast> castSet = this.castService.mapToSet(castDto);
+
+                    processTvSeriesCast(castDto, tvSeries, castSet);
                 }
             }
 
@@ -307,6 +239,41 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private boolean isEmpty() {
         return this.tvSeriesRepository.count() == 0;
     }
+
+    private void processTvSeriesCast(List<CastApiApiDTO> castDto, TvSeries tvSeries, Set<Cast> castSet) {
+        this.castService.processCast(
+                castDto,
+                tvSeries,
+                c -> castTvSeriesRepository.findByTvSeriesIdAndCastApiIdAndCharacter(tvSeries.getId(), c.getId(), c.getCharacter()),
+                (c, t) -> castService.createCastEntity(
+                        c,
+                        t,
+                        castSet,
+                        CastTvSeries::new,
+                        CastTvSeries::setTvSeries,
+                        CastTvSeries::setCast,
+                        CastTvSeries::setCharacter
+                ),
+                castTvSeriesRepository::save
+        );
+    }
+
+    private void processTvSeriesCrew(List<CrewApiDTO> crewDto, TvSeries tvSeries, Set<Crew> crewSet) {
+        this.crewService.processCrew(
+                crewDto,
+                tvSeries,
+                c -> crewTvSeriesRepository.findByTvSeriesIdAndCrewApiIdAndJobJob(tvSeries.getId(), c.getId(), "Creator"),
+                (c, t) -> {
+                    CrewTvSeries crewTvSeries = new CrewTvSeries();
+                    crewTvSeries.setTvSeries(t);
+                    return crewTvSeries;
+                },
+                crewTvSeriesRepository::save,
+                c -> "Creator",
+                crewSet
+        );
+    }
+
 
     private TvSeriesResponseApiDTO getTvSeriesResponse(int page, LocalDate startDate, LocalDate endDate) {
         String url = String.format(this.apiConfig.getUrl()
@@ -344,7 +311,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
     }
 
-    public MediaResponseCreditsDTO getCreditsById(Long apiId) {
+    private MediaResponseCreditsDTO getCreditsById(Long apiId) {
         String url = String.format(this.apiConfig.getUrl() + "/tv/%d/credits?api_key=%s", apiId, this.apiConfig.getKey());
 
         try {

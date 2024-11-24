@@ -1,6 +1,6 @@
 package com.watchitnow.database.model.dto.apiDto;
 
-public class CrewApiApiDTO extends CreditApiDTO {
+public class CrewApiDTO extends CreditApiDTO {
     private String job;
 
     private Double popularity;

@@ -25,10 +25,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -99,80 +100,12 @@ public class MovieServiceImpl implements MovieService {
                 .collect(Collectors.toSet());
     }
 
-    @Scheduled(fixedDelay = 100000000)
+    //    @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateMovies() {
-        for (long i = 1; i <= 363912; i++) {
-            Optional<Movie> movieOptional = this.movieRepository.findById(i);
-            if (movieOptional.isEmpty()) {
-                continue;
-            }
-
-            Movie movie = movieOptional.get();
-            MovieApiByIdResponseDTO dtoMovieById = getMediaResponseById(movie.getApiId());
-
-            if (dtoMovieById == null || movie.getOverview().isBlank()) {
-                movie.getGenres().clear();
-                movie.getProductionCompanies().clear();
-                this.movieRepository.delete(movie);
-                continue;
-            }
-
-            BigDecimal popularity = BigDecimal.valueOf(dtoMovieById.getPopularity()).setScale(1, RoundingMode.HALF_UP);
-            movie.setPopularity(popularity.doubleValue());
-            movie.setOriginalTitle(!dtoMovieById.getOriginalTitle().equals(movie.getTitle()) && !dtoMovieById.getOriginalTitle().isBlank() ? dtoMovieById.getOriginalTitle() : null);
-
-            MediaResponseCreditsDTO creditsById = getCreditsById(movie.getApiId());
-            if (creditsById == null) {
-                continue;
-            }
-
-            List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
-            Set<Cast> castSet = this.castService.mapToSet(castDto, movie);
-
-            castDto.forEach(dto -> {
-                Optional<CastMovie> optional = this.castMovieRepository.findByMovieIdAndCastApiIdAndCharacter(movie.getId(), dto.getId(), dto.getCharacter());
-                if (optional.isEmpty()) {
-                    CastMovie castMovie = new CastMovie();
-
-                    castMovie.setMovie(movie);
-                    castMovie.setCast(castSet.stream().filter(cast -> cast.getApiId() == dto.getId()).toList().get(0));
-                    castMovie.setCharacter(dto.getCharacter() == null || dto.getCharacter().isBlank() ? null : dto.getCharacter());
-
-                    castMovieRepository.save(castMovie);
-                }
-            });
-
-
-            List<CrewApiApiDTO> crewDto = this.crewService.filterCrewApiDto(creditsById);
-            Set<Crew> crewSet = this.crewService.mapToSet(crewDto.stream().toList(), movie);
-
-            crewDto.forEach(dto -> {
-                Optional<CrewMovie> optional = this.crewMovieRepository.findByMovieIdAndCrewApiIdAndJobJob(movie.getId(), dto.getId(), dto.getJob());
-                if (optional.isEmpty()) {
-                    CrewMovie crewMovie = new CrewMovie();
-
-                    crewMovie.setMovie(movie);
-                    crewMovie.setCrew(crewSet.stream().filter(crew -> crew.getApiId() == dto.getId()).toList().get(0));
-
-                    JobCrew jobByName = this.crewService.findJobByName(dto.getJob());
-
-                    if (jobByName == null) {
-                        jobByName = new JobCrew(dto.getJob());
-                        this.crewService.saveJob(jobByName);
-                    }
-
-                    crewMovie.setJob(jobByName);
-
-                    this.crewMovieRepository.save(crewMovie);
-                }
-            });
-
-            this.movieRepository.save(movie);
-        }
     }
 
-    //    @Scheduled(fixedDelay = 500)
+//  @Scheduled(fixedDelay = 500)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
@@ -201,7 +134,7 @@ public class MovieServiceImpl implements MovieService {
 
         LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
 
-        if (year == 2005) {
+        if (year == 2009) {
             return;
         }
 
@@ -213,7 +146,7 @@ public class MovieServiceImpl implements MovieService {
 
             for (MovieApiDTO dto : response.getResults()) {
 
-                if (dto.getPosterPath() == null) {
+                if ((dto.getPosterPath() == null || dto.getPosterPath().isBlank()) || dto.getOverview() == null || dto.getOverview().isBlank()) {
                     continue;
                 }
 
@@ -235,15 +168,29 @@ public class MovieServiceImpl implements MovieService {
                     movie.setProductionCompanies(productionCompanyMap.get("all"));
 
                     if (!productionCompanyMap.get("toSave").isEmpty()) {
-                        //TODO: This and tv-series fetching method cannot be executed at the same time. It may throw exception if they try to save the same production company at the same time
                         this.productionCompanyService.saveAllProductionCompanies(productionCompanyMap.get("toSave"));
                     }
 
                     this.movieRepository.save(movie);
 
+                    logger.info("Saved movie: {}", movie.getTitle());
                     savedMoviesCount++;
 
-                    logger.info("Saved movie: {}", movie.getTitle());
+                    MediaResponseCreditsDTO creditsById = getCreditsById(dto.getId());
+
+                    if (creditsById == null) {
+                        continue;
+                    }
+
+                    List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
+                    Set<Cast> castSet = this.castService.mapToSet(castDto);
+
+                    processMovieCast(castDto, movie, castSet);
+
+                    List<CrewApiDTO> crewDto = this.crewService.filterCrewApiDto(creditsById);
+                    Set<Crew> crewSet = this.crewService.mapToSet(crewDto.stream().toList());
+
+                    processMovieCrew(crewDto, movie, crewSet);
                 }
             }
 
@@ -261,6 +208,40 @@ public class MovieServiceImpl implements MovieService {
         return this.movieRepository.count() == 0;
     }
 
+    private void processMovieCast(List<CastApiApiDTO> castDto, Movie movie, Set<Cast> castSet) {
+        this.castService.processCast(
+                castDto,
+                movie,
+                c -> castMovieRepository.findByMovieIdAndCastApiIdAndCharacter(movie.getId(), c.getId(), c.getCharacter()),
+                (c, m) -> castService.createCastEntity(
+                        c,
+                        m,
+                        castSet,
+                        CastMovie::new,
+                        CastMovie::setMovie,
+                        CastMovie::setCast,
+                        CastMovie::setCharacter
+                ),
+                castMovieRepository::save
+        );
+    }
+
+    private void processMovieCrew(List<CrewApiDTO> crewDto, Movie movie, Set<Crew> crewSet) {
+        this.crewService.processCrew(
+                crewDto,
+                movie,
+                c -> crewMovieRepository.findByMovieIdAndCrewApiIdAndJobJob(movie.getId(), c.getId(), c.getJob()),
+                (c, m) -> {
+                    CrewMovie crewMovie = new CrewMovie();
+                    crewMovie.setMovie(m);
+                    return crewMovie;
+                },
+                crewMovieRepository::save,
+                CrewApiDTO::getJob,
+                crewSet
+        );
+    }
+
     private MovieResponseApiDTO getMoviesResponseByDate(int page, LocalDate startDate, LocalDate endDate) {
         String url = String.format(this.apiConfig.getUrl()
                 + "/discover/movie?page=%d&primary_release_date.gte=%s&primary_release_date.lte=%s&api_key="
@@ -273,7 +254,7 @@ public class MovieServiceImpl implements MovieService {
                 .body(MovieResponseApiDTO.class);
     }
 
-    public MovieApiByIdResponseDTO getMediaResponseById(Long apiId) {
+    private MovieApiByIdResponseDTO getMediaResponseById(Long apiId) {
         String url = String.format(this.apiConfig.getUrl() + "/movie/%d?api_key=" + this.apiConfig.getKey(), apiId);
         try {
             return this.restClient
@@ -287,7 +268,7 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
-    public MediaResponseCreditsDTO getCreditsById(Long apiId) {
+    private MediaResponseCreditsDTO getCreditsById(Long apiId) {
         String url = String.format(this.apiConfig.getUrl() + "/movie/%d/credits?api_key=%s", apiId, this.apiConfig.getKey());
 
         try {

@@ -1,24 +1,27 @@
 package com.watchitnow.service;
 
-import com.watchitnow.database.model.dto.apiDto.CrewApiApiDTO;
+import com.watchitnow.database.model.dto.apiDto.CrewApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MediaResponseCreditsDTO;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
-import com.watchitnow.database.model.entity.credit.Crew.JobCrew;
-import com.watchitnow.database.model.entity.media.Media;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public interface CrewService {
-    List<Crew> findAllByApiId(List<Long> apiIds);
+    Set<Crew> mapToSet(List<CrewApiDTO> crewDto);
 
-    void saveAll(Set<Crew> crews);
+    List<CrewApiDTO> filterCrewApiDto(MediaResponseCreditsDTO creditsById);
 
-    Set<Crew> mapToSet(List<CrewApiApiDTO> crewDto, Media media);
-
-    List<CrewApiApiDTO> filterCrewApiDto(MediaResponseCreditsDTO creditsById);
-
-    JobCrew findJobByName(String name);
-
-    void saveJob(JobCrew jobByName);
+    <T, E> void processCrew(
+            List<CrewApiDTO> crewDto,
+            T parentEntity,
+            Function<CrewApiDTO, Optional<E>> findFunction,
+            BiFunction<CrewApiDTO, T, E> entityCreator,
+            Function<E, E> saveFunction,
+            Function<CrewApiDTO, String> jobNameFunction,
+            Set<Crew> crewSet
+    );
 }

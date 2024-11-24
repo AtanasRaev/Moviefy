@@ -12,7 +12,8 @@ public class MovieMapper extends MediaMapper {
 
     private final MovieGenreService genreService;
 
-    public MovieMapper(TrailerMappingUtil trailerMappingUtil, MovieGenreService genreService) {
+    public MovieMapper(TrailerMappingUtil trailerMappingUtil,
+                       MovieGenreService genreService) {
         super(trailerMappingUtil);
         this.genreService = genreService;
     }
@@ -22,7 +23,7 @@ public class MovieMapper extends MediaMapper {
 
         super.mapCommonFields(movie, dto, responseTrailer);
         movie.setTitle(dto.getTitle());
-        movie.setOriginalTitle(!dto.getOriginalTitle().equals(dto.getTitle()) ? dto.getOriginalTitle() : null);
+        movie.setOriginalTitle(!dto.getOriginalTitle().equals(dto.getTitle()) && !dto.getOriginalTitle().isBlank() ? dto.getOriginalTitle() : null);
         movie.setReleaseDate(dto.getReleaseDate());
         movie.setRuntime(responseById.getRuntime());
         movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));

@@ -30,6 +30,10 @@ public class TvSeriesResponseApiDTO {
         return results;
     }
 
+    public void setResults(List<TvSeriesApiDTO> results) {
+        this.results = results;
+    }
+
     public int getTotalPages() {
         return totalPages;
     }
