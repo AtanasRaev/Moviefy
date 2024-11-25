@@ -14,8 +14,12 @@ import java.util.Optional;
 public interface MovieRepository extends JpaRepository<Movie, Long> {
     Optional<Movie> findByApiId(Long apiId);
 
-    @Query("SELECT COUNT(m) FROM Movie m WHERE EXTRACT(YEAR FROM m.releaseDate) = :year AND EXTRACT(MONTH FROM m.releaseDate) = :month")
-    long countMoviesInDateRange(@Param("year") int year, @Param("month") int month);
+    @Query("SELECT COUNT(m) FROM Movie m WHERE EXTRACT(YEAR FROM m.releaseDate) = " +
+            "(SELECT MIN(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m)")
+    Long countOldestMovies();
+
+    @Query("SELECT MIN(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m")
+    Integer findOldestMovieYear();
 
     @Query("SELECT m FROM Movie m WHERE m.releaseDate = (SELECT MIN(m2.releaseDate) FROM Movie m2)")
     List<Movie> findOldestMovie();

@@ -1,15 +1,17 @@
 package com.watchitnow.database.model.dto.apiDto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 
 public class MovieApiByIdResponseDTO {
-   @JsonProperty("production_companies")
+    @JsonProperty("production_companies")
     private List<ProductionApiDTO> productionCompanies;
 
-    @JsonIgnore
+    @NotNull
+    @Positive
     private Integer runtime;
 
     public List<ProductionApiDTO> getProductionCompanies() {

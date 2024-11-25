@@ -5,7 +5,6 @@ import com.watchitnow.database.model.dto.apiDto.CreditApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MediaResponseCreditsDTO;
 import com.watchitnow.database.model.entity.credit.Cast.Cast;
 import com.watchitnow.database.model.entity.credit.Credit;
-import com.watchitnow.database.model.entity.media.Media;
 import com.watchitnow.database.repository.CastRepository;
 import com.watchitnow.service.CastService;
 import com.watchitnow.utils.CastMapper;
@@ -13,7 +12,10 @@ import com.watchitnow.utils.CreditRetrievalUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 @Service
 public class CastServiceImpl implements CastService {

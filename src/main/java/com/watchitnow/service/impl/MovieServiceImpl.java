@@ -105,55 +105,46 @@ public class MovieServiceImpl implements MovieService {
     private void updateMovies() {
     }
 
-//  @Scheduled(fixedDelay = 500)
+//    @Scheduled(fixedDelay = 500)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
         int year = LocalDate.now().getYear();
         int page = 1;
-        int savedMoviesCount = 0;
-        int totalPages;
+        Long countOldestMovies = this.movieRepository.countOldestMovies();
+        int count = countOldestMovies.intValue();
 
-        LocalDate startDate = LocalDate.of(year, 12, 1);
+        if (countOldestMovies > 0) {
+            year = this.movieRepository.findOldestMovieYear();
 
-        if (!isEmpty()) {
-            List<Movie> oldestMovies = this.movieRepository.findOldestMovie();
-            if (!oldestMovies.isEmpty()) {
-                Movie oldestMovie = oldestMovies.get(0);
-
-                year = oldestMovie.getReleaseDate().getYear();
-                startDate = LocalDate.of(year, oldestMovie.getReleaseDate().getMonthValue(), oldestMovie.getReleaseDate().getDayOfMonth());
-
-                long moviesByYearAndMonth = this.movieRepository.countMoviesInDateRange(oldestMovie.getReleaseDate().getYear(), oldestMovie.getReleaseDate().getMonthValue());
-
-                if (moviesByYearAndMonth > 20) {
-                    page = (int) ((moviesByYearAndMonth / 20) + 1);
-                }
+            if (countOldestMovies >= 1000) {
+                year -= 1;
+            } else {
+                page = (int) Math.ceil(countOldestMovies / 20.0);
             }
         }
 
-        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
+        while (count < 1000) {
+            logger.info("Fetching page {} of year {}", page, year);
 
-        if (year == 2009) {
-            return;
-        }
+            MovieResponseApiDTO response = getMoviesResponseByDateAndVoteCount(page, year);
 
-        for (int i = 0; i < 40; i++) {
-            logger.info("Fetching page {} of date range {} to {}", page, startDate, endDate);
+            if (response == null || response.getResults() == null) {
+                logger.warn("No results returned for page {} of year {}", page, year);
+                break;
+            }
 
-            MovieResponseApiDTO response = getMoviesResponseByDate(page, startDate, endDate);
-            totalPages = response.getTotalPages();
+            if (page >= response.getTotalPages()) {
+                logger.info("Reached the last page for year {}.", year);
+                break;
+            }
 
             for (MovieApiDTO dto : response.getResults()) {
-
-                if ((dto.getPosterPath() == null || dto.getPosterPath().isBlank()) || dto.getOverview() == null || dto.getOverview().isBlank()) {
-                    continue;
-                }
 
                 if (this.movieRepository.findByApiId(dto.getId()).isEmpty()) {
                     MovieApiByIdResponseDTO responseById = getMediaResponseById(dto.getId());
 
-                    if (responseById == null) {
+                    if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < 45) {
                         continue;
                     }
 
@@ -172,9 +163,9 @@ public class MovieServiceImpl implements MovieService {
                     }
 
                     this.movieRepository.save(movie);
+                    count++;
 
                     logger.info("Saved movie: {}", movie.getTitle());
-                    savedMoviesCount++;
 
                     MediaResponseCreditsDTO creditsById = getCreditsById(dto.getId());
 
@@ -184,21 +175,14 @@ public class MovieServiceImpl implements MovieService {
 
                     List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
                     Set<Cast> castSet = this.castService.mapToSet(castDto);
-
                     processMovieCast(castDto, movie, castSet);
 
                     List<CrewApiDTO> crewDto = this.crewService.filterCrewApiDto(creditsById);
                     Set<Crew> crewSet = this.crewService.mapToSet(crewDto.stream().toList());
-
                     processMovieCrew(crewDto, movie, crewSet);
                 }
             }
-
-            DateRange result = DatePaginationUtil.updatePageAndDate(page, totalPages, i, savedMoviesCount, startDate, endDate, year);
-            page = result.getPage();
-            startDate = result.getStartDate();
-            endDate = result.getEndDate();
-            year = result.getYear();
+            page++;
         }
 
         logger.info("Finished fetching movies.");
@@ -242,10 +226,10 @@ public class MovieServiceImpl implements MovieService {
         );
     }
 
-    private MovieResponseApiDTO getMoviesResponseByDate(int page, LocalDate startDate, LocalDate endDate) {
+    private MovieResponseApiDTO getMoviesResponseByDateAndVoteCount(int page, int year) {
         String url = String.format(this.apiConfig.getUrl()
-                + "/discover/movie?page=%d&primary_release_date.gte=%s&primary_release_date.lte=%s&api_key="
-                + this.apiConfig.getKey(), page, startDate, endDate);
+                        + "/discover/movie?primary_release_year=%d&sort_by=vote_count.desc&api_key=%s&page=%d",
+                year, this.apiConfig.getKey(), page);
 
         return this.restClient
                 .get()

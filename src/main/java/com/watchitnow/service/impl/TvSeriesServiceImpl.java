@@ -17,6 +17,7 @@ import com.watchitnow.database.repository.CastTvSeriesRepository;
 import com.watchitnow.database.repository.CrewTvSeriesRepository;
 import com.watchitnow.database.repository.SeasonTvSeriesRepository;
 import com.watchitnow.database.repository.TvSeriesRepository;
+import java.time.temporal.TemporalAdjusters;
 import com.watchitnow.service.*;
 import com.watchitnow.utils.*;
 import org.modelmapper.ModelMapper;
@@ -116,53 +117,49 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-//    @Scheduled(fixedDelay = 500)
+    @Scheduled(fixedDelay = 500)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 
         int year = LocalDate.now().getYear();
+
         int page = 1;
-        int totalPages;
-        int savedSeriesCount = 0;
+        Long countOldestTvSeries = this.tvSeriesRepository.countOldestTvSeries();
+        int count = countOldestTvSeries.intValue();
 
-        LocalDate startDate = LocalDate.of(year, 12, 1);
+        if (countOldestTvSeries > 0) {
+            year = this.tvSeriesRepository.findOldestTvSeriesYear();
 
-        if (!isEmpty()) {
-            List<TvSeries> oldestTvSeries = this.tvSeriesRepository.findOldestTvSeries();
-            if (!oldestTvSeries.isEmpty()) {
-                TvSeries oldestTV = oldestTvSeries.get(0);
-
-                year = oldestTV.getFirstAirDate().getYear();
-                startDate = LocalDate.of(year, oldestTV.getFirstAirDate().getMonthValue(), oldestTV.getFirstAirDate().getDayOfMonth());
-
-                long tvSeriesByYearAndMonth = this.tvSeriesRepository.countTvSeriesInDateRange(oldestTV.getFirstAirDate().getYear(), oldestTV.getFirstAirDate().getMonthValue());
-
-                if (tvSeriesByYearAndMonth > 20) {
-                    page = (int) ((tvSeriesByYearAndMonth / 20) + 1);
-                }
+            if (countOldestTvSeries >= 1000) {
+                year -= 1;
+            } else {
+                page = (int) Math.ceil(countOldestTvSeries / 20.0);
             }
         }
 
-        LocalDate endDate = LocalDate.of(year, startDate.getMonthValue(), startDate.lengthOfMonth());
+        LocalDate start = LocalDate.ofYearDay(year, 1);
+        LocalDate end = start.with(TemporalAdjusters.lastDayOfYear());
 
-        if (year == 1999) {
-            return;
-        }
+        while (count < 1000) {
+            logger.info("Fetching page {} of year {}", page, year);
 
-        for (int i = 0; i < 40; i++) {
-            logger.info("Fetching page {} of date range {} to {}", page, startDate, endDate);
+            TvSeriesResponseApiDTO response = getTvSeriesResponseByDateAndVoteCount(page, start, end);
 
-            TvSeriesResponseApiDTO response = getTvSeriesResponse(page, startDate, endDate);
-            totalPages = response.getTotalPages();
+            if (response == null || response.getResults() == null) {
+                logger.warn("No results returned for page {} of year {}", page, year);
+                break;
+            }
+
+            if (page >= response.getTotalPages()) {
+                logger.info("Reached the last page for year {}.", year);
+                break;
+            }
 
             for (TvSeriesApiDTO dto : response.getResults()) {
 
-                if ((dto.getPosterPath() == null || dto.getPosterPath().isBlank()) || (dto.getOverview() == null || dto.getOverview().isBlank())) {
-                    continue;
-                }
-
                 if (this.tvSeriesRepository.findByApiId(dto.getId()).isEmpty()) {
                     TvSeriesApiByIdResponseDTO responseById = getTvSeriesResponseById(dto.getId());
+
                     if (responseById == null) {
                         continue;
                     }
@@ -188,12 +185,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
                     this.tvSeriesRepository.save(tvSeries);
                     this.seasonTvSeriesRepository.saveAll(seasons);
-                    savedSeriesCount++;
+                    count++;
                     logger.info("Saved tv series: {}", tvSeries.getName());
 
                     List<CrewApiDTO> crewDto = responseById.getCrew().stream().limit(6).toList();
                     Set<Crew> crewSet = this.crewService.mapToSet(crewDto);
-
                     processTvSeriesCrew(crewDto, tvSeries, crewSet);
 
                     MediaResponseCreditsDTO creditsById = getCreditsById(tvSeries.getApiId());
@@ -204,16 +200,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
                     List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
                     Set<Cast> castSet = this.castService.mapToSet(castDto);
-
                     processTvSeriesCast(castDto, tvSeries, castSet);
                 }
             }
-
-            DateRange result = DatePaginationUtil.updatePageAndDate(page, totalPages, i, savedSeriesCount, startDate, endDate, year);
-            page = result.getPage();
-            startDate = result.getStartDate();
-            endDate = result.getEndDate();
-            year = result.getYear();
+            page++;
         }
 
         logger.info("Finished fetching tvSeries.");
@@ -274,12 +264,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         );
     }
 
-
-    private TvSeriesResponseApiDTO getTvSeriesResponse(int page, LocalDate startDate, LocalDate endDate) {
+    private TvSeriesResponseApiDTO getTvSeriesResponseByDateAndVoteCount(int page, LocalDate start, LocalDate end) {
         String url = String.format(this.apiConfig.getUrl()
-                        + "/discover/tv?page=%d&first_air_date.gte=%s&first_air_date.lte=%s&api_key="
-                        + this.apiConfig.getKey()
-                , page, startDate, endDate);
+                        + "/discover/tv?first_air_date.gte=%s&first_air_date.lte=%s&sort_by=vote_count.desc&api_key=%s&page=%d",
+                start, end, this.apiConfig.getKey(), page);
+
         return this.restClient
                 .get()
                 .uri(url)

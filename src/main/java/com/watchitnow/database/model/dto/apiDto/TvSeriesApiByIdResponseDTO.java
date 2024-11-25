@@ -1,6 +1,7 @@
 package com.watchitnow.database.model.dto.apiDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 import java.util.Set;
@@ -9,6 +10,7 @@ public class TvSeriesApiByIdResponseDTO {
     @JsonProperty("production_companies")
     private List<ProductionApiDTO> productionCompanies;
 
+    @Positive
     @JsonProperty("episode_run_time")
     private List<Integer> episodeRuntime;
 

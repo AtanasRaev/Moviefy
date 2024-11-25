@@ -16,6 +16,13 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate = (SELECT MIN(tv2.firstAirDate) FROM TvSeries tv2)")
     List<TvSeries> findOldestTvSeries();
 
+    @Query("SELECT COUNT(tv) FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = " +
+            "(SELECT MIN(EXTRACT(YEAR FROM tv.firstAirDate)) FROM TvSeries tv)")
+    Long countOldestTvSeries();
+
+    @Query("SELECT MIN(EXTRACT(YEAR FROM tv.firstAirDate)) FROM TvSeries tv")
+    Integer findOldestTvSeriesYear();
+
     Optional<TvSeries> findByApiId(Long id);
 
     @Query("SELECT DISTINCT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres LEFT JOIN FETCH tv.productionCompanies LEFT JOIN FETCH tv.seasons WHERE tv.id = :id")
