@@ -1,12 +1,10 @@
 package com.watchitnow.database.model.dto.apiDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDate;
 
 public class TvSeriesApiDTO extends MediaApiDTO {
-    @NotBlank
     private String name;
 
     @JsonProperty("original_name")

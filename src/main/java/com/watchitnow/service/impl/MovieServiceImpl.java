@@ -9,26 +9,25 @@ import com.watchitnow.database.model.entity.credit.Cast.Cast;
 import com.watchitnow.database.model.entity.credit.Cast.CastMovie;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
 import com.watchitnow.database.model.entity.credit.Crew.CrewMovie;
-import com.watchitnow.database.model.entity.credit.Crew.JobCrew;
 import com.watchitnow.database.model.entity.media.Movie;
 import com.watchitnow.database.repository.CastMovieRepository;
 import com.watchitnow.database.repository.CrewMovieRepository;
 import com.watchitnow.database.repository.MovieRepository;
 import com.watchitnow.service.*;
-import com.watchitnow.utils.*;
+import com.watchitnow.utils.MediaRetrievalUtil;
+import com.watchitnow.utils.MovieMapper;
+import com.watchitnow.utils.TrailerMappingUtil;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -105,11 +104,12 @@ public class MovieServiceImpl implements MovieService {
     private void updateMovies() {
     }
 
-//    @Scheduled(fixedDelay = 500)
+//    @Scheduled(fixedDelay = 500000)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
         int year = LocalDate.now().getYear();
+
         int page = 1;
         Long countOldestMovies = this.movieRepository.countOldestMovies();
         int count = countOldestMovies.intValue();
@@ -119,6 +119,7 @@ public class MovieServiceImpl implements MovieService {
 
             if (countOldestMovies >= 1000) {
                 year -= 1;
+                count = 0;
             } else {
                 page = (int) Math.ceil(countOldestMovies / 20.0);
             }
@@ -134,12 +135,20 @@ public class MovieServiceImpl implements MovieService {
                 break;
             }
 
-            if (page >= response.getTotalPages()) {
+            if (page > response.getTotalPages()) {
                 logger.info("Reached the last page for year {}.", year);
                 break;
             }
 
             for (MovieApiDTO dto : response.getResults()) {
+
+                if (count >= 1000) {
+                    break;
+                }
+
+                if (isInvalid(dto)) {
+                    continue;
+                }
 
                 if (this.movieRepository.findByApiId(dto.getId()).isEmpty()) {
                     MovieApiByIdResponseDTO responseById = getMediaResponseById(dto.getId());
@@ -190,6 +199,13 @@ public class MovieServiceImpl implements MovieService {
 
     private boolean isEmpty() {
         return this.movieRepository.count() == 0;
+    }
+
+    private static boolean isInvalid(MovieApiDTO dto) {
+        return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
+                || dto.getOverview() == null || dto.getOverview().isBlank()
+                || dto.getTitle() == null || dto.getTitle().isBlank()
+                || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
     }
 
     private void processMovieCast(List<CastApiApiDTO> castDto, Movie movie, Set<Cast> castSet) {

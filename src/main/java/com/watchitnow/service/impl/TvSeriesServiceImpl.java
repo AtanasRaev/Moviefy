@@ -17,15 +17,15 @@ import com.watchitnow.database.repository.CastTvSeriesRepository;
 import com.watchitnow.database.repository.CrewTvSeriesRepository;
 import com.watchitnow.database.repository.SeasonTvSeriesRepository;
 import com.watchitnow.database.repository.TvSeriesRepository;
-import java.time.temporal.TemporalAdjusters;
 import com.watchitnow.service.*;
-import com.watchitnow.utils.*;
+import com.watchitnow.utils.MediaRetrievalUtil;
+import com.watchitnow.utils.TrailerMappingUtil;
+import com.watchitnow.utils.TvSeriesMapper;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -117,7 +117,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-    @Scheduled(fixedDelay = 500)
+//    @Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 
@@ -132,30 +132,36 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             if (countOldestTvSeries >= 1000) {
                 year -= 1;
+                count = 0;
             } else {
                 page = (int) Math.ceil(countOldestTvSeries / 20.0);
             }
         }
 
-        LocalDate start = LocalDate.ofYearDay(year, 1);
-        LocalDate end = start.with(TemporalAdjusters.lastDayOfYear());
-
         while (count < 1000) {
             logger.info("Fetching page {} of year {}", page, year);
 
-            TvSeriesResponseApiDTO response = getTvSeriesResponseByDateAndVoteCount(page, start, end);
+            TvSeriesResponseApiDTO response = getTvSeriesResponseByDateAndVoteCount(page, year);
 
             if (response == null || response.getResults() == null) {
                 logger.warn("No results returned for page {} of year {}", page, year);
                 break;
             }
 
-            if (page >= response.getTotalPages()) {
+            if (page > response.getTotalPages()) {
                 logger.info("Reached the last page for year {}.", year);
                 break;
             }
 
             for (TvSeriesApiDTO dto : response.getResults()) {
+
+                if (count >= 1000) {
+                    break;
+                }
+
+                if (isInvalid(dto)) {
+                    continue;
+                }
 
                 if (this.tvSeriesRepository.findByApiId(dto.getId()).isEmpty()) {
                     TvSeriesApiByIdResponseDTO responseById = getTvSeriesResponseById(dto.getId());
@@ -207,6 +213,13 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
 
         logger.info("Finished fetching tvSeries.");
+    }
+
+    private static boolean isInvalid(TvSeriesApiDTO dto) {
+        return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
+                || dto.getOverview() == null || dto.getOverview().isBlank()
+                || dto.getName() == null || dto.getName().isBlank()
+                || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
     }
 
     private Set<SeasonTvSeries> mapSeasonsFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
@@ -264,10 +277,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         );
     }
 
-    private TvSeriesResponseApiDTO getTvSeriesResponseByDateAndVoteCount(int page, LocalDate start, LocalDate end) {
+    private TvSeriesResponseApiDTO getTvSeriesResponseByDateAndVoteCount(int page, int year) {
         String url = String.format(this.apiConfig.getUrl()
-                        + "/discover/tv?first_air_date.gte=%s&first_air_date.lte=%s&sort_by=vote_count.desc&api_key=%s&page=%d",
-                start, end, this.apiConfig.getKey(), page);
+                        + "/discover/tv?first_air_date.gte=%d-01-01&first_air_date.lte=%d-12-31&sort_by=vote_count.desc&api_key=%s&page=%d",
+                year, year, this.apiConfig.getKey(), page);
 
         return this.restClient
                 .get()
