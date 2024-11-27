@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -117,7 +118,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-//    @Scheduled(fixedDelay = 500000)
+    @Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 
@@ -150,7 +151,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             if (page > response.getTotalPages()) {
                 logger.info("Reached the last page for year {}.", year);
-                break;
+                year -= 1;
+                page = 1;
+                count = 0;
+                continue;
             }
 
             for (TvSeriesApiDTO dto : response.getResults()) {

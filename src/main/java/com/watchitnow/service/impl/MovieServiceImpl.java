@@ -137,7 +137,10 @@ public class MovieServiceImpl implements MovieService {
 
             if (page > response.getTotalPages()) {
                 logger.info("Reached the last page for year {}.", year);
-                break;
+                year -= 1;
+                page = 1;
+                count = 0;
+                continue;
             }
 
             for (MovieApiDTO dto : response.getResults()) {

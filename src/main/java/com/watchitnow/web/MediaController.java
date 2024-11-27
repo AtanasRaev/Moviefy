@@ -80,6 +80,7 @@ public class MediaController {
             media = tvSeriesService.getTvSeriesById(id);
         }
 
+        //TODO: Change response
         if (media == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid id: " + id));
         }
