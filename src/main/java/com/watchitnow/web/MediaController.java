@@ -5,11 +5,13 @@ import com.watchitnow.service.MovieService;
 import com.watchitnow.service.impl.MovieGenreServiceImpl;
 import com.watchitnow.service.impl.SeriesGenreServiceImpl;
 import com.watchitnow.service.impl.TvSeriesServiceImpl;
-
-
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,59 +43,58 @@ public class MediaController {
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
         if (isMediaTypeInvalid(mediaType)) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + mediaType));
+            return buildErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid request",
+                    String.format("The media type '%s' is invalid. It must be 'tv' or 'movie'.", mediaType)
+            );
         }
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
-        Page<?> contentPage;
+        Page<?> contentPage = fetchContentByMediaType(mediaType, pageable);
 
-        if ("movie".equalsIgnoreCase(mediaType)) {
-            contentPage = movieService.getMoviesFromCurrentMonth(pageable);
-        } else {
-            contentPage = tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
-        }
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("items_on_page", contentPage.getNumberOfElements());
-        response.put("total_items", contentPage.getTotalElements());
-        response.put("total_pages", contentPage.getTotalPages());
-        response.put("current_page", contentPage.getNumber() + 1);
-        response.put(mediaType, contentPage.getContent());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of(
+                "items_on_page", contentPage.getNumberOfElements(),
+                "total_items", contentPage.getTotalElements(),
+                "total_pages", contentPage.getTotalPages(),
+                "current_page", contentPage.getNumber() + 1,
+                mediaType, contentPage.getContent()
+        ));
     }
 
     @GetMapping("/{mediaType}/{id}")
-    public ResponseEntity<Object> getMediaById(
+    public ResponseEntity<Map<String, Object>> getMediaById(
             @PathVariable String mediaType,
             @PathVariable Long id) {
 
-        MediaDetailsDTO media;
-
         if (isMediaTypeInvalid(mediaType)) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + mediaType));
+            return buildErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid request",
+                    String.format("The media type '%s' is invalid. It must be 'tv' or 'movie'.", mediaType)
+            );
         }
 
-        if ("movie".equalsIgnoreCase(mediaType)) {
-            media = movieService.getMovieById(id);
-        } else {
-            media = tvSeriesService.getTvSeriesById(id);
-        }
+        MediaDetailsDTO media = fetchMediaById(mediaType, id);
 
-        //TODO: Change response
         if (media == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid id: " + id));
+            return buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("Not found %s with id %d", mediaType, id)
+            );
         }
 
-        return ResponseEntity.ok(media);
+        return ResponseEntity.ok(Map.of(mediaType, media));
     }
+
 
 //    @GetMapping("/{mediaType}/genre/{genreType}")
 //    public ResponseEntity<Map<String, Object>> getGenres(
-//        @PathVariable String mediaType,
-//        @PathVariable String genreType,
-//        @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-//        @RequestParam(defaultValue = "1") @Min(1) int page) {
+//            @PathVariable String mediaType,
+//            @PathVariable String genreType,
+//            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+//            @RequestParam(defaultValue = "1") @Min(1) int page) {
 //
 //        if (isMediaTypeInvalid(mediaType)) {
 //            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + mediaType));
@@ -119,5 +120,28 @@ public class MediaController {
 
     private boolean isMediaTypeInvalid(String mediaType) {
         return !"movie".equalsIgnoreCase(mediaType) && !"tv".equalsIgnoreCase(mediaType);
+    }
+
+    private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String error, String message) {
+        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+        response.put("error", error);
+        response.put("message", message);
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
+    }
+
+
+    private Page<?> fetchContentByMediaType(String mediaType, Pageable pageable) {
+        return "movie".equalsIgnoreCase(mediaType)
+                ? movieService.getMoviesFromCurrentMonth(pageable)
+                : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
+    }
+
+    private MediaDetailsDTO fetchMediaById(String mediaType, Long id) {
+        return "movie".equalsIgnoreCase(mediaType)
+                ? movieService.getMovieById(id)
+                : tvSeriesService.getTvSeriesById(id);
     }
 }

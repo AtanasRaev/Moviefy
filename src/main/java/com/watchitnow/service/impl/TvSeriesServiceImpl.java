@@ -118,7 +118,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-    @Scheduled(fixedDelay = 500000)
+//    @Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 

@@ -15,17 +15,9 @@ import java.util.function.Function;
 
 @Component
 public class MediaRetrievalUtil {
-    private final RestClient restClient;
-    private final ApiConfig apiConfig;
     private static final int MAX_EMPTY_MONTHS = 12;
     private static final int DAYS_OFFSET = 7;
     private static final int MAX_ITEMS = 100;
-
-    public MediaRetrievalUtil(RestClient restClient,
-                              ApiConfig apiConfig) {
-        this.restClient = restClient;
-        this.apiConfig = apiConfig;
-    }
 
     public <T, R> Page<R> fetchContentFromDateRange(Pageable pageable,
                                                     Function<LocalDateRange, List<T>> fetchFunction,

@@ -6,8 +6,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.time.LocalDate;
 import java.util.Set;
 
-@JsonPropertyOrder({ "name",
+@JsonPropertyOrder({"name",
         "original_name",
+        "status",
         "poster_path",
         "backdrop_path",
         "first_air_date",
@@ -21,6 +22,9 @@ import java.util.Set;
         "seasons"})
 public class TvSeriesDetailsDTO extends MediaDetailsDTO {
     private String name;
+
+    @JsonProperty("status")
+    private String statusTvSeries;
 
     @JsonProperty("original_name")
     private String originalName;
@@ -40,6 +44,22 @@ public class TvSeriesDetailsDTO extends MediaDetailsDTO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getStatusTvSeries() {
+        return statusTvSeries;
+    }
+
+    public void setStatusTvSeries(String statusTvSeries) {
+        this.statusTvSeries = statusTvSeries;
+    }
+
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
     }
 
     public LocalDate getFirstAirDate() {
