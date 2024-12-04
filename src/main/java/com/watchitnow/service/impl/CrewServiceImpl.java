@@ -3,12 +3,18 @@ package com.watchitnow.service.impl;
 import com.watchitnow.database.model.dto.apiDto.CreditApiDTO;
 import com.watchitnow.database.model.dto.apiDto.CrewApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MediaResponseCreditsDTO;
+import com.watchitnow.database.model.dto.pageDto.CastPageDTO;
+import com.watchitnow.database.model.dto.pageDto.CrewPageDTO;
+import com.watchitnow.database.model.entity.credit.Cast.CastMovie;
+import com.watchitnow.database.model.entity.credit.Cast.CastTvSeries;
 import com.watchitnow.database.model.entity.credit.Credit;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
 import com.watchitnow.database.model.entity.credit.Crew.CrewMovie;
 import com.watchitnow.database.model.entity.credit.Crew.CrewTvSeries;
 import com.watchitnow.database.model.entity.credit.Crew.JobCrew;
+import com.watchitnow.database.repository.CrewMovieRepository;
 import com.watchitnow.database.repository.CrewRepository;
+import com.watchitnow.database.repository.CrewTvSeriesRepository;
 import com.watchitnow.database.repository.JobCrewRepository;
 import com.watchitnow.service.CrewService;
 import com.watchitnow.utils.CreditRetrievalUtil;
@@ -22,15 +28,21 @@ import java.util.function.Function;
 @Service
 public class CrewServiceImpl implements CrewService {
     private final CrewRepository crewRepository;
+    private final CrewMovieRepository crewMovieRepository;
+    private final CrewTvSeriesRepository crewTvSeriesRepository;
     private final JobCrewRepository jobCrewRepository;
     private final CreditRetrievalUtil creditRetrievalUtil;
     private final CrewMapper crewMapper;
 
     public CrewServiceImpl(CrewRepository crewRepository,
+                           CrewMovieRepository crewMovieRepository,
+                           CrewTvSeriesRepository crewTvSeriesRepository,
                            JobCrewRepository jobCrewRepository,
                            CreditRetrievalUtil creditRetrievalUtil,
                            CrewMapper crewMapper) {
         this.crewRepository = crewRepository;
+        this.crewMovieRepository = crewMovieRepository;
+        this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.jobCrewRepository = jobCrewRepository;
         this.creditRetrievalUtil = creditRetrievalUtil;
         this.crewMapper = crewMapper;
@@ -100,6 +112,39 @@ public class CrewServiceImpl implements CrewService {
             }
         });
     }
+
+    @Override
+    public Set<CrewPageDTO> getCrewByMediaId(String mediaType, long mediaId) {
+        Set<CrewPageDTO> crewPageDTOs;
+        if ("movie".equals(mediaType)) {
+            crewPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
+                    CrewPageDTO::new,
+                    crewMovieRepository::findCrewByMovieId,
+                    CrewPageDTO::setJob,
+                    CrewPageDTO::setName,
+                    CrewPageDTO::setProfilePath,
+                    cm -> cm.getJob().getJob(),
+                    cm -> cm.getCrew().getName(),
+                    cm -> cm.getCrew().getProfilePath())
+            );
+        } else if ("tv".equals(mediaType)) {
+            crewPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
+                    CrewPageDTO::new,
+                    crewTvSeriesRepository::findCrewByTvSeriesId,
+                    CrewPageDTO::setJob,
+                    CrewPageDTO::setName,
+                    CrewPageDTO::setProfilePath,
+                    cm -> cm.getJob().getJob(),
+                    cm -> cm.getCrew().getName(),
+                    cm -> cm.getCrew().getProfilePath())
+            );
+        } else {
+            throw new IllegalArgumentException("Unsupported media type: " + mediaType);
+        }
+
+        return crewPageDTOs;
+    }
+
 
     private JobCrew findOrCreateJob(String jobName) {
         Optional<JobCrew> optional = jobCrewRepository.findByJob(jobName);

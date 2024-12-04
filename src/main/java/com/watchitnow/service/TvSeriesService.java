@@ -10,7 +10,9 @@ import java.util.Set;
 public interface TvSeriesService {
     Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable);
 
-    TvSeriesDetailsDTO getTvSeriesById(long id);
+    TvSeriesDetailsDTO getTvSeriesDetailsById(long id);
 
     Set<TvSeriesPageDTO> getTvSeriesByGenre(String genreType);
+
+    Page<TvSeriesPageDTO> getMostPopularTvSeries(Pageable pageable);
 }

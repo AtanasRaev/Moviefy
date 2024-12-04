@@ -9,20 +9,13 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Component
 public class CreditRetrievalUtil {
-    private final RestClient restClient;
-    private final ApiConfig apiConfig;
-
-    public CreditRetrievalUtil(RestClient restClient,
-                               ApiConfig apiConfig) {
-        this.restClient = restClient;
-        this.apiConfig = apiConfig;
-    }
-
     public <T, R> Set<R> creditRetrieval(List<T> dtoList,
                                          Function<T, R> mapFunction,
                                          Function<T, Long> dtoIdExtraction,
@@ -55,18 +48,26 @@ public class CreditRetrievalUtil {
         return new LinkedHashSet<>(creditList);
     }
 
-    public MediaResponseCreditsDTO getCreditsById(Long apiId, String type) {
-        String url = String.format(this.apiConfig.getUrl() + "/%s/%d/credits?api_key=%s", type, apiId, this.apiConfig.getKey());
+    public <T, R> Set<R> getCreditByMediaId(Long mediaId,
+                                            Supplier<R> creditSupplier,
+                                            Function<Long, List<T>> findCreditByMovieId,
+                                            BiConsumer<R, String> mapField,
+                                            BiConsumer<R, String> mapName,
+                                            BiConsumer<R, String> mapProfilePath,
+                                            Function<T, String> getFiled,
+                                            Function<T, String> getName,
+                                            Function<T, String> getProfilePath) {
 
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(MediaResponseCreditsDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
-            return null;
-        }
+        return findCreditByMovieId.apply(mediaId)
+                .stream()
+                .map(c -> {
+                    R credit = creditSupplier.get();
+                    mapField.accept(credit, getFiled.apply(c));
+                    mapName.accept(credit, getName.apply(c));
+                    mapProfilePath.accept(credit, getProfilePath.apply(c));
+                    return credit;
+                })
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
+
 }

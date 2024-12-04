@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.LocalDate;
 
-@JsonPropertyOrder({ "title",
+@JsonPropertyOrder({"title",
         "original_title",
         "poster_path",
         "backdrop_path",
@@ -16,7 +16,9 @@ import java.time.LocalDate;
         "vote_average",
         "api_id",
         "genres",
-        "production_companies"})
+        "production_companies",
+        "cast",
+        "crew"})
 public class MovieDetailsDTO extends MediaDetailsDTO {
     private String title;
 

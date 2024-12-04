@@ -10,7 +10,6 @@ public abstract class CreditApiDTO {
     @JsonProperty("profile_path")
     private String profilePath;
 
-
     public long getId() {
         return id;
     }

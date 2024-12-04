@@ -6,11 +6,11 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "crew_tv")
 public class CrewTvSeries extends CreditTvSeries {
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "job_id", referencedColumnName = "id")
     private JobCrew job;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "crew_id", referencedColumnName = "id")
     private Crew crew;
 

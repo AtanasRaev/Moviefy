@@ -2,7 +2,6 @@ package com.watchitnow.utils;
 
 import com.watchitnow.database.model.dto.apiDto.CastApiApiDTO;
 import com.watchitnow.database.model.entity.credit.Cast.Cast;
-import com.watchitnow.database.model.entity.media.Media;
 import org.springframework.stereotype.Component;
 
 @Component

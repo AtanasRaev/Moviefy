@@ -92,15 +92,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public TvSeriesDetailsDTO getTvSeriesById(long id) {
+    public TvSeriesDetailsDTO getTvSeriesDetailsById(long id) {
         TvSeriesDetailsDTO tv = this.modelMapper.map(this.tvSeriesRepository.findTvSeriesById(id), TvSeriesDetailsDTO.class);
         if (tv == null) {
             return null;
         }
+
         tv.setSeasons(tv.getSeasons().stream()
                 .sorted(Comparator.comparingInt(SeasonTvSeriesDTO::getSeasonNumber))
                 .collect(Collectors.toCollection(LinkedHashSet::new)));
 
+        tv.setCast(this.castService.getCastByMediaId("tv", id));
+        tv.setCrew(this.crewService.getCrewByMediaId("tv", id));
         return tv;
     }
 
@@ -112,13 +115,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .collect(Collectors.toSet());
     }
 
+    @Override
+    public Page<TvSeriesPageDTO> getMostPopularTvSeries(Pageable pageable) {
+        return null;
+    }
+
 
     //     @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateTvSeries() {
     }
 
-//    @Scheduled(fixedDelay = 500000)
+    //    @Scheduled(fixedDelay = 500000)
     private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 

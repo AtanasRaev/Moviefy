@@ -87,8 +87,11 @@ public class MovieServiceImpl implements MovieService {
 
 
     @Override
-    public MovieDetailsDTO getMovieById(long id) {
-        return this.modelMapper.map(this.movieRepository.findMovieById(id), MovieDetailsDTO.class);
+    public MovieDetailsDTO getMovieDetailsById(long id) {
+        MovieDetailsDTO movie = this.modelMapper.map(this.movieRepository.findMovieById(id), MovieDetailsDTO.class);
+        movie.setCast(this.castService.getCastByMediaId("movie", id));
+        movie.setCrew(this.crewService.getCrewByMediaId("movie", id));
+        return movie;
     }
 
     @Override
@@ -99,12 +102,19 @@ public class MovieServiceImpl implements MovieService {
                 .collect(Collectors.toSet());
     }
 
+    @Override
+    public Page<MoviePageDTO> getMostPopularMovies(Pageable pageable) {
+        List<Movie> allByPopularityDesc = this.movieRepository.findAllByPopularityDesc();
+
+        return null;
+    }
+
     //    @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateMovies() {
     }
 
-//    @Scheduled(fixedDelay = 500000)
+    //    @Scheduled(fixedDelay = 500000)
     private void fetchMovies() {
         logger.info("Starting to fetch movies...");
 

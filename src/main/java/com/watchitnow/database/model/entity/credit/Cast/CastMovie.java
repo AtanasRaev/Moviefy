@@ -9,7 +9,7 @@ public class CastMovie extends CreditMovie {
     @Column
     private String character;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cast_id", referencedColumnName = "id")
     private Cast cast;
 

@@ -43,15 +43,11 @@ public class MediaController {
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
         if (isMediaTypeInvalid(mediaType)) {
-            return buildErrorResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid request",
-                    String.format("The media type '%s' is invalid. It must be 'tv' or 'movie'.", mediaType)
-            );
+            return getInvalidRequest(mediaType);
         }
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
-        Page<?> contentPage = fetchContentByMediaType(mediaType, pageable);
+        Page<?> contentPage = getLatestMediaPage(mediaType, pageable);
 
         return ResponseEntity.ok(Map.of(
                 "items_on_page", contentPage.getNumberOfElements(),
@@ -68,11 +64,7 @@ public class MediaController {
             @PathVariable Long id) {
 
         if (isMediaTypeInvalid(mediaType)) {
-            return buildErrorResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid request",
-                    String.format("The media type '%s' is invalid. It must be 'tv' or 'movie'.", mediaType)
-            );
+            return getInvalidRequest(mediaType);
         }
 
         MediaDetailsDTO media = fetchMediaById(mediaType, id);
@@ -86,6 +78,23 @@ public class MediaController {
         }
 
         return ResponseEntity.ok(Map.of(mediaType, media));
+    }
+
+
+    @GetMapping("/{mediaType}/popularity")
+    public ResponseEntity<Map<String, Object>> getMostPopularMedia(
+            @PathVariable String mediaType,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
+
+        if (isMediaTypeInvalid(mediaType)) {
+            return getInvalidRequest(mediaType);
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
+        Page<?> contentPage = getMostPopularMediaPage(mediaType, pageable);
+
+        return null;
     }
 
 
@@ -132,8 +141,13 @@ public class MediaController {
                 .body(response);
     }
 
+    private Page<?> getMostPopularMediaPage(String mediaType, Pageable pageable) {
+        return "movie".equalsIgnoreCase(mediaType)
+                ? movieService.getMostPopularMovies(pageable)
+                : tvSeriesService.getMostPopularTvSeries(pageable);
+    }
 
-    private Page<?> fetchContentByMediaType(String mediaType, Pageable pageable) {
+    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable) {
         return "movie".equalsIgnoreCase(mediaType)
                 ? movieService.getMoviesFromCurrentMonth(pageable)
                 : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
@@ -141,7 +155,15 @@ public class MediaController {
 
     private MediaDetailsDTO fetchMediaById(String mediaType, Long id) {
         return "movie".equalsIgnoreCase(mediaType)
-                ? movieService.getMovieById(id)
-                : tvSeriesService.getTvSeriesById(id);
+                ? movieService.getMovieDetailsById(id)
+                : tvSeriesService.getTvSeriesDetailsById(id);
+    }
+
+    private ResponseEntity<Map<String, Object>> getInvalidRequest(String input) {
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Invalid request",
+                String.format("The media type '%s' is invalid. It must be 'tv' or 'movie'.", input)
+        );
     }
 }

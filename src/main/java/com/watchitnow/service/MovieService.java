@@ -10,7 +10,9 @@ import java.util.Set;
 public interface MovieService {
     Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable);
 
-    MovieDetailsDTO getMovieById(long id);
+    MovieDetailsDTO getMovieDetailsById(long id);
 
     Set<MoviePageDTO> getMoviesByGenre(String genreType);
+
+    Page<MoviePageDTO> getMostPopularMovies(Pageable pageable);
 }
