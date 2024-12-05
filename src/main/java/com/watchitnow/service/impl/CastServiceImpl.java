@@ -123,9 +123,11 @@ public class CastServiceImpl implements CastService {
             castPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
                     CastPageDTO::new,
                     castMovieRepository::findCastByMovieId,
+                    CastPageDTO::setId,
                     CastPageDTO::setCharacter,
                     CastPageDTO::setName,
                     CastPageDTO::setProfilePath,
+                    CastMovie::getId,
                     CastMovie::getCharacter,
                     cm -> cm.getCast().getName(),
                     cm -> cm.getCast().getProfilePath())
@@ -134,9 +136,11 @@ public class CastServiceImpl implements CastService {
             castPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
                     CastPageDTO::new,
                     castTvSeriesRepository::findCastByTvSeriesId,
+                    CastPageDTO::setId,
                     CastPageDTO::setCharacter,
                     CastPageDTO::setName,
                     CastPageDTO::setProfilePath,
+                    CastTvSeries::getId,
                     CastTvSeries::getCharacter,
                     cm -> cm.getCast().getName(),
                     cm -> cm.getCast().getProfilePath())

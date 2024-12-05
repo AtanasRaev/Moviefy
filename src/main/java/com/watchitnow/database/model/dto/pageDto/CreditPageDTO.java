@@ -1,9 +1,19 @@
 package com.watchitnow.database.model.dto.pageDto;
 
 public abstract class CreditPageDTO {
+    private Long id;
+
     private String name;
 
     private String profilePath;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;

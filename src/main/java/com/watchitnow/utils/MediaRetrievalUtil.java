@@ -1,13 +1,11 @@
 package com.watchitnow.utils;
 
-import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.entity.media.Movie;
 import com.watchitnow.database.model.entity.media.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.*;

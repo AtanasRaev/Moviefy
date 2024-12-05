@@ -2,6 +2,7 @@ package com.watchitnow.utils;
 
 import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.MediaResponseCreditsDTO;
+import com.watchitnow.database.model.dto.pageDto.CastPageDTO;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -51,9 +52,11 @@ public class CreditRetrievalUtil {
     public <T, R> Set<R> getCreditByMediaId(Long mediaId,
                                             Supplier<R> creditSupplier,
                                             Function<Long, List<T>> findCreditByMovieId,
+                                            BiConsumer<R, Long> mapId,
                                             BiConsumer<R, String> mapField,
                                             BiConsumer<R, String> mapName,
                                             BiConsumer<R, String> mapProfilePath,
+                                            Function<T, Long> getId,
                                             Function<T, String> getFiled,
                                             Function<T, String> getName,
                                             Function<T, String> getProfilePath) {
@@ -62,6 +65,7 @@ public class CreditRetrievalUtil {
                 .stream()
                 .map(c -> {
                     R credit = creditSupplier.get();
+                    mapId.accept(credit, getId.apply(c));
                     mapField.accept(credit, getFiled.apply(c));
                     mapName.accept(credit, getName.apply(c));
                     mapProfilePath.accept(credit, getProfilePath.apply(c));
@@ -69,5 +73,4 @@ public class CreditRetrievalUtil {
                 })
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
-
 }

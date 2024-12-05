@@ -93,7 +93,7 @@ public class MovieServiceImpl implements MovieService {
 
 
     @Override
-    public MovieDetailsDTO getMovieDetailsById(long id) {
+    public MovieDetailsDTO getMovieDetailsById(Long id) {
         MovieDetailsDTO movie = this.modelMapper.map(this.movieRepository.findMovieById(id), MovieDetailsDTO.class);
         movie.setCast(this.castService.getCastByMediaId("movie", id));
         movie.setCrew(this.crewService.getCrewByMediaId("movie", id));

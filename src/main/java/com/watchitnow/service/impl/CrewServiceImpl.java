@@ -3,10 +3,7 @@ package com.watchitnow.service.impl;
 import com.watchitnow.database.model.dto.apiDto.CreditApiDTO;
 import com.watchitnow.database.model.dto.apiDto.CrewApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MediaResponseCreditsDTO;
-import com.watchitnow.database.model.dto.pageDto.CastPageDTO;
 import com.watchitnow.database.model.dto.pageDto.CrewPageDTO;
-import com.watchitnow.database.model.entity.credit.Cast.CastMovie;
-import com.watchitnow.database.model.entity.credit.Cast.CastTvSeries;
 import com.watchitnow.database.model.entity.credit.Credit;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
 import com.watchitnow.database.model.entity.credit.Crew.CrewMovie;
@@ -120,9 +117,11 @@ public class CrewServiceImpl implements CrewService {
             crewPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
                     CrewPageDTO::new,
                     crewMovieRepository::findCrewByMovieId,
+                    CrewPageDTO::setId,
                     CrewPageDTO::setJob,
                     CrewPageDTO::setName,
                     CrewPageDTO::setProfilePath,
+                    CrewMovie::getId,
                     cm -> cm.getJob().getJob(),
                     cm -> cm.getCrew().getName(),
                     cm -> cm.getCrew().getProfilePath())
@@ -131,12 +130,15 @@ public class CrewServiceImpl implements CrewService {
             crewPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
                     CrewPageDTO::new,
                     crewTvSeriesRepository::findCrewByTvSeriesId,
+                    CrewPageDTO::setId,
                     CrewPageDTO::setJob,
                     CrewPageDTO::setName,
                     CrewPageDTO::setProfilePath,
+                    CrewTvSeries::getId,
                     cm -> cm.getJob().getJob(),
                     cm -> cm.getCrew().getName(),
                     cm -> cm.getCrew().getProfilePath())
+
             );
         } else {
             throw new IllegalArgumentException("Unsupported media type: " + mediaType);
@@ -144,7 +146,6 @@ public class CrewServiceImpl implements CrewService {
 
         return crewPageDTOs;
     }
-
 
     private JobCrew findOrCreateJob(String jobName) {
         Optional<JobCrew> optional = jobCrewRepository.findByJob(jobName);
