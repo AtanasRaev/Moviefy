@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.Set;
 
 public interface TvSeriesService {
-    Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable);
+    Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable, int totalPages);
 
     TvSeriesDetailsDTO getTvSeriesDetailsById(long id);
 

@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.Set;
 
 public interface MovieService {
-    Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable);
+    Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable, int totalPages);
 
     MovieDetailsDTO getMovieDetailsById(Long id);
 

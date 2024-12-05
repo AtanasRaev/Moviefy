@@ -12,6 +12,8 @@ import com.watchitnow.database.model.entity.credit.Cast.Cast;
 import com.watchitnow.database.model.entity.credit.Cast.CastTvSeries;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
 import com.watchitnow.database.model.entity.credit.Crew.CrewTvSeries;
+import com.watchitnow.database.model.entity.genre.MovieGenre;
+import com.watchitnow.database.model.entity.genre.SeriesGenre;
 import com.watchitnow.database.model.entity.media.SeasonTvSeries;
 import com.watchitnow.database.model.entity.media.TvSeries;
 import com.watchitnow.database.repository.CastTvSeriesRepository;
@@ -84,13 +86,15 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable) {
-        return mediaRetrievalUtil.fetchContentFromDateRange(
+    public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable, int totalPages) {
+        return mediaRetrievalUtil.fetchContentFromDateRange(totalPages,
                 pageable,
                 dateRange -> tvSeriesRepository.findByFirstAirDateBetweenWithGenres(dateRange.start(), dateRange.end()),
                 tvSeries -> {
                     TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
-                    tvSeries.getGenres().stream().findFirst().ifPresent(g -> map.setGenre(g.getName()));
+                    tvSeries.getGenres().stream()
+                            .min(Comparator.comparing(SeriesGenre::getId))
+                            .ifPresent(g -> map.setGenre(g.getName()));
                     return map;
                 }
         );

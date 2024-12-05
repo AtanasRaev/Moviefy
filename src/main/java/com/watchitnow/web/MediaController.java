@@ -46,13 +46,16 @@ public class MediaController {
             return getInvalidRequest(mediaType);
         }
 
+        int totalPages = 10;
+
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
-        Page<?> contentPage = getLatestMediaPage(mediaType, pageable);
+        int pageSize = pageable.getPageSize();
+        Page<?> contentPage = getLatestMediaPage(mediaType, pageable, totalPages);
 
         return ResponseEntity.ok(Map.of(
                 "items_on_page", contentPage.getNumberOfElements(),
-                "total_items", contentPage.getTotalElements(),
-                "total_pages", contentPage.getTotalPages(),
+                "total_items", pageSize * totalPages,
+                "total_pages", totalPages,
                 "current_page", contentPage.getNumber() + 1,
                 mediaType, contentPage.getContent()
         ));
@@ -147,10 +150,10 @@ public class MediaController {
                 : tvSeriesService.getMostPopularTvSeries(pageable);
     }
 
-    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable) {
+    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, int totalPages) {
         return "movie".equalsIgnoreCase(mediaType)
-                ? movieService.getMoviesFromCurrentMonth(pageable)
-                : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
+                ? movieService.getMoviesFromCurrentMonth(pageable, totalPages)
+                : tvSeriesService.getTvSeriesFromCurrentMonth(pageable, totalPages);
     }
 
     private MediaDetailsDTO fetchMediaById(String mediaType, Long id) {

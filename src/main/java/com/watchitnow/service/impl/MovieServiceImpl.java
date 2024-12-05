@@ -11,6 +11,7 @@ import com.watchitnow.database.model.entity.credit.Cast.Cast;
 import com.watchitnow.database.model.entity.credit.Cast.CastMovie;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
 import com.watchitnow.database.model.entity.credit.Crew.CrewMovie;
+import com.watchitnow.database.model.entity.genre.MovieGenre;
 import com.watchitnow.database.model.entity.media.Movie;
 import com.watchitnow.database.repository.CastMovieRepository;
 import com.watchitnow.database.repository.CrewMovieRepository;
@@ -28,9 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,13 +78,15 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable) {
-        return mediaRetrievalUtil.fetchContentFromDateRange(
+    public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable, int totalPages) {
+        return mediaRetrievalUtil.fetchContentFromDateRange(totalPages,
                 pageable,
                 dateRange -> movieRepository.findByReleaseDateBetweenWithGenres(dateRange.start(), dateRange.end()),
                 movie -> {
                     MoviePageDTO map = modelMapper.map(movie, MoviePageDTO.class);
-                    movie.getGenres().stream().findFirst().ifPresent(g -> map.setGenre(g.getName()));
+                    movie.getGenres().stream()
+                            .min(Comparator.comparing(MovieGenre::getId))
+                            .ifPresent(g -> map.setGenre(g.getName()));
                     return map;
                 }
         );
