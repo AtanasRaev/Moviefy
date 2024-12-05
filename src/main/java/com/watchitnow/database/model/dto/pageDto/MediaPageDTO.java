@@ -2,15 +2,13 @@ package com.watchitnow.database.model.dto.pageDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Set;
-
 public abstract class MediaPageDTO {
     private Long id;
 
     @JsonProperty("poster_path")
     private String posterPath;
 
-    private Set<GenrePageDTO> genres;
+    private String genre;
 
     public Long getId() {
         return id;
@@ -28,11 +26,11 @@ public abstract class MediaPageDTO {
         this.posterPath = posterPath;
     }
 
-    public Set<GenrePageDTO> getGenres() {
-        return genres;
+    public String getGenre() {
+        return genre;
     }
 
-    public void setGenres(Set<GenrePageDTO> genres) {
-        this.genres = genres;
+    public void setGenre(String genre) {
+        this.genre = genre;
     }
 }

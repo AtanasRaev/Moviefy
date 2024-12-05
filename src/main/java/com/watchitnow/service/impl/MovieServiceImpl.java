@@ -2,7 +2,9 @@ package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.*;
+import com.watchitnow.database.model.dto.databaseDto.GenreDTO;
 import com.watchitnow.database.model.dto.detailsDto.MovieDetailsDTO;
+import com.watchitnow.database.model.dto.pageDto.GenrePageDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.credit.Cast.Cast;
@@ -81,7 +83,11 @@ public class MovieServiceImpl implements MovieService {
         return mediaRetrievalUtil.fetchContentFromDateRange(
                 pageable,
                 dateRange -> movieRepository.findByReleaseDateBetweenWithGenres(dateRange.start(), dateRange.end()),
-                movie -> modelMapper.map(movie, MoviePageDTO.class)
+                movie -> {
+                    MoviePageDTO map = modelMapper.map(movie, MoviePageDTO.class);
+                    movie.getGenres().stream().findFirst().ifPresent(g -> map.setGenre(g.getName()));
+                    return map;
+                }
         );
     }
 

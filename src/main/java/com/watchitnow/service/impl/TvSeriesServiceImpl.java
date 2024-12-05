@@ -5,6 +5,7 @@ import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 import com.watchitnow.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
+import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.credit.Cast.Cast;
@@ -87,7 +88,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return mediaRetrievalUtil.fetchContentFromDateRange(
                 pageable,
                 dateRange -> tvSeriesRepository.findByFirstAirDateBetweenWithGenres(dateRange.start(), dateRange.end()),
-                tvSeries -> modelMapper.map(tvSeries, TvSeriesPageDTO.class)
+                tvSeries -> {
+                    TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
+                    tvSeries.getGenres().stream().findFirst().ifPresent(g -> map.setGenre(g.getName()));
+                    return map;
+                }
         );
     }
 
