@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -39,8 +40,8 @@ public class MediaController {
     @GetMapping("/{mediaType}/latest")
     public ResponseEntity<Map<String, Object>> getLatestMedia(
             @PathVariable String mediaType,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-            @RequestParam(defaultValue = "1") @Min(1) int page) {
+            @RequestParam(defaultValue = "20") @Min(10) @Max(100) int size,
+            @RequestParam(defaultValue = "1") @Min(1) @Max(10) int page) {
 
         if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
@@ -84,20 +85,19 @@ public class MediaController {
     }
 
 
-    @GetMapping("/{mediaType}/popularity")
+    @GetMapping("/{mediaType}/popular")
     public ResponseEntity<Map<String, Object>> getMostPopularMedia(
-            @PathVariable String mediaType,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-            @RequestParam(defaultValue = "1") @Min(1) int page) {
+            @PathVariable String mediaType) {
 
         if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
-        Page<?> contentPage = getMostPopularMediaPage(mediaType, pageable);
+        int totalItems = 10;
 
-        return null;
+        List<?> mediaList = getMostPopularMediaList(mediaType, totalItems);
+
+        return ResponseEntity.ok(Map.of(mediaType, mediaList));
     }
 
 
@@ -144,10 +144,10 @@ public class MediaController {
                 .body(response);
     }
 
-    private Page<?> getMostPopularMediaPage(String mediaType, Pageable pageable) {
+    private List<?> getMostPopularMediaList(String mediaType, int totalItems) {
         return "movie".equalsIgnoreCase(mediaType)
-                ? movieService.getMostPopularMovies(pageable)
-                : tvSeriesService.getMostPopularTvSeries(pageable);
+                ? movieService.getMostPopularMovies(totalItems)
+                : tvSeriesService.getMostPopularTvSeries(totalItems);
     }
 
     private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, int totalPages) {

@@ -20,7 +20,7 @@ public class SeasonTvSeries {
     @Column
     private Integer seasonNumber;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tv_series_id")
     private TvSeries tvSeries;
 

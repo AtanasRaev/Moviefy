@@ -8,8 +8,6 @@ public abstract class MediaPageDTO {
     @JsonProperty("poster_path")
     private String posterPath;
 
-    private String genre;
-
     public Long getId() {
         return id;
     }
@@ -24,13 +22,5 @@ public abstract class MediaPageDTO {
 
     public void setPosterPath(String posterPath) {
         this.posterPath = posterPath;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
     }
 }

@@ -2,16 +2,13 @@ package com.watchitnow.service.impl;
 
 import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.*;
-import com.watchitnow.database.model.dto.databaseDto.GenreDTO;
 import com.watchitnow.database.model.dto.detailsDto.MovieDetailsDTO;
-import com.watchitnow.database.model.dto.pageDto.GenrePageDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.credit.Cast.Cast;
 import com.watchitnow.database.model.entity.credit.Cast.CastMovie;
 import com.watchitnow.database.model.entity.credit.Crew.Crew;
 import com.watchitnow.database.model.entity.credit.Crew.CrewMovie;
-import com.watchitnow.database.model.entity.genre.MovieGenre;
 import com.watchitnow.database.model.entity.media.Movie;
 import com.watchitnow.database.repository.CastMovieRepository;
 import com.watchitnow.database.repository.CrewMovieRepository;
@@ -29,7 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -82,16 +81,9 @@ public class MovieServiceImpl implements MovieService {
         return mediaRetrievalUtil.fetchContentFromDateRange(totalPages,
                 pageable,
                 dateRange -> movieRepository.findByReleaseDateBetweenWithGenres(dateRange.start(), dateRange.end()),
-                movie -> {
-                    MoviePageDTO map = modelMapper.map(movie, MoviePageDTO.class);
-                    movie.getGenres().stream()
-                            .min(Comparator.comparing(MovieGenre::getId))
-                            .ifPresent(g -> map.setGenre(g.getName()));
-                    return map;
-                }
+                movie -> modelMapper.map(movie, MoviePageDTO.class)
         );
     }
-
 
     @Override
     public MovieDetailsDTO getMovieDetailsById(Long id) {
@@ -110,10 +102,11 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public Page<MoviePageDTO> getMostPopularMovies(Pageable pageable) {
-        List<Movie> allByPopularityDesc = this.movieRepository.findAllByPopularityDesc();
-
-        return null;
+    public List<MoviePageDTO> getMostPopularMovies(int totalItems) {
+        return this.movieRepository.findAllByPopularityDesc(totalItems)
+                .stream()
+                .map(movie -> modelMapper.map(movie, MoviePageDTO.class))
+                .toList();
     }
 
     //    @Scheduled(fixedDelay = 100000000)

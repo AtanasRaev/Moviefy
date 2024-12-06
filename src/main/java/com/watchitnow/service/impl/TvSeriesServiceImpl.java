@@ -87,14 +87,24 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable, int totalPages) {
-        return mediaRetrievalUtil.fetchContentFromDateRange(totalPages,
+        return mediaRetrievalUtil.fetchContentFromDateRange(
+                totalPages,
                 pageable,
                 dateRange -> tvSeriesRepository.findByFirstAirDateBetweenWithGenres(dateRange.start(), dateRange.end()),
                 tvSeries -> {
                     TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
-                    tvSeries.getGenres().stream()
-                            .min(Comparator.comparing(SeriesGenre::getId))
-                            .ifPresent(g -> map.setGenre(g.getName()));
+
+                    Set<SeasonTvSeries> seasons = tvSeries.getSeasons();
+                    if (seasons != null && !seasons.isEmpty()) {
+                        seasons.stream()
+                                .max(Comparator.comparing(SeasonTvSeries::getSeasonNumber))
+                                .ifPresent(lastSeason -> {
+                                    map.setSeasonsCount(lastSeason.getSeasonNumber() > 411
+                                            ? lastSeason.getSeasonNumber()
+                                            : seasons.size());
+                                    map.setEpisodeTime(lastSeason.getEpisodeCount());
+                                });
+                    }
                     return map;
                 }
         );
@@ -125,7 +135,16 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public Page<TvSeriesPageDTO> getMostPopularTvSeries(Pageable pageable) {
+    public List<TvSeriesPageDTO> getMostPopularTvSeries(int totalItems) {
+//        LocalDate endDate = LocalDate.now();
+//        LocalDate startDate = endDate.minusYears(10);
+//        List<TvSeries> allSortedByPopularityAndReleaseDate = this.tvSeriesRepository.findAllSortedByPopularityAndReleaseDate(startDate, endDate, totalItems * 10);
+//        List<TvSeries> list = allSortedByPopularityAndReleaseDate.stream()
+//                .sorted(Comparator.comparing(TvSeries::getFirstAirDate).reversed())
+//                .limit(totalItems)
+//                .toList();
+//
+//        System.out.println();
         return null;
     }
 

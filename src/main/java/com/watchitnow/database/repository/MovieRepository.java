@@ -33,6 +33,6 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.genres g WHERE g.name = :genreName")
     List<Movie> findByGenreName(@Param("genreName") String genreName);
 
-    @Query("SELECT m FROM Movie m ORDER BY m.popularity DESC")
-    List<Movie> findAllByPopularityDesc();
+    @Query("SELECT m FROM Movie m ORDER BY m.popularity DESC LIMIT :totalItems")
+    List<Movie> findAllByPopularityDesc(@Param("totalItems") int totalItems);
 }
