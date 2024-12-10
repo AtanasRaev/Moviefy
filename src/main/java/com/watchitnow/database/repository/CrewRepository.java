@@ -1,6 +1,6 @@
 package com.watchitnow.database.repository;
 
-import com.watchitnow.database.model.entity.credit.Crew.Crew;
+import com.watchitnow.database.model.entity.credit.crew.Crew;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

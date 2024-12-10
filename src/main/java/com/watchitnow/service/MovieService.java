@@ -2,6 +2,7 @@ package com.watchitnow.service;
 
 import com.watchitnow.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
+import com.watchitnow.database.model.dto.pageDto.MoviePopularDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,5 +16,5 @@ public interface MovieService {
 
     Set<MoviePageDTO> getMoviesByGenre(String genreType);
 
-    List<MoviePageDTO> getMostPopularMovies(int totalItems);
+    List<MoviePopularDTO> getMostPopularMovies(int totalItems);
 }

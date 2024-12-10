@@ -3,7 +3,7 @@ package com.watchitnow.service;
 import com.watchitnow.database.model.dto.apiDto.CrewApiDTO;
 import com.watchitnow.database.model.dto.apiDto.MediaResponseCreditsDTO;
 import com.watchitnow.database.model.dto.pageDto.CrewPageDTO;
-import com.watchitnow.database.model.entity.credit.Crew.Crew;
+import com.watchitnow.database.model.entity.credit.crew.Crew;
 
 import java.util.List;
 import java.util.Optional;

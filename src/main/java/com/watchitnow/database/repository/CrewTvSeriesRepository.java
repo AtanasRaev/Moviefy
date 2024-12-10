@@ -1,7 +1,6 @@
 package com.watchitnow.database.repository;
 
-import com.watchitnow.database.model.entity.credit.Cast.CastMovie;
-import com.watchitnow.database.model.entity.credit.Crew.CrewTvSeries;
+import com.watchitnow.database.model.entity.credit.crew.CrewTvSeries;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

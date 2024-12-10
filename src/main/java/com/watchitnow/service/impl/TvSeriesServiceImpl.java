@@ -5,15 +5,12 @@ import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 import com.watchitnow.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
-import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
 import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
-import com.watchitnow.database.model.entity.credit.Cast.Cast;
-import com.watchitnow.database.model.entity.credit.Cast.CastTvSeries;
-import com.watchitnow.database.model.entity.credit.Crew.Crew;
-import com.watchitnow.database.model.entity.credit.Crew.CrewTvSeries;
-import com.watchitnow.database.model.entity.genre.MovieGenre;
-import com.watchitnow.database.model.entity.genre.SeriesGenre;
+import com.watchitnow.database.model.entity.credit.cast.Cast;
+import com.watchitnow.database.model.entity.credit.cast.CastTvSeries;
+import com.watchitnow.database.model.entity.credit.crew.Crew;
+import com.watchitnow.database.model.entity.credit.crew.CrewTvSeries;
 import com.watchitnow.database.model.entity.media.SeasonTvSeries;
 import com.watchitnow.database.model.entity.media.TvSeries;
 import com.watchitnow.database.repository.CastTvSeriesRepository;
@@ -29,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -96,14 +92,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
                     Set<SeasonTvSeries> seasons = tvSeries.getSeasons();
                     if (seasons != null && !seasons.isEmpty()) {
-                        seasons.stream()
-                                .max(Comparator.comparing(SeasonTvSeries::getSeasonNumber))
-                                .ifPresent(lastSeason -> {
-                                    map.setSeasonsCount(lastSeason.getSeasonNumber() > 411
-                                            ? lastSeason.getSeasonNumber()
-                                            : seasons.size());
-                                    map.setEpisodeTime(lastSeason.getEpisodeCount());
-                                });
+                        mapSeasonsToPageDTO(seasons, map);
                     }
                     return map;
                 }
@@ -136,16 +125,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     public List<TvSeriesPageDTO> getMostPopularTvSeries(int totalItems) {
-//        LocalDate endDate = LocalDate.now();
-//        LocalDate startDate = endDate.minusYears(10);
-//        List<TvSeries> allSortedByPopularityAndReleaseDate = this.tvSeriesRepository.findAllSortedByPopularityAndReleaseDate(startDate, endDate, totalItems * 10);
-//        List<TvSeries> list = allSortedByPopularityAndReleaseDate.stream()
-//                .sorted(Comparator.comparing(TvSeries::getFirstAirDate).reversed())
-//                .limit(totalItems)
-//                .toList();
-//
-//        System.out.println();
-        return null;
+        return this.tvSeriesRepository.findAllSortedByPopularity(totalItems)
+                .stream()
+                .map(tvSeries -> {
+                    TvSeriesPageDTO map = this.modelMapper.map(tvSeries, TvSeriesPageDTO.class);
+                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+                    return map;
+                })
+                .toList();
     }
 
 
@@ -262,10 +249,24 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
     }
 
+    private static void mapSeasonsToPageDTO(Set<SeasonTvSeries> seasons, TvSeriesPageDTO map) {
+        seasons.stream()
+                .max(Comparator.comparing(SeasonTvSeries::getSeasonNumber))
+                .ifPresent(lastSeason -> {
+                    map.setSeasonsCount(lastSeason.getSeasonNumber() > 411
+                            ? lastSeason.getSeasonNumber()
+                            : seasons.size());
+                });
+    }
+
     private Set<SeasonTvSeries> mapSeasonsFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
         Set<SeasonTvSeries> seasons = new HashSet<>();
 
         for (SeasonDTO seasonDTO : seasonsResponse.getSeasons()) {
+            if (seasonDTO.getAirDate() == null || seasonDTO.getSeasonNumber() > 0) {
+                continue;
+            }
+
             if (this.seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).isEmpty()) {
                 SeasonTvSeries season = new SeasonTvSeries();
                 season.setApiId(seasonDTO.getId());

@@ -1,4 +1,4 @@
-package com.watchitnow.database.model.entity.credit.Crew;
+package com.watchitnow.database.model.entity.credit.crew;
 
 import jakarta.persistence.*;
 

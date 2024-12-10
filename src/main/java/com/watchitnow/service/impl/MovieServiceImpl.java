@@ -4,11 +4,13 @@ import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
+import com.watchitnow.database.model.dto.pageDto.MoviePopularDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
-import com.watchitnow.database.model.entity.credit.Cast.Cast;
-import com.watchitnow.database.model.entity.credit.Cast.CastMovie;
-import com.watchitnow.database.model.entity.credit.Crew.Crew;
-import com.watchitnow.database.model.entity.credit.Crew.CrewMovie;
+import com.watchitnow.database.model.entity.credit.cast.Cast;
+import com.watchitnow.database.model.entity.credit.cast.CastMovie;
+import com.watchitnow.database.model.entity.credit.crew.Crew;
+import com.watchitnow.database.model.entity.credit.crew.CrewMovie;
+import com.watchitnow.database.model.entity.genre.MovieGenre;
 import com.watchitnow.database.model.entity.media.Movie;
 import com.watchitnow.database.repository.CastMovieRepository;
 import com.watchitnow.database.repository.CrewMovieRepository;
@@ -28,6 +30,7 @@ import org.springframework.web.client.RestClient;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -102,10 +105,15 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MoviePageDTO> getMostPopularMovies(int totalItems) {
+    public List<MoviePopularDTO> getMostPopularMovies(int totalItems) {
         return this.movieRepository.findAllByPopularityDesc(totalItems)
                 .stream()
-                .map(movie -> modelMapper.map(movie, MoviePageDTO.class))
+                .map(movie -> {
+                    MoviePopularDTO map = modelMapper.map(movie, MoviePopularDTO.class);
+                    Optional<MovieGenre> optional = this.movieGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
+                    optional.ifPresent(genre -> map.setGenre(genre.getName()));
+                    return map;
+                })
                 .toList();
     }
 

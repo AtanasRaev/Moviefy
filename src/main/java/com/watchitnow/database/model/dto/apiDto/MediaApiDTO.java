@@ -23,6 +23,9 @@ public abstract class MediaApiDTO {
     @JsonProperty("vote_average")
     private Double voteAverage;
 
+    @JsonProperty("vote_count")
+    private Integer voteCount;
+
     public Long getId() {
         return id;
     }
@@ -77,5 +80,13 @@ public abstract class MediaApiDTO {
 
     public void setVoteAverage(Double voteAverage) {
         this.voteAverage = voteAverage;
+    }
+
+    public Integer getVoteCount() {
+        return voteCount;
+    }
+
+    public void setVoteCount(Integer voteCount) {
+        this.voteCount = voteCount;
     }
 }

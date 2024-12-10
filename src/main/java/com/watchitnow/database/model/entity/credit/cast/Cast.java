@@ -1,4 +1,4 @@
-package com.watchitnow.database.model.entity.credit.Cast;
+package com.watchitnow.database.model.entity.credit.cast;
 
 import com.watchitnow.database.model.entity.credit.Credit;
 import jakarta.persistence.Entity;

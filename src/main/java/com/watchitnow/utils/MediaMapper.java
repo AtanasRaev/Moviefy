@@ -25,6 +25,7 @@ public abstract class MediaMapper {
         media.setOverview(dto.getOverview());
         media.setPosterPath(dto.getPosterPath());
         media.setBackdropPath(dto.getBackdropPath());
+        media.setVoteCount(dto.getVoteCount());
         media.setPopularity(popularity.doubleValue());
         media.setVoteAverage(voteAverage.doubleValue());
 

@@ -52,6 +52,14 @@ public class MovieGenreServiceImpl implements MovieGenreService {
         return genresList;
     }
 
+    @Override
+    public List<MovieGenre> getAllGenresByMovieId(Long movieId) {
+        return this.genreRepository.findByMovieId(movieId)
+                .stream()
+                .sorted(Comparator.comparing(MovieGenre::getId))
+                .toList();
+    }
+
     private GenreResponseApiDTO getResponse() {
         String url = this.apiConfig.getUrl() + "/genre/movie/list?api_key=" + this.apiConfig.getKey();
 

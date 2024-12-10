@@ -11,4 +11,5 @@ public interface SeasonTvSeriesRepository extends JpaRepository<SeasonTvSeries, 
 
     List<SeasonTvSeries> findAllBySeasonNumber(int seasonNumber);
 
+    List<SeasonTvSeries> findAllByTvSeriesId(Long tvSeriesId);
 }

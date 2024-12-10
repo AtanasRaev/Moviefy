@@ -1,11 +1,11 @@
-package com.watchitnow.database.model.entity.credit.Cast;
+package com.watchitnow.database.model.entity.credit.cast;
 
-import com.watchitnow.database.model.entity.credit.CreditTvSeries;
+import com.watchitnow.database.model.entity.credit.CreditMovie;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "cast_tv")
-public class CastTvSeries extends CreditTvSeries {
+@Table(name = "cast_movies")
+public class CastMovie extends CreditMovie {
     @Column
     private String character;
 

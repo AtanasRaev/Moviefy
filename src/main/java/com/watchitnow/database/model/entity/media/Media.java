@@ -26,6 +26,9 @@ public abstract class Media {
     @Column(name = "vote_average")
     private Double voteAverage;
 
+    @Column(name = "vote_count")
+    private Integer voteCount;
+
     @Column
     private String trailer;
 
@@ -75,6 +78,14 @@ public abstract class Media {
 
     public void setPopularity(Double popularity) {
         this.popularity = popularity;
+    }
+
+    public Integer getVoteCount() {
+        return voteCount;
+    }
+
+    public void setVoteCount(Integer voteCount) {
+        this.voteCount = voteCount;
     }
 
     public Double getVoteAverage() {

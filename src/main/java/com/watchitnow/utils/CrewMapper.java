@@ -1,7 +1,7 @@
 package com.watchitnow.utils;
 
 import com.watchitnow.database.model.dto.apiDto.CrewApiDTO;
-import com.watchitnow.database.model.entity.credit.Crew.Crew;
+import com.watchitnow.database.model.entity.credit.crew.Crew;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,0 +1,13 @@
+package com.watchitnow.database.model.dto.pageDto;
+
+public class MoviePopularDTO extends MoviePageDTO {
+    private String genre;
+
+    public String getGenre() {
+        return genre;
+    }
+
+    public void setGenre(String genre) {
+        this.genre = genre;
+    }
+}
