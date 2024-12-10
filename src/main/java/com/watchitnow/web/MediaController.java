@@ -84,10 +84,8 @@ public class MediaController {
         return ResponseEntity.ok(Map.of(mediaType, media));
     }
 
-
     @GetMapping("/{mediaType}/popular")
-    public ResponseEntity<Map<String, Object>> getMostPopularMedia(
-            @PathVariable String mediaType) {
+    public ResponseEntity<Map<String, Object>> getMostPopularMedia(@PathVariable String mediaType) {
 
         if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
@@ -100,6 +98,19 @@ public class MediaController {
         return ResponseEntity.ok(Map.of(mediaType, mediaList));
     }
 
+    @GetMapping("/{mediaType}/best")
+    public ResponseEntity<Map<String, Object>> getBestMedia(@PathVariable String mediaType) {
+
+        if (isMediaTypeInvalid(mediaType)) {
+            return getInvalidRequest(mediaType);
+        }
+
+        int totalItems = 10;
+
+        List<?> mediaList = getBestMediaList(mediaType, totalItems);
+
+        return ResponseEntity.ok(Map.of(mediaType, mediaList));
+    }
 
 //    @GetMapping("/{mediaType}/genre/{genreType}")
 //    public ResponseEntity<Map<String, Object>> getGenres(
@@ -148,6 +159,12 @@ public class MediaController {
         return "movie".equalsIgnoreCase(mediaType)
                 ? movieService.getMostPopularMovies(totalItems)
                 : tvSeriesService.getMostPopularTvSeries(totalItems);
+    }
+
+    private List<?> getBestMediaList(String mediaType, int totalItems) {
+        return "movie".equalsIgnoreCase(mediaType)
+                ? movieService.getBestMovies(totalItems)
+                : tvSeriesService.getBestTvSeries(totalItems);
     }
 
     private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, int totalPages) {

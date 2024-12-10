@@ -3,8 +3,8 @@ package com.watchitnow.service.impl;
 import com.watchitnow.config.ApiConfig;
 import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.detailsDto.MovieDetailsDTO;
-import com.watchitnow.database.model.dto.pageDto.MoviePageDTO;
-import com.watchitnow.database.model.dto.pageDto.MoviePopularDTO;
+import com.watchitnow.database.model.dto.pageDto.movieDto.MoviePageDTO;
+import com.watchitnow.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
 import com.watchitnow.database.model.entity.credit.cast.Cast;
 import com.watchitnow.database.model.entity.credit.cast.CastMovie;
@@ -105,13 +105,29 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MoviePopularDTO> getMostPopularMovies(int totalItems) {
+    public List<MoviePageWithGenreDTO> getMostPopularMovies(int totalItems) {
         return this.movieRepository.findAllByPopularityDesc(totalItems)
                 .stream()
                 .map(movie -> {
-                    MoviePopularDTO map = modelMapper.map(movie, MoviePopularDTO.class);
-                    Optional<MovieGenre> optional = this.movieGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
-                    optional.ifPresent(genre -> map.setGenre(genre.getName()));
+                    MoviePageWithGenreDTO map = modelMapper.map(movie, MoviePageWithGenreDTO.class);
+                    mapOneGenre(map);
+                    return map;
+                })
+                .toList();
+    }
+
+    private void mapOneGenre(MoviePageWithGenreDTO map) {
+        Optional<MovieGenre> optional = this.movieGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
+        optional.ifPresent(genre -> map.setGenre(genre.getName()));
+    }
+
+    @Override
+    public List<MoviePageWithGenreDTO> getBestMovies(int totalItems) {
+        return this.movieRepository.findAllSortedByVoteCount(totalItems)
+                .stream()
+                .map(movie -> {
+                    MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
+                    mapOneGenre(map);
                     return map;
                 })
                 .toList();

@@ -1,7 +1,8 @@
 package com.watchitnow.service;
 
 import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
-import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
+import com.watchitnow.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageDTO;
+import com.watchitnow.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,4 +17,6 @@ public interface TvSeriesService {
     Set<TvSeriesPageDTO> getTvSeriesByGenre(String genreType);
 
     List<TvSeriesPageDTO> getMostPopularTvSeries(int totalItems);
+
+    List<TvSeriesPageWithGenreDTO> getBestTvSeries(int totalItems);
 }

@@ -1,6 +1,6 @@
-package com.watchitnow.database.model.dto.pageDto;
+package com.watchitnow.database.model.dto.pageDto.movieDto;
 
-public class TvSeriesPopularDTO extends TvSeriesPageDTO {
+public class MoviePageWithGenreDTO extends MoviePageDTO {
     private String genre;
 
     public String getGenre() {

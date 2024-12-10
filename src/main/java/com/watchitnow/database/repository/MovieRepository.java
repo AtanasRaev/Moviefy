@@ -35,4 +35,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     @Query("SELECT m FROM Movie m ORDER BY m.popularity DESC LIMIT :totalItems")
     List<Movie> findAllByPopularityDesc(@Param("totalItems") int totalItems);
+
+    @Query("SELECT m FROM Movie m WHERE m.voteCount IS NOT NULL ORDER BY m.voteCount DESC LIMIT :totalItems")
+    List<Movie> findAllSortedByVoteCount(@Param("totalItems") int totalItems);
 }

@@ -1,17 +1,18 @@
-package com.watchitnow.database.model.dto.pageDto;
+package com.watchitnow.database.model.dto.pageDto.tvSeriesDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.watchitnow.database.model.dto.pageDto.MediaPageDTO;
 
 @JsonPropertyOrder({"id", "name", "poster_path", "first_air_date", "seasons", "episode_time", "genres"})
-public class TvSeriesPageDTO extends MediaPageDTO{
+public class TvSeriesPageDTO extends MediaPageDTO {
     private String name;
 
     @JsonProperty("seasons")
     private Integer seasonsCount;
 
-    @JsonProperty("episode_time")
-    private Integer episodeTime;
+    @JsonProperty("episodes_count")
+    private Integer episodesCount;
 
     public String getName() {
         return name;
@@ -29,11 +30,11 @@ public class TvSeriesPageDTO extends MediaPageDTO{
         this.seasonsCount = seasonsCount;
     }
 
-    public Integer getEpisodeTime() {
-        return episodeTime;
+    public Integer getEpisodesCount() {
+        return episodesCount;
     }
 
-    public void setEpisodeTime(Integer episodeTime) {
-        this.episodeTime = episodeTime;
+    public void setEpisodesCount(Integer episodesCount) {
+        this.episodesCount = episodesCount;
     }
 }

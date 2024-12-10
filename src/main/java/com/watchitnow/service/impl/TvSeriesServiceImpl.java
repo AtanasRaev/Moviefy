@@ -5,12 +5,15 @@ import com.watchitnow.database.model.dto.apiDto.*;
 import com.watchitnow.database.model.dto.databaseDto.SeasonDTO;
 import com.watchitnow.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.watchitnow.database.model.dto.detailsDto.TvSeriesDetailsDTO;
-import com.watchitnow.database.model.dto.pageDto.TvSeriesPageDTO;
+import com.watchitnow.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageDTO;
+import com.watchitnow.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
 import com.watchitnow.database.model.entity.ProductionCompany;
+
 import com.watchitnow.database.model.entity.credit.cast.Cast;
 import com.watchitnow.database.model.entity.credit.cast.CastTvSeries;
 import com.watchitnow.database.model.entity.credit.crew.Crew;
 import com.watchitnow.database.model.entity.credit.crew.CrewTvSeries;
+import com.watchitnow.database.model.entity.genre.SeriesGenre;
 import com.watchitnow.database.model.entity.media.SeasonTvSeries;
 import com.watchitnow.database.model.entity.media.TvSeries;
 import com.watchitnow.database.repository.CastTvSeriesRepository;
@@ -135,6 +138,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .toList();
     }
 
+    @Override
+    public List<TvSeriesPageWithGenreDTO> getBestTvSeries(int totalItems) {
+        return this.tvSeriesRepository.findAllSortedByVoteCount(totalItems)
+                .stream()
+                .map(tvSeries -> {
+                    TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
+                    mapOneGenre(map);
+                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+                    return map;
+                })
+                .toList();
+    }
 
     //     @Scheduled(fixedDelay = 100000000)
     //TODO
@@ -256,6 +271,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     map.setSeasonsCount(lastSeason.getSeasonNumber() > 411
                             ? lastSeason.getSeasonNumber()
                             : seasons.size());
+                    map.setEpisodesCount(lastSeason.getEpisodeCount());
                 });
     }
 
@@ -278,6 +294,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             }
         }
         return seasons;
+    }
+
+    private void mapOneGenre(TvSeriesPageWithGenreDTO map) {
+        Optional<SeriesGenre> optional = this.seriesGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
+        optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
 
     private boolean isEmpty() {

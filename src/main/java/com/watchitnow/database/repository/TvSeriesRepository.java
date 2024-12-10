@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,4 +42,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres g WHERE g.name = :genreName")
     List<TvSeries> findByGenreName(@Param("genreName") String genreName);
+
+    @Query("SELECT tv FROM TvSeries tv WHERE tv.voteCount IS NOT NULL ORDER BY tv.voteCount DESC LIMIT :totalItems")
+    List<TvSeries> findAllSortedByVoteCount(@Param("totalItems") int totalItems);
 }

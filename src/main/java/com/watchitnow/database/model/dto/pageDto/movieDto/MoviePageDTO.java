@@ -1,6 +1,7 @@
-package com.watchitnow.database.model.dto.pageDto;
+package com.watchitnow.database.model.dto.pageDto.movieDto;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.watchitnow.database.model.dto.pageDto.MediaPageDTO;
 
 @JsonPropertyOrder({"id", "title", "poster_path", "runtime"})
 public class MoviePageDTO extends MediaPageDTO {
