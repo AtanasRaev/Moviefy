@@ -17,7 +17,7 @@ public class init implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         if (this.moviesGenreService.isEmpty()) {
             this.moviesGenreService.fetchGenres();
         }

@@ -19,4 +19,8 @@ public interface TvSeriesService {
     List<TvSeriesPageDTO> getMostPopularTvSeries(int totalItems);
 
     List<TvSeriesPageWithGenreDTO> getBestTvSeries(int totalItems);
+
+    void fetchSeriesAsync();
+
+    boolean isEmpty();
 }

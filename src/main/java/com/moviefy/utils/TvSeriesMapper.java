@@ -30,7 +30,6 @@ public class TvSeriesMapper extends MediaMapper {
         tvSeries.setName(dto.getName());
         tvSeries.setOriginalName(!dto.getOriginalName().equals(dto.getName()) && !dto.getOriginalName().isBlank() ? dto.getOriginalName() : null);
         tvSeries.setFirstAirDate(dto.getFirstAirDate());
-        tvSeries.setEpisodeRunTime(getEpisodeRunTime(responseById));
         tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));
 
         if (responseById.getStatus() != null && !responseById.getStatus().isBlank()) {

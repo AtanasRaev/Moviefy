@@ -20,7 +20,7 @@ public class ProductionCompany {
     @Column
     private String name;
 
-    @Column(unique = true)
+    @Column(name = "api_id", unique = true)
     private Long apiId;
 
     @ManyToMany(mappedBy = "productionCompanies", fetch = FetchType.LAZY)

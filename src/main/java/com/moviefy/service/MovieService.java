@@ -19,4 +19,8 @@ public interface MovieService {
     List<MoviePageWithGenreDTO> getMostPopularMovies(int totalItems);
 
     List<MoviePageWithGenreDTO> getBestMovies(int totalItems);
+
+    void fetchMoviesAsync();
+
+    boolean isEmpty();
 }

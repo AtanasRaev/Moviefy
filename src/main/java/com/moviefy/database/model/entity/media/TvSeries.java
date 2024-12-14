@@ -29,12 +29,8 @@ public class TvSeries extends Media {
 
     @OneToMany(mappedBy = "tvSeries",
             fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL,
             orphanRemoval = true)
     private Set<SeasonTvSeries> seasons;
-
-    @Column(name = "episode_run_time")
-    private Integer episodeRunTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", referencedColumnName = "id")
@@ -78,14 +74,6 @@ public class TvSeries extends Media {
 
     public void setFirstAirDate(LocalDate firstAirDate) {
         this.firstAirDate = firstAirDate;
-    }
-
-    public Integer getEpisodeRunTime() {
-        return episodeRunTime;
-    }
-
-    public void setEpisodeRunTime(Integer episodeRunTime) {
-        this.episodeRunTime = episodeRunTime;
     }
 
     public StatusTvSeries getStatusTvSeries() {

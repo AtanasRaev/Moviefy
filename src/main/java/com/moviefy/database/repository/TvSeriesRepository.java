@@ -10,18 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
-    @Query("SELECT COUNT(tv) FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = :year AND EXTRACT(MONTH FROM tv.firstAirDate) = :month")
-    long countTvSeriesInDateRange(@Param("year") int year, @Param("month") int month);
-
-    @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate = (SELECT MIN(tv2.firstAirDate) FROM TvSeries tv2)")
-    List<TvSeries> findOldestTvSeries();
-
     @Query("SELECT COUNT(tv) FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = " +
-            "(SELECT MIN(EXTRACT(YEAR FROM tv.firstAirDate)) FROM TvSeries tv)")
-    Long countOldestTvSeries();
+            "(SELECT MAX(EXTRACT(YEAR FROM tv.firstAirDate)) FROM TvSeries tv)")
+    Long countNewestTvSeries();
 
-    @Query("SELECT MIN(EXTRACT(YEAR FROM tv.firstAirDate)) FROM TvSeries tv")
-    Integer findOldestTvSeriesYear();
+    @Query("SELECT MAX(EXTRACT(YEAR FROM tv.firstAirDate)) FROM TvSeries tv")
+    int findNewestTvSeriesYear();
 
     Optional<TvSeries> findByApiId(Long id);
 

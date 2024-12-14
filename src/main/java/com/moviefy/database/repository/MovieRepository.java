@@ -15,14 +15,11 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     Optional<Movie> findByApiId(Long apiId);
 
     @Query("SELECT COUNT(m) FROM Movie m WHERE EXTRACT(YEAR FROM m.releaseDate) = " +
-            "(SELECT MIN(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m)")
-    Long countOldestMovies();
+            "(SELECT MAX(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m)")
+    Long countNewestMovies();
 
-    @Query("SELECT MIN(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m")
-    Integer findOldestMovieYear();
-
-    @Query("SELECT m FROM Movie m WHERE m.releaseDate = (SELECT MIN(m2.releaseDate) FROM Movie m2)")
-    List<Movie> findOldestMovie();
+    @Query("SELECT MAX(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m")
+    Integer findNewestMovieYear();
 
     @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres LEFT JOIN FETCH m.productionCompanies WHERE m.id = :id")
     Optional<Movie> findMovieById(@Param("id") Long id);

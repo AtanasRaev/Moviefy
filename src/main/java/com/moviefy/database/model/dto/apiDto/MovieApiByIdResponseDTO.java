@@ -10,6 +10,9 @@ public class MovieApiByIdResponseDTO {
     @JsonProperty("production_companies")
     private List<ProductionApiDTO> productionCompanies;
 
+    @JsonProperty("belongs_to_collection")
+    private CollectionApiDTO collection;
+
     @NotNull
     @Positive
     private Integer runtime;
@@ -20,6 +23,14 @@ public class MovieApiByIdResponseDTO {
 
     public void setProductionCompanies(List<ProductionApiDTO> productionCompanies) {
         this.productionCompanies = productionCompanies;
+    }
+
+    public CollectionApiDTO getCollection() {
+        return collection;
+    }
+
+    public void setCollection(CollectionApiDTO collection) {
+        this.collection = collection;
     }
 
     public Integer getRuntime() {

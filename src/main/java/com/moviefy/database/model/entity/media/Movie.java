@@ -1,5 +1,6 @@
 package com.moviefy.database.model.entity.media;
 
+import com.moviefy.database.model.entity.Collection;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.genre.MovieGenre;
 import jakarta.persistence.*;
@@ -37,6 +38,10 @@ public class Movie extends Media {
             inverseJoinColumns = @JoinColumn(name = "production_id")
     )
     Set<ProductionCompany> productionCompanies;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collection_id", referencedColumnName = "id")
+    private Collection collection;
 
     public Set<MovieGenre> getGenres() {
         return genres;
@@ -84,5 +89,13 @@ public class Movie extends Media {
 
     public void setProductionCompanies(Set<ProductionCompany> productionCompanies) {
         this.productionCompanies = productionCompanies;
+    }
+
+    public Collection getCollection() {
+        return collection;
+    }
+
+    public void setCollection(Collection collection) {
+        this.collection = collection;
     }
 }
