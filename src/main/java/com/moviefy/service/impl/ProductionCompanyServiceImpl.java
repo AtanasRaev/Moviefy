@@ -3,6 +3,7 @@ package com.moviefy.service.impl;
 import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.ProductionApiDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
 import com.moviefy.database.model.entity.media.Media;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.model.entity.ProductionCompany;
@@ -71,7 +72,7 @@ public class ProductionCompanyServiceImpl implements ProductionCompanyService {
     }
 
     @Override
-    public void saveAllProductionCompanies(Set<ProductionCompany> productionCompanies) {
+    public void saveAllProduction(Set<ProductionCompany> productionCompanies) {
         this.productionCompanyRepository.saveAll(productionCompanies);
     }
 }

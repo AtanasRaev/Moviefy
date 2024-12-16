@@ -7,6 +7,8 @@ import com.moviefy.database.repository.CollectionRepository;
 import com.moviefy.service.CollectionService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CollectionServiceImpl implements CollectionService {
     private final CollectionRepository collectionRepository;
@@ -38,5 +40,10 @@ public class CollectionServiceImpl implements CollectionService {
         saveCollection(collection);
 
         return collection;
+    }
+
+    @Override
+    public List<Collection> findByName(String name) {
+        return this.collectionRepository.findByName(name);
     }
 }

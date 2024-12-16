@@ -20,7 +20,5 @@ public interface TvSeriesService {
 
     List<TvSeriesPageWithGenreDTO> getBestTvSeries(int totalItems);
 
-    void fetchSeriesAsync();
-
     boolean isEmpty();
 }

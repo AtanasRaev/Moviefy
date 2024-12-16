@@ -9,5 +9,5 @@ import java.util.Set;
 public interface ProductionCompanyService {
     Map<String, Set<ProductionCompany>> getProductionCompaniesFromResponse(Object responseById, Media type);
 
-    void saveAllProductionCompanies(Set<ProductionCompany> productionCompanies);
+    void saveAllProduction(Set<ProductionCompany> productionCompanies);
 }

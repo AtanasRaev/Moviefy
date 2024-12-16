@@ -1,6 +1,8 @@
 package com.moviefy.service;
 
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import org.springframework.data.domain.Page;
@@ -20,7 +22,9 @@ public interface MovieService {
 
     List<MoviePageWithGenreDTO> getBestMovies(int totalItems);
 
-    void fetchMoviesAsync();
-
     boolean isEmpty();
+
+    MovieDetailsHomeDTO findFirstMovieByCollectionName(String name);
+
+    List<MovieHomeDTO> findMoviesByCollectionName(String name);
 }

@@ -158,8 +158,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private void updateTvSeries() {
     }
 
-    @Override
-    public void fetchSeriesAsync() {
+    private void fetchSeries() {
         logger.info("Starting to fetch tv series...");
 
         int year = START_YEAR;
@@ -236,7 +235,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 tvSeries.setProductionCompanies(productionCompaniesMap.get("all"));
 
                 if (!productionCompaniesMap.get("toSave").isEmpty()) {
-                    this.productionCompanyService.saveAllProductionCompanies(productionCompaniesMap.get("toSave"));
+                    this.productionCompanyService.saveAllProduction(productionCompaniesMap.get("toSave"));
                 }
 
                 Set<SeasonTvSeries> seasons = mapSeasonsFromResponse(seasonsResponse, tvSeries);

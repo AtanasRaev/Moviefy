@@ -1,6 +1,8 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.service.MovieService;
 import com.moviefy.service.impl.MovieGenreServiceImpl;
 import com.moviefy.service.impl.SeriesGenreServiceImpl;
@@ -110,6 +112,40 @@ public class MediaController {
         List<?> mediaList = getBestMediaList(mediaType, totalItems);
 
         return ResponseEntity.ok(Map.of(mediaType, mediaList));
+    }
+
+    @GetMapping("collection/movies")
+    public ResponseEntity<Map<String, Object>> getCollectionSearch(@RequestParam("name") String input) {
+        if (input == null || input.isBlank()) {
+            return buildErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid request",
+                    "The search must not be empty!"
+            );
+        }
+
+
+        MovieDetailsHomeDTO firstMovie = this.movieService.findFirstMovieByCollectionName(input);
+
+        if (firstMovie == null) {
+            return buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("Not found collection '%s'", input)
+            );
+        }
+
+        Map<String, Object> map = new LinkedHashMap<>();
+
+        List<MovieHomeDTO> list = this.movieService.findMoviesByCollectionName(input)
+                .stream()
+                .skip(1)
+                .toList();
+
+
+        map.put("first_movie", firstMovie);
+        map.put("rest_movies", list);
+        return ResponseEntity.ok(map);
     }
 
 //    @GetMapping("/{mediaType}/genre/{genreType}")

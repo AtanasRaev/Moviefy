@@ -3,6 +3,11 @@ package com.moviefy.service.impl;
 import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
+import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
+import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
+import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.entity.Collection;
@@ -29,10 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.threeten.bp.LocalDate;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -141,13 +143,72 @@ public class MovieServiceImpl implements MovieService {
                 .toList();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return this.movieRepository.count() == 0;
+    }
+
+    @Override
+    public MovieDetailsHomeDTO findFirstMovieByCollectionName(String name) {
+        List<Collection> byName = this.collectionService.findByName(name);
+
+        if (byName.isEmpty()) {
+            return null;
+        }
+
+        Collection collection = byName.get(0);
+
+        Optional<Movie> firstMovie = collection.getMovies()
+                .stream()
+                .min(Comparator.comparing(Movie::getReleaseDate));
+
+        return firstMovie.map(movie -> {
+            MovieDetailsHomeDTO map = this.modelMapper.map(movie, MovieDetailsHomeDTO.class);
+
+            Optional<Movie> byId = this.movieRepository.findMovieById(movie.getId());
+
+            List<ProductionHomePageDTO> production = byId.get().getProductionCompanies()
+                    .stream()
+                    .sorted(Comparator.comparing(ProductionCompany::getId))
+                    .map(p -> this.modelMapper.map(p, ProductionHomePageDTO.class))
+                    .toList();
+
+            List<CrewHomePageDTO> crew = this.crewService.getCrewByMediaId("movie", movie.getId())
+                    .stream()
+                    .sorted(Comparator.comparing(CrewPageDTO::getId))
+                    .map(c -> this.modelMapper.map(c, CrewHomePageDTO.class))
+                    .toList();
+
+            map.setCrew(crew);
+            map.setProductionCompany(production);
+            return map;
+        }).orElse(null);
+    }
+
+    @Override
+    public List<MovieHomeDTO> findMoviesByCollectionName(String name) {
+        List<Collection> byName = this.collectionService.findByName(name);
+
+        if (byName.isEmpty()) {
+            return List.of();
+        }
+
+        Collection collection = byName.get(0);
+
+        return collection.getMovies()
+                .stream()
+                .sorted(Comparator.comparing(Movie::getReleaseDate))
+                .map(movie -> this.modelMapper.map(movie, MovieHomeDTO.class))
+                .toList();
+    }
+
+
     //    @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateMovies() {
     }
 
-    @Override
-    public void fetchMoviesAsync() {
+    private void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
         int year = START_YEAR;
@@ -227,7 +288,7 @@ public class MovieServiceImpl implements MovieService {
                 movie.setProductionCompanies(productionCompanyMap.get("all"));
 
                 if (!productionCompanyMap.get("toSave").isEmpty()) {
-                    this.productionCompanyService.saveAllProductionCompanies(productionCompanyMap.get("toSave"));
+                    this.productionCompanyService.saveAllProduction(productionCompanyMap.get("toSave"));
                 }
 
                 this.movieRepository.save(movie);
@@ -253,11 +314,6 @@ public class MovieServiceImpl implements MovieService {
         }
 
         logger.info("Finished fetching movies.");
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return this.movieRepository.count() == 0;
     }
 
     private static boolean isInvalid(MovieApiDTO dto) {
