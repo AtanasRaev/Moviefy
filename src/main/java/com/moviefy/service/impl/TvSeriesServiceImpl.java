@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.threeten.bp.LocalDate;
@@ -153,7 +154,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .toList();
     }
 
-    //     @Scheduled(fixedDelay = 100000000)
+//    @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateTvSeries() {
     }
@@ -222,7 +223,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     continue;
                 }
 
-                SeasonTvSeriesResponseApiDTO seasonsResponse = getSeasonsResponse(dto.getId());
 
                 TrailerResponseApiDTO responseTrailer = this.trailerMappingUtil.getTrailerResponseById(dto.getId(),
                         this.apiConfig.getUrl(),
@@ -238,12 +238,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     this.productionCompanyService.saveAllProduction(productionCompaniesMap.get("toSave"));
                 }
 
+                SeasonTvSeriesResponseApiDTO seasonsResponse = getSeasonsResponse(dto.getId());
                 Set<SeasonTvSeries> seasons = mapSeasonsFromResponse(seasonsResponse, tvSeries);
                 tvSeries.setSeasons(seasons);
 
                 this.tvSeriesRepository.save(tvSeries);
                 this.seasonTvSeriesRepository.saveAll(seasons);
                 count++;
+
                 logger.info("Saved tv series: {}", tvSeries.getName());
 
                 List<CrewApiDTO> crewDto = responseById.getCrew().stream().limit(6).toList();
@@ -285,10 +287,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     private Set<SeasonTvSeries> mapSeasonsFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
+        if (seasonsResponse == null || tvSeries == null) {
+            return new HashSet<>();
+        }
+
         Set<SeasonTvSeries> seasons = new HashSet<>();
 
         for (SeasonDTO seasonDTO : seasonsResponse.getSeasons()) {
-            if (seasonDTO.getAirDate() == null || seasonDTO.getSeasonNumber() > 0) {
+            if (seasonDTO.getAirDate() == null || seasonDTO.getSeasonNumber() < 1) {
                 continue;
             }
 

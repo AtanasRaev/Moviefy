@@ -15,7 +15,7 @@ public class SeriesGenre {
     @Column
     private String name;
 
-    @Column
+    @Column(name = "api_id", unique = true)
     private Long apiId;
 
     @ManyToMany(mappedBy = "genres", fetch = FetchType.LAZY)

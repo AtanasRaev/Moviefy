@@ -22,7 +22,7 @@ public class MovieGenre {
     @Column(unique = true)
     private String name;
 
-    @Column(name = "api_id")
+    @Column(name = "api_id", unique = true)
     private Long apiId;
 
     @ManyToMany(mappedBy = "genres", fetch = FetchType.LAZY)

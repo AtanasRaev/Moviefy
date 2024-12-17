@@ -19,7 +19,7 @@ public class Collection {
     @Column(name = "poster_path")
     private String posterPath;
 
-    @Column(name = "api_id", unique = true, nullable = false)
+    @Column(name = "api_id", unique = true)
     private long apiId;
 
     @OneToMany(mappedBy = "collection",

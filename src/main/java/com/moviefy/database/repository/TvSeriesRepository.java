@@ -38,4 +38,5 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.voteCount IS NOT NULL ORDER BY tv.voteCount DESC LIMIT :totalItems")
     List<TvSeries> findAllSortedByVoteCount(@Param("totalItems") int totalItems);
+
 }

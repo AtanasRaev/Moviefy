@@ -24,7 +24,7 @@ public class SeasonTvSeries {
     @JoinColumn(name = "tv_series_id", referencedColumnName = "id")
     private TvSeries tvSeries;
 
-    @Column(name = "api_id")
+    @Column(name = "api_id", unique = true)
     private Long apiId;
 
     public Long getId() {

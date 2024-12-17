@@ -34,10 +34,6 @@ public class TvSeriesDetailsDTO extends MediaDetailsDTO {
 
     private Set<SeasonTvSeriesDTO> seasons;
 
-    @JsonProperty("episode_run_time")
-    private Integer episodeRunTime;
-
-
     public String getName() {
         return name;
     }
@@ -76,13 +72,5 @@ public class TvSeriesDetailsDTO extends MediaDetailsDTO {
 
     public void setSeasons(Set<SeasonTvSeriesDTO> seasons) {
         this.seasons = seasons;
-    }
-
-    public Integer getEpisodeRunTime() {
-        return episodeRunTime;
-    }
-
-    public void setEpisodeRunTime(Integer episodeRunTime) {
-        this.episodeRunTime = episodeRunTime;
     }
 }
