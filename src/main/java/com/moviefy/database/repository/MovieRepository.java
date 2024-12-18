@@ -1,6 +1,8 @@
 package com.moviefy.database.repository;
 
 import com.moviefy.database.model.entity.media.Movie;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,8 +26,8 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres LEFT JOIN FETCH m.productionCompanies WHERE m.id = :id")
     Optional<Movie> findMovieById(@Param("id") Long id);
 
-    @Query("SELECT DISTINCT m FROM Movie m JOIN FETCH m.genres WHERE m.releaseDate BETWEEN :startDate AND :endDate")
-    List<Movie> findByReleaseDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    @Query("SELECT m FROM Movie m WHERE m.releaseDate <= :startDate ORDER BY m.releaseDate DESC")
+    Page<Movie> findByReleaseDate(@Param("startDate") LocalDate startDate, Pageable pageable);
 
     @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.genres g WHERE g.name = :genreName")
     List<Movie> findByGenreName(@Param("genreName") String genreName);
@@ -33,6 +35,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m ORDER BY m.popularity DESC LIMIT :totalItems")
     List<Movie> findAllByPopularityDesc(@Param("totalItems") int totalItems);
 
-    @Query("SELECT m FROM Movie m WHERE m.voteCount IS NOT NULL ORDER BY m.voteCount DESC LIMIT :totalItems")
-    List<Movie> findAllSortedByVoteCount(@Param("totalItems") int totalItems);
+    @Query("SELECT m FROM Movie m")
+    Page<Movie> findAllSortedByVoteCount(Pageable pageable);
+
 }

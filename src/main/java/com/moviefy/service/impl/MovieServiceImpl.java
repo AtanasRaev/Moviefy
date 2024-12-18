@@ -22,7 +22,6 @@ import com.moviefy.database.repository.CastMovieRepository;
 import com.moviefy.database.repository.CrewMovieRepository;
 import com.moviefy.database.repository.MovieRepository;
 import com.moviefy.service.*;
-import com.moviefy.utils.MediaRetrievalUtil;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
 import org.modelmapper.ModelMapper;
@@ -32,8 +31,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.threeten.bp.LocalDate;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,7 +50,6 @@ public class MovieServiceImpl implements MovieService {
     private final RestClient restClient;
     private final ModelMapper modelMapper;
     private final TrailerMappingUtil trailerMappingUtil;
-    private final MediaRetrievalUtil mediaRetrievalUtil;
     private final MovieMapper movieMapper;
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
     private static final int START_YEAR = 1970;
@@ -71,7 +69,6 @@ public class MovieServiceImpl implements MovieService {
                             RestClient restClient,
                             ModelMapper modelMapper,
                             TrailerMappingUtil trailerMappingUtil,
-                            MediaRetrievalUtil mediaRetrievalUtil,
                             MovieMapper movieMapper) {
         this.movieRepository = movieRepository;
         this.castMovieRepository = castMovieRepository;
@@ -85,17 +82,15 @@ public class MovieServiceImpl implements MovieService {
         this.restClient = restClient;
         this.modelMapper = modelMapper;
         this.trailerMappingUtil = trailerMappingUtil;
-        this.mediaRetrievalUtil = mediaRetrievalUtil;
         this.movieMapper = movieMapper;
     }
 
     @Override
-    public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable, int totalPages) {
-        return mediaRetrievalUtil.fetchContentFromDateRange(totalPages,
-                pageable,
-                dateRange -> movieRepository.findByReleaseDateBetweenWithGenres(dateRange.start(), dateRange.end()),
-                movie -> modelMapper.map(movie, MoviePageDTO.class)
-        );
+    public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable) {
+        return movieRepository.findByReleaseDate(
+                getStartOfCurrentMonth(),
+                pageable
+        ).map(movie -> modelMapper.map(movie, MoviePageDTO.class));
     }
 
     @Override
@@ -115,7 +110,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MoviePageWithGenreDTO> getMostPopularMovies(int totalItems) {
+    public List<MoviePageWithGenreDTO> getTrendingMovies(int totalItems) {
         return this.movieRepository.findAllByPopularityDesc(totalItems)
                 .stream()
                 .map(movie -> {
@@ -132,15 +127,13 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MoviePageWithGenreDTO> getBestMovies(int totalItems) {
-        return this.movieRepository.findAllSortedByVoteCount(totalItems)
-                .stream()
+    public Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable) {
+        return this.movieRepository.findAllSortedByVoteCount(pageable)
                 .map(movie -> {
                     MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
                     mapOneGenre(map);
                     return map;
-                })
-                .toList();
+                });
     }
 
     @Override
@@ -206,6 +199,10 @@ public class MovieServiceImpl implements MovieService {
     //    @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateMovies() {
+    }
+
+    private LocalDate getStartOfCurrentMonth() {
+        return LocalDate.now().minusDays(7);
     }
 
     private void fetchMovies() {

@@ -10,15 +10,15 @@ import java.util.List;
 import java.util.Set;
 
 public interface TvSeriesService {
-    Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable, int totalPages);
+    Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable);
 
     TvSeriesDetailsDTO getTvSeriesDetailsById(long id);
 
     Set<TvSeriesPageDTO> getTvSeriesByGenre(String genreType);
 
-    List<TvSeriesPageDTO> getMostPopularTvSeries(int totalItems);
+    List<TvSeriesPageDTO> getTrendingTvSeries(int totalItems);
 
-    List<TvSeriesPageWithGenreDTO> getBestTvSeries(int totalItems);
+    Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable);
 
     boolean isEmpty();
 }

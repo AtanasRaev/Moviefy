@@ -1,6 +1,8 @@
 package com.moviefy.database.repository;
 
 import com.moviefy.database.model.entity.media.TvSeries;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,8 +29,8 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             "WHERE tv.id = :id")
     Optional<TvSeries> findTvSeriesById(@Param("id") Long id);
 
-    @Query("SELECT DISTINCT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres LEFT JOIN FETCH tv.seasons WHERE tv.firstAirDate BETWEEN :startDate AND :endDate")
-    List<TvSeries> findByFirstAirDateBetweenWithGenres(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate <= :startDate ORDER BY tv.firstAirDate DESC")
+    Page<TvSeries> findByFirstAirDate(@Param("startDate") LocalDate startDate, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv ORDER BY tv.popularity DESC LIMIT :totalItems")
     List<TvSeries> findAllSortedByPopularity(@Param("totalItems") int totalItems);
@@ -36,7 +38,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     @Query("SELECT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres g WHERE g.name = :genreName")
     List<TvSeries> findByGenreName(@Param("genreName") String genreName);
 
-    @Query("SELECT tv FROM TvSeries tv WHERE tv.voteCount IS NOT NULL ORDER BY tv.voteCount DESC LIMIT :totalItems")
-    List<TvSeries> findAllSortedByVoteCount(@Param("totalItems") int totalItems);
+    @Query("SELECT tv FROM TvSeries tv")
+    Page<TvSeries> findAllSortedByVoteCount(Pageable pageable);
 
 }

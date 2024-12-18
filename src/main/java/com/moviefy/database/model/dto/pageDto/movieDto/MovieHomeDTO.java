@@ -9,6 +9,8 @@ public class MovieHomeDTO {
 
     private int runtime;
 
+    private String trailer;
+
     @JsonProperty("backdrop_path")
     private String backdropPath;
 
@@ -34,6 +36,14 @@ public class MovieHomeDTO {
 
     public void setRuntime(int runtime) {
         this.runtime = runtime;
+    }
+
+    public String getTrailer() {
+        return trailer;
+    }
+
+    public void setTrailer(String trailer) {
+        this.trailer = trailer;
     }
 
     public String getBackdropPath() {

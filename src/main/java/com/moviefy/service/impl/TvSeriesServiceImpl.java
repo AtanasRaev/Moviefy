@@ -20,7 +20,6 @@ import com.moviefy.database.repository.CrewTvSeriesRepository;
 import com.moviefy.database.repository.SeasonTvSeriesRepository;
 import com.moviefy.database.repository.TvSeriesRepository;
 import com.moviefy.service.*;
-import com.moviefy.utils.MediaRetrievalUtil;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
 import org.modelmapper.ModelMapper;
@@ -28,11 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.threeten.bp.LocalDate;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,7 +48,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final RestClient restClient;
     private final TrailerMappingUtil trailerMappingUtil;
     private final ModelMapper modelMapper;
-    private final MediaRetrievalUtil mediaRetrievalUtil;
     private final TvSeriesMapper tvSeriesMapper;
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesServiceImpl.class);
     private static final int START_YEAR = 1970;
@@ -69,7 +66,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                                RestClient restClient,
                                TrailerMappingUtil trailerMappingUtil,
                                ModelMapper modelMapper,
-                               MediaRetrievalUtil mediaRetrievalUtil,
                                TvSeriesMapper tvSeriesMapper) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
@@ -83,27 +79,26 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.restClient = restClient;
         this.trailerMappingUtil = trailerMappingUtil;
         this.modelMapper = modelMapper;
-        this.mediaRetrievalUtil = mediaRetrievalUtil;
         this.tvSeriesMapper = tvSeriesMapper;
     }
 
     @Override
-    public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable, int totalPages) {
-        return mediaRetrievalUtil.fetchContentFromDateRange(
-                totalPages,
-                pageable,
-                dateRange -> tvSeriesRepository.findByFirstAirDateBetweenWithGenres(dateRange.start(), dateRange.end()),
-                tvSeries -> {
+    public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable) {
+        return this.tvSeriesRepository.findByFirstAirDate(
+                getStartOfCurrentMonth(),
+                pageable
+        ).map(tvSeries -> {
                     TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
 
-                    Set<SeasonTvSeries> seasons = tvSeries.getSeasons();
-                    if (seasons != null && !seasons.isEmpty()) {
-                        mapSeasonsToPageDTO(seasons, map);
+                    List<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId());
+                    if (!seasons.isEmpty()) {
+                        mapSeasonsToPageDTO(new HashSet<>(seasons), map);
                     }
                     return map;
                 }
         );
     }
+
 
     @Override
     public TvSeriesDetailsDTO getTvSeriesDetailsById(long id) {
@@ -130,7 +125,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public List<TvSeriesPageDTO> getMostPopularTvSeries(int totalItems) {
+    public List<TvSeriesPageDTO> getTrendingTvSeries(int totalItems) {
         return this.tvSeriesRepository.findAllSortedByPopularity(totalItems)
                 .stream()
                 .map(tvSeries -> {
@@ -142,21 +137,23 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public List<TvSeriesPageWithGenreDTO> getBestTvSeries(int totalItems) {
-        return this.tvSeriesRepository.findAllSortedByVoteCount(totalItems)
-                .stream()
+    public  Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable) {
+        return this.tvSeriesRepository.findAllSortedByVoteCount(pageable)
                 .map(tvSeries -> {
                     TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
                     mapOneGenre(map);
                     mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
                     return map;
-                })
-                .toList();
+                });
     }
 
-//    @Scheduled(fixedDelay = 100000000)
+    //    @Scheduled(fixedDelay = 100000000)
     //TODO
     private void updateTvSeries() {
+    }
+
+    private LocalDate getStartOfCurrentMonth() {
+        return LocalDate.now().minusDays(7);
     }
 
     private void fetchSeries() {

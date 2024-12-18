@@ -12,15 +12,15 @@ import java.util.List;
 import java.util.Set;
 
 public interface MovieService {
-    Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable, int totalPages);
+    Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable);
 
     MovieDetailsDTO getMovieDetailsById(Long id);
 
     Set<MoviePageDTO> getMoviesByGenre(String genreType);
 
-    List<MoviePageWithGenreDTO> getMostPopularMovies(int totalItems);
+    List<MoviePageWithGenreDTO> getTrendingMovies(int totalItems);
 
-    List<MoviePageWithGenreDTO> getBestMovies(int totalItems);
+    Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable);
 
     boolean isEmpty();
 

@@ -43,26 +43,24 @@ public class MediaController {
     public ResponseEntity<Map<String, Object>> getLatestMedia(
             @PathVariable String mediaType,
             @RequestParam(defaultValue = "20") @Min(10) @Max(100) int size,
-            @RequestParam(defaultValue = "1") @Min(1) @Max(10) int page) {
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
 
         if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
-        int totalPages = 10;
-
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
-        int pageSize = pageable.getPageSize();
-        Page<?> contentPage = getLatestMediaPage(mediaType, pageable, totalPages);
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<?> contentPage = getLatestMediaPage(mediaType, pageable);
 
         return ResponseEntity.ok(Map.of(
                 "items_on_page", contentPage.getNumberOfElements(),
-                "total_items", pageSize * totalPages,
-                "total_pages", totalPages,
+                "total_items", contentPage.getTotalElements(),
+                "total_pages", contentPage.getTotalPages(),
                 "current_page", contentPage.getNumber() + 1,
                 mediaType, contentPage.getContent()
         ));
     }
+
 
     @GetMapping("/{mediaType}/{id}")
     public ResponseEntity<Map<String, Object>> getMediaById(
@@ -86,35 +84,45 @@ public class MediaController {
         return ResponseEntity.ok(Map.of(mediaType, media));
     }
 
+    @GetMapping("/{mediaType}/trending")
+    public ResponseEntity<Map<String, Object>> getMostTrendingMedia(@PathVariable String mediaType) {
+
+        if (isMediaTypeInvalid(mediaType)) {
+            return getInvalidRequest(mediaType);
+        }
+
+        int totalItems = 10;
+
+        List<?> mediaList = getTrendingMediaList(mediaType, totalItems);
+
+        return ResponseEntity.ok(Map.of(mediaType, mediaList));
+    }
+
     @GetMapping("/{mediaType}/popular")
-    public ResponseEntity<Map<String, Object>> getMostPopularMedia(@PathVariable String mediaType) {
+    public ResponseEntity<Map<String, Object>> getPopularMedia(
+            @PathVariable String mediaType,
+            @RequestParam(defaultValue = "20") @Min(10) @Max(100) int size,
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
 
         if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
-        int totalItems = 10;
 
-        List<?> mediaList = getMostPopularMediaList(mediaType, totalItems);
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("voteCount").descending());
+        Page<?> mediaPage = getPopularMediaPage(mediaType, pageable);
 
-        return ResponseEntity.ok(Map.of(mediaType, mediaList));
+        Map<String, Object> response = Map.of(
+                mediaType, mediaPage.getContent(),
+                "current_page", mediaPage.getNumber() + 1,
+                "total_items", mediaPage.getTotalElements(),
+                "total_pages", mediaPage.getTotalPages()
+        );
+
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{mediaType}/best")
-    public ResponseEntity<Map<String, Object>> getBestMedia(@PathVariable String mediaType) {
-
-        if (isMediaTypeInvalid(mediaType)) {
-            return getInvalidRequest(mediaType);
-        }
-
-        int totalItems = 10;
-
-        List<?> mediaList = getBestMediaList(mediaType, totalItems);
-
-        return ResponseEntity.ok(Map.of(mediaType, mediaList));
-    }
-
-    @GetMapping("collection/movies")
+    @GetMapping("movie/collection")
     public ResponseEntity<Map<String, Object>> getCollectionSearch(@RequestParam("name") String input) {
         if (input == null || input.isBlank()) {
             return buildErrorResponse(
@@ -191,22 +199,22 @@ public class MediaController {
                 .body(response);
     }
 
-    private List<?> getMostPopularMediaList(String mediaType, int totalItems) {
+    private List<?> getTrendingMediaList(String mediaType, int totalItems) {
         return "movie".equalsIgnoreCase(mediaType)
-                ? movieService.getMostPopularMovies(totalItems)
-                : tvSeriesService.getMostPopularTvSeries(totalItems);
+                ? movieService.getTrendingMovies(totalItems)
+                : tvSeriesService.getTrendingTvSeries(totalItems);
     }
 
-    private List<?> getBestMediaList(String mediaType, int totalItems) {
+    private Page<?> getPopularMediaPage(String mediaType, Pageable pageable) {
         return "movie".equalsIgnoreCase(mediaType)
-                ? movieService.getBestMovies(totalItems)
-                : tvSeriesService.getBestTvSeries(totalItems);
+                ? movieService.getPopularMovies(pageable)
+                : tvSeriesService.getPopularTvSeries(pageable);
     }
 
-    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, int totalPages) {
+    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable) {
         return "movie".equalsIgnoreCase(mediaType)
-                ? movieService.getMoviesFromCurrentMonth(pageable, totalPages)
-                : tvSeriesService.getTvSeriesFromCurrentMonth(pageable, totalPages);
+                ? movieService.getMoviesFromCurrentMonth(pageable)
+                : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
     }
 
     private MediaDetailsDTO fetchMediaById(String mediaType, Long id) {
