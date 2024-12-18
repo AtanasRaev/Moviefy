@@ -50,6 +50,7 @@ dependencies {
     implementation 'com.google.cloud:google-cloud-secretmanager:2.1.0'
     implementation 'com.squareup.okhttp3:okhttp:4.9.1'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
     testImplementation 'org.mockito:mockito-core:4.8.0'

@@ -6,7 +6,7 @@ import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
@@ -110,18 +110,16 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MoviePageWithGenreDTO> getTrendingMovies(int totalItems) {
-        return this.movieRepository.findAllByPopularityDesc(totalItems)
-                .stream()
+    public Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable) {
+        return this.movieRepository.findAllByPopularityDesc(pageable)
                 .map(movie -> {
                     MoviePageWithGenreDTO map = modelMapper.map(movie, MoviePageWithGenreDTO.class);
-                    mapOneGenre(map);
+                    mapOneGenreToPageDTO(map);
                     return map;
-                })
-                .toList();
+                });
     }
 
-    private void mapOneGenre(MoviePageWithGenreDTO map) {
+    private void mapOneGenreToPageDTO(MoviePageWithGenreDTO map) {
         Optional<MovieGenre> optional = this.movieGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
@@ -131,7 +129,7 @@ public class MovieServiceImpl implements MovieService {
         return this.movieRepository.findAllSortedByVoteCount(pageable)
                 .map(movie -> {
                     MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
-                    mapOneGenre(map);
+                    mapOneGenreToPageDTO(map);
                     return map;
                 });
     }

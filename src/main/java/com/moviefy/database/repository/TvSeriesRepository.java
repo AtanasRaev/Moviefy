@@ -32,8 +32,8 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate <= :startDate ORDER BY tv.firstAirDate DESC")
     Page<TvSeries> findByFirstAirDate(@Param("startDate") LocalDate startDate, Pageable pageable);
 
-    @Query("SELECT tv FROM TvSeries tv ORDER BY tv.popularity DESC LIMIT :totalItems")
-    List<TvSeries> findAllSortedByPopularity(@Param("totalItems") int totalItems);
+    @Query("SELECT tv FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = :year ORDER BY tv.voteCount DESC")
+    Page<TvSeries> findAllByYearOrderByVoteCount(@Param("year") int year, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres g WHERE g.name = :genreName")
     List<TvSeries> findByGenreName(@Param("genreName") String genreName);

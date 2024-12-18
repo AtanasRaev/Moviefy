@@ -1,7 +1,7 @@
 package com.moviefy.service;
 
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
@@ -18,7 +18,7 @@ public interface MovieService {
 
     Set<MoviePageDTO> getMoviesByGenre(String genreType);
 
-    List<MoviePageWithGenreDTO> getTrendingMovies(int totalItems);
+    Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable);
 
     Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable);
 

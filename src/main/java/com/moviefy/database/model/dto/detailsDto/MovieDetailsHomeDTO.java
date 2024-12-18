@@ -1,19 +1,16 @@
-package com.moviefy.database.model.dto.pageDto.movieDto;
+package com.moviefy.database.model.dto.detailsDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieDTO;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public class MovieDetailsHomeDTO {
-    private long id;
-
+public class MovieDetailsHomeDTO extends MovieDTO {
     @JsonProperty("backdrop_path")
     private String backdropPath;
-
-    private String title;
 
     private String overview;
 
@@ -22,23 +19,10 @@ public class MovieDetailsHomeDTO {
     @JsonProperty("production_companies")
     private List<ProductionHomePageDTO> productionCompany;
 
-    private int runtime;
-
     private String trailer;
-
-    @JsonProperty("vote_average")
-    private double voteAverage;
 
     @JsonProperty("release_date")
     private LocalDate releaseDate;
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
 
     public String getBackdropPath() {
         return backdropPath;
@@ -46,14 +30,6 @@ public class MovieDetailsHomeDTO {
 
     public void setBackdropPath(String backdropPath) {
         this.backdropPath = backdropPath;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public String getOverview() {
@@ -80,14 +56,6 @@ public class MovieDetailsHomeDTO {
         this.productionCompany = productionCompany;
     }
 
-    public int getRuntime() {
-        return runtime;
-    }
-
-    public void setRuntime(int runtime) {
-        this.runtime = runtime;
-    }
-
     public String getTrailer() {
         return trailer;
     }
@@ -96,13 +64,6 @@ public class MovieDetailsHomeDTO {
         this.trailer = trailer;
     }
 
-    public double getVoteAverage() {
-        return voteAverage;
-    }
-
-    public void setVoteAverage(double voteAverage) {
-        this.voteAverage = voteAverage;
-    }
 
     public LocalDate getReleaseDate() {
         return releaseDate;

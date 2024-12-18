@@ -5,8 +5,11 @@ import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import com.moviefy.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
+import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
@@ -125,26 +128,30 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public List<TvSeriesPageDTO> getTrendingTvSeries(int totalItems) {
-        return this.tvSeriesRepository.findAllSortedByPopularity(totalItems)
-                .stream()
+    public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(Pageable pageable) {
+        return this.tvSeriesRepository.findAllByYearOrderByVoteCount(LocalDate.now().getYear(), pageable)
                 .map(tvSeries -> {
-                    TvSeriesPageDTO map = this.modelMapper.map(tvSeries, TvSeriesPageDTO.class);
-                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
-                    return map;
-                })
-                .toList();
-    }
-
-    @Override
-    public  Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable) {
-        return this.tvSeriesRepository.findAllSortedByVoteCount(pageable)
-                .map(tvSeries -> {
-                    TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
-                    mapOneGenre(map);
+                    TvSeriesTrendingPageDTO map = this.modelMapper.map(tvSeries, TvSeriesTrendingPageDTO.class);
+                    mapAllGenresToPageDTO(map);
                     mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
                     return map;
                 });
+    }
+
+    @Override
+    public Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable) {
+        return this.tvSeriesRepository.findAllSortedByVoteCount(pageable)
+                .map(tvSeries -> {
+                    TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
+                    mapOneGenreToPageDTO(map);
+                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+                    return map;
+                });
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return this.tvSeriesRepository.count() == 0;
     }
 
     //    @Scheduled(fixedDelay = 100000000)
@@ -272,7 +279,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
     }
 
-    private static void mapSeasonsToPageDTO(Set<SeasonTvSeries> seasons, TvSeriesPageDTO map) {
+    private static void mapSeasonsToPageDTO(Set<SeasonTvSeries> seasons, TvSeriesDTO map) {
         seasons.stream()
                 .max(Comparator.comparing(SeasonTvSeries::getSeasonNumber))
                 .ifPresent(lastSeason -> {
@@ -308,14 +315,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return seasons;
     }
 
-    private void mapOneGenre(TvSeriesPageWithGenreDTO map) {
+    private void mapOneGenreToPageDTO(TvSeriesPageWithGenreDTO map) {
         Optional<SeriesGenre> optional = this.seriesGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
 
-    @Override
-    public boolean isEmpty() {
-        return this.tvSeriesRepository.count() == 0;
+    private void mapAllGenresToPageDTO(TvSeriesTrendingPageDTO map) {
+        List<SeriesGenre> genres = this.seriesGenreService.getAllGenresByMovieId(map.getId()).stream().toList();
+        if (!genres.isEmpty()) {
+            map.setAllGenres(genres
+                    .stream()
+                    .map(genre -> this.modelMapper.map(genre, GenrePageDTO.class)).toList());
+        }
     }
 
     private void processTvSeriesCast(List<CastApiApiDTO> castDto, TvSeries tvSeries, Set<Cast> castSet) {
