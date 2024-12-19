@@ -5,10 +5,13 @@ import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.service.MovieService;
 import com.moviefy.service.impl.MovieGenreServiceImpl;
+import com.moviefy.service.impl.MovieServiceImpl;
 import com.moviefy.service.impl.SeriesGenreServiceImpl;
 import com.moviefy.service.impl.TvSeriesServiceImpl;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +33,7 @@ public class MediaController {
     private final TvSeriesServiceImpl tvSeriesService;
     private final MovieGenreServiceImpl movieGenreService;
     private final SeriesGenreServiceImpl seriesGenreService;
+    private static final Logger logger = LoggerFactory.getLogger(MediaController.class);
 
     public MediaController(MovieService movieService, TvSeriesServiceImpl tvSeriesService,
                            MovieGenreServiceImpl movieGenreService, SeriesGenreServiceImpl seriesGenreService) {
@@ -162,6 +166,12 @@ public class MediaController {
         map.put("first_movie", firstMovie);
         map.put("rest_movies", list);
         return ResponseEntity.ok(map);
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        logger.info("Ping");
+        return ResponseEntity.ok("pong");
     }
 
 //    @GetMapping("/{mediaType}/genre/{genreType}")
