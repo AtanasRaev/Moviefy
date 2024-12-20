@@ -1,7 +1,7 @@
 package com.moviefy.service.impl;
 
 import com.moviefy.database.model.dto.apiDto.CollectionApiDTO;
-import com.moviefy.database.model.entity.Collection;
+import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.CollectionRepository;
 import com.moviefy.service.CollectionService;

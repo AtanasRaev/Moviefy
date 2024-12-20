@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.time.LocalDate;
 import java.util.Set;
 
-@JsonPropertyOrder({"name",
+@JsonPropertyOrder({
+        "id",
+        "name",
         "original_name",
         "status",
         "poster_path",

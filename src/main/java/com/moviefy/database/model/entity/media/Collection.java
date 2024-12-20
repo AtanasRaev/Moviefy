@@ -1,6 +1,5 @@
-package com.moviefy.database.model.entity;
+package com.moviefy.database.model.entity.media;
 
-import com.moviefy.database.model.entity.media.Movie;
 import jakarta.persistence.*;
 
 import java.util.LinkedHashSet;

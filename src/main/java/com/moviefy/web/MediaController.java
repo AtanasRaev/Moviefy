@@ -33,7 +33,6 @@ public class MediaController {
     private final TvSeriesServiceImpl tvSeriesService;
     private final MovieGenreServiceImpl movieGenreService;
     private final SeriesGenreServiceImpl seriesGenreService;
-    private static final Logger logger = LoggerFactory.getLogger(MediaController.class);
 
     public MediaController(MovieService movieService, TvSeriesServiceImpl tvSeriesService,
                            MovieGenreServiceImpl movieGenreService, SeriesGenreServiceImpl seriesGenreService) {
@@ -46,7 +45,7 @@ public class MediaController {
     @GetMapping("/{mediaType}/latest")
     public ResponseEntity<Map<String, Object>> getLatestMedia(
             @PathVariable String mediaType,
-            @RequestParam(defaultValue = "10") @Min(10) @Max(100) int size,
+            @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
         if (isMediaTypeInvalid(mediaType)) {
@@ -113,7 +112,7 @@ public class MediaController {
     @GetMapping("/{mediaType}/popular")
     public ResponseEntity<Map<String, Object>> getPopularMedia(
             @PathVariable String mediaType,
-            @RequestParam(defaultValue = "10") @Min(10) @Max(100) int size,
+            @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
         if (isMediaTypeInvalid(mediaType)) {

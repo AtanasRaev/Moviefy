@@ -1,6 +1,5 @@
 package com.moviefy.database.model.entity.media;
 
-import com.moviefy.database.model.entity.Collection;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.genre.MovieGenre;
 import jakarta.persistence.*;

@@ -1,7 +1,7 @@
 package com.moviefy.service;
 
 import com.moviefy.database.model.dto.apiDto.CollectionApiDTO;
-import com.moviefy.database.model.entity.Collection;
+import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
 
 import java.util.List;

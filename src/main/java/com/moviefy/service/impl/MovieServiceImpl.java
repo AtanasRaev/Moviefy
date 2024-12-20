@@ -8,7 +8,7 @@ import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.*;
-import com.moviefy.database.model.entity.Collection;
+import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastMovie;
