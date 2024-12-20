@@ -13,5 +13,7 @@ public interface CollectionService {
 
     Collection getCollectionFromResponse(CollectionApiDTO collectionDto, Movie movie);
 
-    List<Collection> findByName(String name);
+    List<Collection> getByName(String name);
+
+    List<Collection> getByNames(List<String> name);
 }

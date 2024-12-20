@@ -7,6 +7,7 @@ import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
@@ -140,8 +141,8 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public MovieDetailsHomeDTO findFirstMovieByCollectionName(String name) {
-        List<Collection> byName = this.collectionService.findByName(name);
+    public MovieDetailsHomeDTO getFirstMovieByCollectionName(String name) {
+        List<Collection> byName = this.collectionService.getByName(name);
 
         if (byName.isEmpty()) {
             return null;
@@ -177,8 +178,8 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MovieHomeDTO> findMoviesByCollectionName(String name) {
-        List<Collection> byName = this.collectionService.findByName(name);
+    public List<MovieHomeDTO> getMoviesByCollectionName(String name) {
+        List<Collection> byName = this.collectionService.getByName(name);
 
         if (byName.isEmpty()) {
             return List.of();
@@ -190,6 +191,28 @@ public class MovieServiceImpl implements MovieService {
                 .stream()
                 .sorted(Comparator.comparing(Movie::getReleaseDate))
                 .map(movie -> this.modelMapper.map(movie, MovieHomeDTO.class))
+                .toList();
+    }
+
+    @Override
+    public List<CollectionPageDTO> getCollectionsByName(List<String> input) {
+        List<Collection> byName = this.collectionService.getByNames(input);
+
+        if (byName.isEmpty()) {
+            return List.of();
+        }
+
+        return byName.stream()
+                .map(c -> {
+                    CollectionPageDTO map = this.modelMapper.map(c, CollectionPageDTO.class);
+
+                    c.getMovies()
+                            .stream()
+                            .min(Comparator.comparing(Movie::getId))
+                            .ifPresent(m -> map.setFirstMovieId(m.getId()));
+
+                    return map;
+                })
                 .toList();
     }
 

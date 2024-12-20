@@ -43,7 +43,12 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    public List<Collection> findByName(String name) {
+    public List<Collection> getByName(String name) {
         return this.collectionRepository.findByName(name);
+    }
+
+    @Override
+    public List<Collection> getByNames(List<String> name) {
+        return this.collectionRepository.findAllByNameIn(name);
     }
 }

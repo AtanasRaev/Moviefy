@@ -2,6 +2,7 @@ package com.moviefy.service;
 
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
@@ -24,7 +25,9 @@ public interface MovieService {
 
     boolean isEmpty();
 
-    MovieDetailsHomeDTO findFirstMovieByCollectionName(String name);
+    MovieDetailsHomeDTO getFirstMovieByCollectionName(String name);
 
-    List<MovieHomeDTO> findMoviesByCollectionName(String name);
+    List<MovieHomeDTO> getMoviesByCollectionName(String name);
+
+    List<CollectionPageDTO> getCollectionsByName(List<String> input);
 }

@@ -2,10 +2,10 @@ package com.moviefy.web;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.service.MovieService;
 import com.moviefy.service.impl.MovieGenreServiceImpl;
-import com.moviefy.service.impl.MovieServiceImpl;
 import com.moviefy.service.impl.SeriesGenreServiceImpl;
 import com.moviefy.service.impl.TvSeriesServiceImpl;
 import jakarta.validation.constraints.Max;
@@ -135,7 +135,7 @@ public class MediaController {
     }
 
     @GetMapping("movie/collection")
-    public ResponseEntity<Map<String, Object>> getCollectionSearch(@RequestParam("name") String input) {
+    public ResponseEntity<Map<String, Object>> getCollectionMoviesSearch(@RequestParam("name") String input) {
         if (input == null || input.isBlank()) {
             return buildErrorResponse(
                     HttpStatus.BAD_REQUEST,
@@ -145,7 +145,7 @@ public class MediaController {
         }
 
 
-        MovieDetailsHomeDTO firstMovie = this.movieService.findFirstMovieByCollectionName(input);
+        MovieDetailsHomeDTO firstMovie = this.movieService.getFirstMovieByCollectionName(input);
 
         if (firstMovie == null) {
             return buildErrorResponse(
@@ -157,7 +157,7 @@ public class MediaController {
 
         Map<String, Object> map = new LinkedHashMap<>();
 
-        List<MovieHomeDTO> list = this.movieService.findMoviesByCollectionName(input)
+        List<MovieHomeDTO> list = this.movieService.getMoviesByCollectionName(input)
                 .stream()
                 .skip(1)
                 .toList();
@@ -168,9 +168,33 @@ public class MediaController {
         return ResponseEntity.ok(map);
     }
 
+    @GetMapping("movie/collections")
+    public ResponseEntity<Map<String, Object>> getCollectionSearch(@RequestParam("names") List<String> input) {
+        if (input == null || input.isEmpty()) {
+            return buildErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid request",
+                    "The search must not be empty!"
+            );
+        }
+
+        List<CollectionPageDTO> collections = this.movieService.getCollectionsByName(input);
+
+        if (collections.isEmpty()) {
+            return buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("Not found collections '%s'", input)
+            );
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "collections", collections)
+        );
+    }
+
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
-        logger.info("Ping");
         return ResponseEntity.ok("pong");
     }
 
@@ -220,7 +244,7 @@ public class MediaController {
     private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable) {
         return "movie".equalsIgnoreCase(mediaType)
                 ? movieService.getTrendingMovies(pageable)
-               : tvSeriesService.getTrendingTvSeries(pageable);
+                : tvSeriesService.getTrendingTvSeries(pageable);
     }
 
     private Page<?> getPopularMediaPage(String mediaType, Pageable pageable) {
