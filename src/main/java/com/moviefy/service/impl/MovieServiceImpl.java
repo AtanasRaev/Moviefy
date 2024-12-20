@@ -5,6 +5,7 @@ import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
+import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.*;
@@ -22,6 +23,7 @@ import com.moviefy.database.repository.MovieRepository;
 import com.moviefy.service.*;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +95,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public MovieDetailsDTO getMovieDetailsById(Long id) {
-        return movieRepository.findMovieById(id)
+        return this.movieRepository.findMovieById(id)
                 .map(this::mapToMovieDetailsDTO)
                 .orElse(null);
     }
@@ -203,14 +205,27 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private MovieDetailsDTO mapToMovieDetailsDTO(Movie movie) {
-        MovieDetailsDTO movieDetails = modelMapper.map(movie, MovieDetailsDTO.class);
+        if (movie == null) {
+            return null;
+        }
 
+        MovieDetailsDTO movieDetails = this.modelMapper.map(movie, MovieDetailsDTO.class);
+
+        movieDetails.setGenres(mapGenres(movie));
         movieDetails.setCast(castService.getCastByMediaId("movie", movie.getId()));
         movieDetails.setCrew(crewService.getCrewByMediaId("movie", movie.getId()));
-
+        movieDetails.setProductionCompanies(this.productionCompanyService.mapProductionCompanies(movie));
         movieDetails.setCollection(getRelatedMoviesInCollection(movie));
 
         return movieDetails;
+    }
+
+    private Set<GenrePageDTO> mapGenres(Movie movie) {
+        return movie.getGenres()
+                .stream()
+                .sorted(Comparator.comparing(MovieGenre::getId))
+                .map(genre -> this.modelMapper.map(genre, GenrePageDTO.class))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private List<MoviePageDTO> getRelatedMoviesInCollection(Movie movie) {

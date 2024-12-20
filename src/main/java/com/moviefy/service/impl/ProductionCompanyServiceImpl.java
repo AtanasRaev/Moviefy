@@ -3,6 +3,7 @@ package com.moviefy.service.impl;
 import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.ProductionApiDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.databaseDto.ProductionCompanyDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
 import com.moviefy.database.model.entity.media.Media;
 import com.moviefy.database.model.entity.media.Movie;
@@ -10,16 +11,22 @@ import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.TvSeries;
 import com.moviefy.database.repository.ProductionCompanyRepository;
 import com.moviefy.service.ProductionCompanyService;
+import jakarta.transaction.Transactional;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductionCompanyServiceImpl implements ProductionCompanyService {
     private final ProductionCompanyRepository productionCompanyRepository;
+    private final ModelMapper modelMapper;
 
-    public ProductionCompanyServiceImpl(ProductionCompanyRepository productionCompanyRepository) {
+    public ProductionCompanyServiceImpl(ProductionCompanyRepository productionCompanyRepository,
+                                        ModelMapper modelMapper) {
         this.productionCompanyRepository = productionCompanyRepository;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -74,5 +81,23 @@ public class ProductionCompanyServiceImpl implements ProductionCompanyService {
     @Override
     public void saveAllProduction(Set<ProductionCompany> productionCompanies) {
         this.productionCompanyRepository.saveAll(productionCompanies);
+    }
+
+    @Override
+    public Set<ProductionCompanyDTO> mapProductionCompanies(Media media) {
+        if (media instanceof Movie movie) {
+            return mapProductionCompaniesForMedia(movie.getProductionCompanies());
+        } else if (media instanceof TvSeries tvSeries) {
+            return mapProductionCompaniesForMedia(tvSeries.getProductionCompanies());
+        } else {
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<ProductionCompanyDTO> mapProductionCompaniesForMedia(Set<ProductionCompany> productionCompanies) {
+        return productionCompanies.stream()
+                .sorted(Comparator.comparing(ProductionCompany::getId))
+                .map(production -> this.modelMapper.map(production, ProductionCompanyDTO.class))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 }

@@ -15,6 +15,7 @@ import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
 import com.moviefy.database.model.entity.credit.crew.Crew;
 import com.moviefy.database.model.entity.credit.crew.CrewTvSeries;
+import com.moviefy.database.model.entity.genre.MovieGenre;
 import com.moviefy.database.model.entity.genre.SeriesGenre;
 import com.moviefy.database.model.entity.media.SeasonTvSeries;
 import com.moviefy.database.model.entity.media.TvSeries;
@@ -25,6 +26,7 @@ import com.moviefy.database.repository.TvSeriesRepository;
 import com.moviefy.service.*;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
+import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,7 @@ import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,33 +93,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return this.tvSeriesRepository.findByFirstAirDate(
                 getStartOfCurrentMonth(),
                 pageable
-        ).map(tvSeries -> {
-                    TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
-
-                    List<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId());
-                    if (!seasons.isEmpty()) {
-                        mapSeasonsToPageDTO(new HashSet<>(seasons), map);
-                    }
-                    return map;
-                }
-        );
+        ).map(this::mapTvSeriesPageDTO);
     }
 
-
     @Override
-    public TvSeriesDetailsDTO getTvSeriesDetailsById(long id) {
-        TvSeriesDetailsDTO tv = this.modelMapper.map(this.tvSeriesRepository.findTvSeriesById(id), TvSeriesDetailsDTO.class);
-        if (tv == null) {
-            return null;
-        }
-
-        tv.setSeasons(tv.getSeasons().stream()
-                .sorted(Comparator.comparingInt(SeasonTvSeriesDTO::getSeasonNumber))
-                .collect(Collectors.toCollection(LinkedHashSet::new)));
-
-        tv.setCast(this.castService.getCastByMediaId("tv", id));
-        tv.setCrew(this.crewService.getCrewByMediaId("tv", id));
-        return tv;
+    public TvSeriesDetailsDTO getTvSeriesDetailsById(Long id) {
+        return this.tvSeriesRepository.findTvSeriesById(id)
+                .map(this::mapToTvSeriesDetailsDTO)
+                .orElse(null);
     }
 
     @Override
@@ -152,6 +136,47 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Override
     public boolean isEmpty() {
         return this.tvSeriesRepository.count() == 0;
+    }
+
+    private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
+        TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
+
+        List<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId());
+        if (!seasons.isEmpty()) {
+            mapSeasonsToPageDTO(new HashSet<>(seasons), map);
+        }
+        return map;
+    }
+
+    private TvSeriesDetailsDTO mapToTvSeriesDetailsDTO(TvSeries tvSeries) {
+        if (tvSeries == null) {
+            return null;
+        }
+
+        TvSeriesDetailsDTO tvDetails = this.modelMapper.map(tvSeries, TvSeriesDetailsDTO.class);
+
+        tvDetails.setGenres(mapGenres(tvSeries));
+        tvDetails.setCast(this.castService.getCastByMediaId("tv", tvDetails.getId()));
+        tvDetails.setCrew(this.crewService.getCrewByMediaId("tv", tvDetails.getId()));
+        tvDetails.setProductionCompanies(this.productionCompanyService.mapProductionCompanies(tvSeries));
+        sortSeasons(tvDetails);
+
+        return tvDetails;
+    }
+
+    private Set<GenrePageDTO> mapGenres(TvSeries tvSeries) {
+        return tvSeries.getGenres()
+                .stream()
+                .sorted(Comparator.comparing(SeriesGenre::getId))
+                .map(genre -> this.modelMapper.map(genre, GenrePageDTO.class))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private void sortSeasons(TvSeriesDetailsDTO tv) {
+        tv.setSeasons(tv.getSeasons()
+                .stream()
+                .sorted(Comparator.comparingInt(SeasonTvSeriesDTO::getSeasonNumber))
+                .collect(Collectors.toCollection(LinkedHashSet::new)));
     }
 
     //    @Scheduled(fixedDelay = 100000000)
