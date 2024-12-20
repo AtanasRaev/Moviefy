@@ -2,10 +2,14 @@ package com.moviefy.database.model.dto.detailsDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 
 import java.time.LocalDate;
+import java.util.List;
 
-@JsonPropertyOrder({"title",
+@JsonPropertyOrder({
+        "id",
+        "title",
         "original_title",
         "poster_path",
         "backdrop_path",
@@ -18,7 +22,8 @@ import java.time.LocalDate;
         "genres",
         "production_companies",
         "cast",
-        "crew"})
+        "crew"
+})
 public class MovieDetailsDTO extends MediaDetailsDTO {
     private String title;
 
@@ -29,6 +34,8 @@ public class MovieDetailsDTO extends MediaDetailsDTO {
     private LocalDate releaseDate;
 
     private Integer runtime;
+
+    private List<MoviePageDTO> collection;
 
     public String getTitle() {
         return title;
@@ -60,5 +67,13 @@ public class MovieDetailsDTO extends MediaDetailsDTO {
 
     public void setRuntime(Integer runtime) {
         this.runtime = runtime;
+    }
+
+    public List<MoviePageDTO> getCollection() {
+        return collection;
+    }
+
+    public void setCollection(List<MoviePageDTO> collection) {
+        this.collection = collection;
     }
 }

@@ -7,10 +7,7 @@ import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.*;
 import com.moviefy.database.model.entity.Collection;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
@@ -96,10 +93,9 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public MovieDetailsDTO getMovieDetailsById(Long id) {
-        MovieDetailsDTO movie = this.modelMapper.map(this.movieRepository.findMovieById(id), MovieDetailsDTO.class);
-        movie.setCast(this.castService.getCastByMediaId("movie", id));
-        movie.setCrew(this.crewService.getCrewByMediaId("movie", id));
-        return movie;
+        return movieRepository.findMovieById(id)
+                .map(this::mapToMovieDetailsDTO)
+                .orElse(null);
     }
 
     @Override
@@ -142,39 +138,19 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public MovieDetailsHomeDTO getFirstMovieByCollectionName(String name) {
-        List<Collection> byName = this.collectionService.getByName(name);
+        List<Collection> collections = collectionService.getByName(name);
 
-        if (byName.isEmpty()) {
+        if (collections.isEmpty()) {
             return null;
         }
 
-        Collection collection = byName.get(0);
+        Collection collection = collections.get(0);
 
-        Optional<Movie> firstMovie = collection.getMovies()
+        return collection.getMovies()
                 .stream()
-                .min(Comparator.comparing(Movie::getReleaseDate));
-
-        return firstMovie.map(movie -> {
-            MovieDetailsHomeDTO map = this.modelMapper.map(movie, MovieDetailsHomeDTO.class);
-
-            Optional<Movie> byId = this.movieRepository.findMovieById(movie.getId());
-
-            List<ProductionHomePageDTO> production = byId.get().getProductionCompanies()
-                    .stream()
-                    .sorted(Comparator.comparing(ProductionCompany::getId))
-                    .map(p -> this.modelMapper.map(p, ProductionHomePageDTO.class))
-                    .toList();
-
-            List<CrewHomePageDTO> crew = this.crewService.getCrewByMediaId("movie", movie.getId())
-                    .stream()
-                    .sorted(Comparator.comparing(CrewPageDTO::getId))
-                    .map(c -> this.modelMapper.map(c, CrewHomePageDTO.class))
-                    .toList();
-
-            map.setCrew(crew);
-            map.setProductionCompany(production);
-            return map;
-        }).orElse(null);
+                .min(Comparator.comparing(Movie::getReleaseDate))
+                .map(this::mapToMovieDetailsHomeDTO)
+                .orElse(null);
     }
 
     @Override
@@ -224,6 +200,62 @@ public class MovieServiceImpl implements MovieService {
 
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
+    }
+
+    private MovieDetailsDTO mapToMovieDetailsDTO(Movie movie) {
+        MovieDetailsDTO movieDetails = modelMapper.map(movie, MovieDetailsDTO.class);
+
+        movieDetails.setCast(castService.getCastByMediaId("movie", movie.getId()));
+        movieDetails.setCrew(crewService.getCrewByMediaId("movie", movie.getId()));
+
+        movieDetails.setCollection(getRelatedMoviesInCollection(movie));
+
+        return movieDetails;
+    }
+
+    private List<MoviePageDTO> getRelatedMoviesInCollection(Movie movie) {
+        Collection collection = collectionService.getCollectionByMovieId(movie.getId());
+
+        if (collection == null) {
+            return List.of();
+        }
+
+        return collection.getMovies()
+                .stream()
+                .filter(m -> m.getId() != movie.getId())
+                .sorted(Comparator.comparing(Movie::getReleaseDate))
+                .map(m -> modelMapper.map(m, MoviePageDTO.class))
+                .toList();
+    }
+
+    private MovieDetailsHomeDTO mapToMovieDetailsHomeDTO(Movie movie) {
+        MovieDetailsHomeDTO movieDetails = modelMapper.map(movie, MovieDetailsHomeDTO.class);
+
+        List<ProductionHomePageDTO> productionCompanies = getProductionCompanies(movie);
+        List<CrewHomePageDTO> crew = getCrewForMovie(movie);
+
+        movieDetails.setProductionCompany(productionCompanies);
+        movieDetails.setCrew(crew);
+
+        return movieDetails;
+    }
+
+    private List<ProductionHomePageDTO> getProductionCompanies(Movie movie) {
+        return movieRepository.findMovieById(movie.getId())
+                .map(foundMovie -> foundMovie.getProductionCompanies()
+                        .stream()
+                        .sorted(Comparator.comparing(ProductionCompany::getId))
+                        .map(company -> modelMapper.map(company, ProductionHomePageDTO.class))
+                        .toList())
+                .orElse(List.of());
+    }
+
+    private List<CrewHomePageDTO> getCrewForMovie(Movie movie) {
+        return crewService.getCrewByMediaId("movie", movie.getId())
+                .stream()
+                .sorted(Comparator.comparing(CrewPageDTO::getId))
+                .map(crew -> modelMapper.map(crew, CrewHomePageDTO.class))
+                .toList();
     }
 
     private void fetchMovies() {

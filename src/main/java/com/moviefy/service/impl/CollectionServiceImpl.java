@@ -43,6 +43,12 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
+    public Collection getCollectionByMovieId(Long movieId) {
+        return this.collectionRepository.findCollectionsByMovieId(movieId)
+                .orElse(null);
+    }
+
+    @Override
     public List<Collection> getByName(String name) {
         return this.collectionRepository.findByName(name);
     }

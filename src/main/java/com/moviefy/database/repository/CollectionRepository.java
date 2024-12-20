@@ -18,4 +18,7 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
 
     @Query("SELECT c FROM Collection c WHERE c.name IN :names")
     List<Collection> findAllByNameIn(List<String> names);
+
+    @Query("SELECT c FROM Collection c JOIN c.movies m WHERE m.id = :movieId")
+    Optional<Collection> findCollectionsByMovieId(@Param("movieId") Long movieId);
 }

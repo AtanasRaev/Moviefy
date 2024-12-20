@@ -75,7 +75,7 @@ public class MediaController {
             return getInvalidRequest(mediaType);
         }
 
-        MediaDetailsDTO media = fetchMediaById(mediaType, id);
+        MediaDetailsDTO media = getMediaByIdPage(mediaType, id);
 
         if (media == null) {
             return buildErrorResponse(
@@ -144,7 +144,6 @@ public class MediaController {
             );
         }
 
-
         MovieDetailsHomeDTO firstMovie = this.movieService.getFirstMovieByCollectionName(input);
 
         if (firstMovie == null) {
@@ -161,7 +160,6 @@ public class MediaController {
                 .stream()
                 .skip(1)
                 .toList();
-
 
         map.put("first_movie", firstMovie);
         map.put("rest_movies", list);
@@ -259,7 +257,7 @@ public class MediaController {
                 : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
     }
 
-    private MediaDetailsDTO fetchMediaById(String mediaType, Long id) {
+    private MediaDetailsDTO getMediaByIdPage(String mediaType, Long id) {
         return "movie".equalsIgnoreCase(mediaType)
                 ? movieService.getMovieDetailsById(id)
                 : tvSeriesService.getTvSeriesDetailsById(id);

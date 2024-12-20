@@ -9,6 +9,8 @@ import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 import java.util.Set;
 
 public abstract class MediaDetailsDTO {
+    private Long id;
+
     @JsonProperty("api_id")
     private Long apiId;
 
@@ -33,6 +35,14 @@ public abstract class MediaDetailsDTO {
 
     @JsonProperty("production_companies")
     private Set<ProductionCompanyDTO> productionCompanies;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Long getApiId() {
         return apiId;
