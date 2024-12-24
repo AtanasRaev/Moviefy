@@ -10,8 +10,6 @@ import com.moviefy.service.impl.SeriesGenreServiceImpl;
 import com.moviefy.service.impl.TvSeriesServiceImpl;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -133,7 +131,7 @@ public class MediaController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("movie/collection")
+    @GetMapping("movies/collection")
     public ResponseEntity<Map<String, Object>> getCollectionMoviesSearch(@RequestParam("name") String input) {
         if (input == null || input.isBlank()) {
             return buildErrorResponse(
@@ -165,7 +163,7 @@ public class MediaController {
         return ResponseEntity.ok(map);
     }
 
-    @GetMapping("movie/collections")
+    @GetMapping("movies/collections")
     public ResponseEntity<Map<String, Object>> getCollectionSearch(@RequestParam("names") List<String> input) {
         if (input == null || input.isEmpty()) {
             return buildErrorResponse(
@@ -195,37 +193,8 @@ public class MediaController {
         return ResponseEntity.ok("pong");
     }
 
-//    @GetMapping("/{mediaType}/genre/{genreType}")
-//    public ResponseEntity<Map<String, Object>> getGenres(
-//            @PathVariable String mediaType,
-//            @PathVariable String genreType,
-//            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-//            @RequestParam(defaultValue = "1") @Min(1) int page) {
-//
-//        if (isMediaTypeInvalid(mediaType)) {
-//            return ResponseEntity.badRequest().body(Map.of("error", "Invalid type: " + mediaType));
-//        }
-//
-//        Pageable pageable = PageRequest.of(page - 1, size);
-//        Page<?> contentPage;
-//
-//        if (isMediaTypeInvalid(mediaType)) {
-//            return ResponseEntity.badRequest().body(Map.of("error", String.format("Invalid type: %s or genre: %s", mediaType, genreType)));
-//        }
-//
-//        if (movieGenreService.getGenreByName(genreType) != null) {
-//            media = movieService.getMoviesByGenre(genreType);
-//        } else if (seriesGenreService.getGenreByName(genreType) != null) {
-//            media = tvSeriesService.getTvSeriesByGenre(genreType);
-//        } else {
-//            return ResponseEntity.badRequest().body(Map.of("error", String.format("Invalid type: %s or genre: %s", mediaType, genreType)));
-//        }
-//
-//        return ResponseEntity.ok(media);
-//    }
-
     private boolean isMediaTypeInvalid(String mediaType) {
-        return !"movie".equalsIgnoreCase(mediaType) && !"tv".equalsIgnoreCase(mediaType);
+        return !"movies".equalsIgnoreCase(mediaType) && !"series".equalsIgnoreCase(mediaType);
     }
 
     private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String error, String message) {
@@ -239,25 +208,25 @@ public class MediaController {
     }
 
     private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable) {
-        return "movie".equalsIgnoreCase(mediaType)
+        return "movies".equalsIgnoreCase(mediaType)
                 ? movieService.getTrendingMovies(pageable)
                 : tvSeriesService.getTrendingTvSeries(pageable);
     }
 
     private Page<?> getPopularMediaPage(String mediaType, Pageable pageable) {
-        return "movie".equalsIgnoreCase(mediaType)
+        return "movies".equalsIgnoreCase(mediaType)
                 ? movieService.getPopularMovies(pageable)
                 : tvSeriesService.getPopularTvSeries(pageable);
     }
 
     private Page<?> getLatestMediaPage(String mediaType, Pageable pageable) {
-        return "movie".equalsIgnoreCase(mediaType)
+        return "movies".equalsIgnoreCase(mediaType)
                 ? movieService.getMoviesFromCurrentMonth(pageable)
                 : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
     }
 
     private MediaDetailsDTO getMediaByIdPage(String mediaType, Long id) {
-        return "movie".equalsIgnoreCase(mediaType)
+        return "movies".equalsIgnoreCase(mediaType)
                 ? movieService.getMovieDetailsById(id)
                 : tvSeriesService.getTvSeriesDetailsById(id);
     }
