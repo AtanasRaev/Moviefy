@@ -3,19 +3,19 @@ package com.moviefy.service.impl;
 import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
+import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
-import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.*;
-import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastMovie;
 import com.moviefy.database.model.entity.credit.crew.Crew;
 import com.moviefy.database.model.entity.credit.crew.CrewMovie;
 import com.moviefy.database.model.entity.genre.MovieGenre;
+import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.CastMovieRepository;
 import com.moviefy.database.repository.CrewMovieRepository;
@@ -23,7 +23,6 @@ import com.moviefy.database.repository.MovieRepository;
 import com.moviefy.service.*;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
-import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -228,7 +227,7 @@ public class MovieServiceImpl implements MovieService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private List<MoviePageDTO> getRelatedMoviesInCollection(Movie movie) {
+    private List<MovieCollectionPageDTO> getRelatedMoviesInCollection(Movie movie) {
         Collection collection = collectionService.getCollectionByMovieId(movie.getId());
 
         if (collection == null) {
@@ -239,7 +238,7 @@ public class MovieServiceImpl implements MovieService {
                 .stream()
                 .filter(m -> m.getId() != movie.getId())
                 .sorted(Comparator.comparing(Movie::getReleaseDate))
-                .map(m -> modelMapper.map(m, MoviePageDTO.class))
+                .map(m -> modelMapper.map(m, MovieCollectionPageDTO.class))
                 .toList();
     }
 
