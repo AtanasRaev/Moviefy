@@ -2,8 +2,7 @@ package com.moviefy.database.model.dto.detailsDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.moviefy.database.model.dto.pageDto.movieDto.MovieCollectionPageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,7 +35,7 @@ public class MovieDetailsDTO extends MediaDetailsDTO {
 
     private Integer runtime;
 
-    private List<MovieCollectionPageDTO> collection;
+    private List<MoviePageWithGenreDTO> collection;
 
     public String getTitle() {
         return title;
@@ -70,11 +69,11 @@ public class MovieDetailsDTO extends MediaDetailsDTO {
         this.runtime = runtime;
     }
 
-    public List<MovieCollectionPageDTO> getCollection() {
+    public List<MoviePageWithGenreDTO> getCollection() {
         return collection;
     }
 
-    public void setCollection(List<MovieCollectionPageDTO> collection) {
+    public void setCollection(List<MoviePageWithGenreDTO> collection) {
         this.collection = collection;
     }
 }

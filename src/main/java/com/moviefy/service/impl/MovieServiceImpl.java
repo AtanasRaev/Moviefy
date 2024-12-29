@@ -227,7 +227,7 @@ public class MovieServiceImpl implements MovieService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private List<MovieCollectionPageDTO> getRelatedMoviesInCollection(Movie movie) {
+    private List<MoviePageWithGenreDTO> getRelatedMoviesInCollection(Movie movie) {
         Collection collection = collectionService.getCollectionByMovieId(movie.getId());
 
         if (collection == null) {
@@ -238,7 +238,11 @@ public class MovieServiceImpl implements MovieService {
                 .stream()
                 .filter(m -> m.getId() != movie.getId())
                 .sorted(Comparator.comparing(Movie::getReleaseDate))
-                .map(m -> modelMapper.map(m, MovieCollectionPageDTO.class))
+                .map(m -> {
+                    MoviePageWithGenreDTO map = modelMapper.map(m, MoviePageWithGenreDTO.class);
+                    mapOneGenreToPageDTO(map);
+                    return map;
+                })
                 .toList();
     }
 
