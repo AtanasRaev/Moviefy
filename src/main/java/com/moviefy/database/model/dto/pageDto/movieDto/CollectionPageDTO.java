@@ -11,7 +11,6 @@ public class CollectionPageDTO {
     @JsonProperty("first_movie_id")
     private Long firstMovieId;
 
-
     public String getName() {
         return name;
     }

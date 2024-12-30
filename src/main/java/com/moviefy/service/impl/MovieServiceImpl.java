@@ -23,6 +23,7 @@ import com.moviefy.database.repository.MovieRepository;
 import com.moviefy.service.*;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,9 +88,9 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable) {
         return movieRepository.findByReleaseDate(
-                getStartOfCurrentMonth(),
-                pageable
-        ).map(movie -> modelMapper.map(movie, MoviePageDTO.class));
+                        getStartOfCurrentMonth(),
+                        pageable
+                ).map(movie -> modelMapper.map(movie, MoviePageDTO.class));
     }
 
     @Override
@@ -214,7 +215,8 @@ public class MovieServiceImpl implements MovieService {
         movieDetails.setCast(castService.getCastByMediaId("movie", movie.getId()));
         movieDetails.setCrew(crewService.getCrewByMediaId("movie", movie.getId()));
         movieDetails.setProductionCompanies(this.productionCompanyService.mapProductionCompanies(movie));
-        movieDetails.setCollection(getRelatedMoviesInCollection(movie));
+
+        setCollection(movie, movieDetails);
 
         return movieDetails;
     }
@@ -227,9 +229,13 @@ public class MovieServiceImpl implements MovieService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private List<MoviePageWithGenreDTO> getRelatedMoviesInCollection(Movie movie) {
+    private void setCollection(Movie movie, MovieDetailsDTO movieDetails) {
         Collection collection = collectionService.getCollectionByMovieId(movie.getId());
+        movieDetails.setCollection(getRelatedMoviesInCollection(movie, collection));
+        movieDetails.setCollectionTitle(collection.getName());
+    }
 
+    private List<MoviePageWithGenreDTO> getRelatedMoviesInCollection(Movie movie, Collection collection) {
         if (collection == null) {
             return List.of();
         }

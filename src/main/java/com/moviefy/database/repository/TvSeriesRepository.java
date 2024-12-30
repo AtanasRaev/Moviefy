@@ -29,7 +29,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             "WHERE tv.id = :id")
     Optional<TvSeries> findTvSeriesById(@Param("id") Long id);
 
-    @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate <= :startDate ORDER BY tv.firstAirDate DESC")
+    @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate <= :startDate ORDER BY tv.firstAirDate DESC, tv.id")
     Page<TvSeries> findByFirstAirDate(@Param("startDate") LocalDate startDate, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = :year ORDER BY tv.voteCount DESC")

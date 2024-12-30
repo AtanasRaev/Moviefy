@@ -19,10 +19,12 @@ import java.util.List;
         "runtime",
         "vote_average",
         "api_id",
+        "collection_name",
         "genres",
         "production_companies",
         "cast",
-        "crew"
+        "crew",
+        "collection"
 })
 public class MovieDetailsDTO extends MediaDetailsDTO {
     private String title;
@@ -34,6 +36,9 @@ public class MovieDetailsDTO extends MediaDetailsDTO {
     private LocalDate releaseDate;
 
     private Integer runtime;
+
+    @JsonProperty("collection_name")
+    private String collectionTitle;
 
     private List<MoviePageWithGenreDTO> collection;
 
@@ -67,6 +72,14 @@ public class MovieDetailsDTO extends MediaDetailsDTO {
 
     public void setRuntime(Integer runtime) {
         this.runtime = runtime;
+    }
+
+    public String getCollectionTitle() {
+        return collectionTitle;
+    }
+
+    public void setCollectionTitle(String collectionTitle) {
+        this.collectionTitle = collectionTitle;
     }
 
     public List<MoviePageWithGenreDTO> getCollection() {
