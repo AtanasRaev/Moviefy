@@ -11,6 +11,10 @@ public class CollectionPageDTO {
     @JsonProperty("first_movie_id")
     private Long firstMovieId;
 
+    private String overview;
+
+    private Integer runtime;
+
     public String getName() {
         return name;
     }
@@ -33,5 +37,21 @@ public class CollectionPageDTO {
 
     public void setFirstMovieId(Long firstMovieId) {
         this.firstMovieId = firstMovieId;
+    }
+
+    public String getOverview() {
+        return overview;
+    }
+
+    public void setOverview(String overview) {
+        this.overview = overview;
+    }
+
+    public Integer getRuntime() {
+        return runtime;
+    }
+
+    public void setRuntime(Integer runtime) {
+        this.runtime = runtime;
     }
 }

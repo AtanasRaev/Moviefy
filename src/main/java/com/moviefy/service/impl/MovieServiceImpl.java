@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -88,9 +89,9 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable) {
         return movieRepository.findByReleaseDate(
-                        getStartOfCurrentMonth(),
-                        pageable
-                ).map(movie -> modelMapper.map(movie, MoviePageDTO.class));
+                getStartOfCurrentMonth(),
+                pageable
+        ).map(movie -> modelMapper.map(movie, MoviePageDTO.class));
     }
 
     @Override
@@ -183,11 +184,14 @@ public class MovieServiceImpl implements MovieService {
         return byName.stream()
                 .map(c -> {
                     CollectionPageDTO map = this.modelMapper.map(c, CollectionPageDTO.class);
-
                     c.getMovies()
                             .stream()
                             .min(Comparator.comparing(Movie::getId))
-                            .ifPresent(m -> map.setFirstMovieId(m.getId()));
+                            .ifPresent(movie -> {
+                                map.setFirstMovieId(movie.getId());
+                                map.setOverview(movie.getOverview());
+                                map.setRuntime(movie.getRuntime());
+                            });
 
                     return map;
                 })
@@ -232,7 +236,9 @@ public class MovieServiceImpl implements MovieService {
     private void setCollection(Movie movie, MovieDetailsDTO movieDetails) {
         Collection collection = collectionService.getCollectionByMovieId(movie.getId());
         movieDetails.setCollection(getRelatedMoviesInCollection(movie, collection));
-        movieDetails.setCollectionTitle(collection.getName());
+        if (collection != null) {
+            movieDetails.setCollectionTitle(collection.getName());
+        }
     }
 
     private List<MoviePageWithGenreDTO> getRelatedMoviesInCollection(Movie movie, Collection collection) {
@@ -318,6 +324,9 @@ public class MovieServiceImpl implements MovieService {
 
             if (page > response.getTotalPages()) {
                 logger.info("Reached the last page for year {}.", year);
+                if (year == LocalDate.now().getYear()) {
+                    return;
+                }
                 year += 1;
                 page = 1;
                 count = 0;

@@ -15,29 +15,25 @@ import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
 import com.moviefy.database.model.entity.credit.crew.Crew;
 import com.moviefy.database.model.entity.credit.crew.CrewTvSeries;
-import com.moviefy.database.model.entity.genre.MovieGenre;
 import com.moviefy.database.model.entity.genre.SeriesGenre;
+import com.moviefy.database.model.entity.media.EpisodeTvSeries;
 import com.moviefy.database.model.entity.media.SeasonTvSeries;
 import com.moviefy.database.model.entity.media.TvSeries;
-import com.moviefy.database.repository.CastTvSeriesRepository;
-import com.moviefy.database.repository.CrewTvSeriesRepository;
-import com.moviefy.database.repository.SeasonTvSeriesRepository;
-import com.moviefy.database.repository.TvSeriesRepository;
+import com.moviefy.database.repository.*;
 import com.moviefy.service.*;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
-import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -113,7 +109,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(Pageable pageable) {
-        return this.tvSeriesRepository.findAllByYearOrderByVoteCount(LocalDate.now().getYear(), pageable)
+        int newestTvSeriesYear = this.tvSeriesRepository.findNewestTvSeriesYear();
+        return this.tvSeriesRepository.findAllByYearOrderByVoteCount(newestTvSeriesYear, pageable)
                 .map(tvSeries -> {
                     TvSeriesTrendingPageDTO map = this.modelMapper.map(tvSeries, TvSeriesTrendingPageDTO.class);
                     mapAllGenresToPageDTO(map);
@@ -224,6 +221,9 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             if (page > response.getTotalPages()) {
                 logger.info("Reached the last page for year {}.", year);
+                if (year == LocalDate.now().getYear()) {
+                    return;
+                }
                 year += 1;
                 page = 1;
                 count = 0;
@@ -268,11 +268,9 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 }
 
                 SeasonTvSeriesResponseApiDTO seasonsResponse = getSeasonsResponse(dto.getId());
-                Set<SeasonTvSeries> seasons = mapSeasonsFromResponse(seasonsResponse, tvSeries);
-                tvSeries.setSeasons(seasons);
+                tvSeries.setSeasons(mapSeasonsAndEpisodesFromResponse(seasonsResponse, tvSeries));
 
                 this.tvSeriesRepository.save(tvSeries);
-                this.seasonTvSeriesRepository.saveAll(seasons);
                 count++;
 
                 logger.info("Saved tv series: {}", tvSeries.getName());
@@ -283,14 +281,12 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
                 MediaResponseCreditsDTO creditsById = getCreditsById(tvSeries.getApiId());
                 if (creditsById == null) {
-                    this.tvSeriesRepository.save(tvSeries);
                     continue;
                 }
 
                 List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
                 Set<Cast> castSet = this.castService.mapToSet(castDto);
                 processTvSeriesCast(castDto, tvSeries, castSet);
-
             }
             page++;
         }
@@ -315,7 +311,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 });
     }
 
-    private Set<SeasonTvSeries> mapSeasonsFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
+    private Set<SeasonTvSeries> mapSeasonsAndEpisodesFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
         if (seasonsResponse == null || tvSeries == null) {
             return new HashSet<>();
         }
@@ -333,11 +329,31 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 season.setSeasonNumber(seasonDTO.getSeasonNumber());
                 season.setAirDate(seasonDTO.getAirDate());
                 season.setEpisodeCount(seasonDTO.getEpisodeCount());
+                season.setPosterPath(seasonDTO.getPosterPath());
                 season.setTvSeries(tvSeries);
+                season.setEpisodes(mapEpisodesFromResponse(tvSeries.getApiId(), season));
                 seasons.add(season);
             }
         }
         return seasons;
+    }
+
+    private Set<EpisodeTvSeries> mapEpisodesFromResponse(long id, SeasonTvSeries season) {
+        EpisodesTvSeriesResponseDTO episodesResponse = getEpisodesResponse(id, season.getSeasonNumber());
+
+        if (episodesResponse == null) {
+            return new HashSet<>();
+        }
+
+        return episodesResponse.getEpisodes()
+                .stream()
+                .map(dto -> {
+                    EpisodeTvSeries map = this.modelMapper.map(dto, EpisodeTvSeries.class);
+                    map.setSeason(season);
+                    return map;
+                })
+                .collect(Collectors.toSet());
+
     }
 
     private void mapOneGenreToPageDTO(TvSeriesPageWithGenreDTO map) {
@@ -416,6 +432,21 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     .body(SeasonTvSeriesResponseApiDTO.class);
         } catch (Exception e) {
             System.err.println("Error fetching season for tv-series with ID: " + id + " - " + e.getMessage());
+            return null;
+        }
+    }
+
+    private EpisodesTvSeriesResponseDTO getEpisodesResponse(Long tvId, Integer season) {
+        String url = String.format(this.apiConfig.getUrl() + "/tv/%d/season/%d?api_key=%s", tvId, season, this.apiConfig.getKey());
+
+        try {
+            return this.restClient
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .body(EpisodesTvSeriesResponseDTO.class);
+        } catch (Exception e) {
+            System.err.println("Error fetching season for tv-series with ID: " + tvId + " - " + e.getMessage());
             return null;
         }
     }

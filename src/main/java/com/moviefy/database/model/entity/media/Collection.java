@@ -26,6 +26,9 @@ public class Collection {
             orphanRemoval = true)
     private Set<Movie> movies;
 
+    @Column(name = "vote_count_average")
+    private Double voteCountAverage;
+
     public Collection() {
     }
 
@@ -34,6 +37,7 @@ public class Collection {
         this.name = name;
         this.posterPath = posterPath;
         this.movies = new LinkedHashSet<>();
+        this.voteCountAverage = 0.0;
     }
 
     public long getId() {
@@ -74,5 +78,13 @@ public class Collection {
 
     public void setMovies(Set<Movie> movies) {
         this.movies = movies;
+    }
+
+    public Double getVoteCountAverage() {
+        return voteCountAverage;
+    }
+
+    public void setVoteCountAverage(Double voteCountAverage) {
+        this.voteCountAverage = voteCountAverage;
     }
 }

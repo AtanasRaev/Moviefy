@@ -16,6 +16,9 @@ public class SeasonDTO {
     @JsonProperty("season_number")
     private Integer seasonNumber;
 
+    @JsonProperty("poster_path")
+    private String posterPath;
+
     public Long getId() {
         return id;
     }
@@ -46,5 +49,13 @@ public class SeasonDTO {
 
     public void setSeasonNumber(Integer seasonNumber) {
         this.seasonNumber = seasonNumber;
+    }
+
+    public String getPosterPath() {
+        return posterPath;
+    }
+
+    public void setPosterPath(String posterPath) {
+        this.posterPath = posterPath;
     }
 }

@@ -235,7 +235,7 @@ public class MediaController {
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 "Invalid request",
-                String.format("The media type '%s' is invalid. It must be 'tv' or 'movie'.", input)
+                String.format("The media type '%s' is invalid. It must be 'series' or 'movies'.", input)
         );
     }
 }

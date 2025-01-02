@@ -3,6 +3,7 @@ package com.moviefy.database.model.entity.media;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Entity
 @Table(name = "seasons")
@@ -11,14 +12,17 @@ public class SeasonTvSeries {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+    @Column(name = "air_date")
     private LocalDate airDate;
 
-    @Column
+    @Column(name = "episode_count")
     private Integer episodeCount;
 
-    @Column
+    @Column(name = "season_number")
     private Integer seasonNumber;
+
+    @Column(name = "poster_path")
+    private String posterPath;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tv_series_id", referencedColumnName = "id")
@@ -26,6 +30,12 @@ public class SeasonTvSeries {
 
     @Column(name = "api_id", unique = true)
     private Long apiId;
+
+    @OneToMany(mappedBy = "season",
+            fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
+            orphanRemoval = true)
+    private Set<EpisodeTvSeries> episodes;
 
     public Long getId() {
         return id;
@@ -59,6 +69,14 @@ public class SeasonTvSeries {
         this.seasonNumber = seasonNumber;
     }
 
+    public String getPosterPath() {
+        return posterPath;
+    }
+
+    public void setPosterPath(String posterPath) {
+        this.posterPath = posterPath;
+    }
+
     public TvSeries getTvSeries() {
         return tvSeries;
     }
@@ -73,5 +91,13 @@ public class SeasonTvSeries {
 
     public void setApiId(Long apiId) {
         this.apiId = apiId;
+    }
+
+    public Set<EpisodeTvSeries> getEpisodes() {
+        return episodes;
+    }
+
+    public void setEpisodes(Set<EpisodeTvSeries> episodes) {
+        this.episodes = episodes;
     }
 }
