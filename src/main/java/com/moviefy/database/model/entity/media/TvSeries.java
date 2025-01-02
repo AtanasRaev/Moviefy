@@ -10,7 +10,7 @@ import java.util.Set;
 @Entity
 @Table(name = "tv_series")
 public class TvSeries extends Media {
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "series_genre",
             joinColumns = @JoinColumn(name = "series_id"),
@@ -28,7 +28,7 @@ public class TvSeries extends Media {
     private LocalDate firstAirDate;
 
     @OneToMany(mappedBy = "tvSeries",
-            fetch = FetchType.EAGER,
+            fetch = FetchType.LAZY,
             cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
             orphanRemoval = true)
     private Set<SeasonTvSeries> seasons;
@@ -37,7 +37,7 @@ public class TvSeries extends Media {
     @JoinColumn(name = "status_id", referencedColumnName = "id")
     private StatusTvSeries statusTvSeries;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "tv_series_production",
             joinColumns = @JoinColumn(name = "series_id"),
