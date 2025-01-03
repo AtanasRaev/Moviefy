@@ -91,7 +91,11 @@ public class MovieServiceImpl implements MovieService {
         return movieRepository.findByReleaseDate(
                 getStartOfCurrentMonth(),
                 pageable
-        ).map(movie -> modelMapper.map(movie, MoviePageDTO.class));
+        ).map(movie -> {
+            MoviePageDTO map = modelMapper.map(movie, MoviePageDTO.class);
+            map.setYear(movie.getReleaseDate().getYear());
+            return map;
+        });
     }
 
     @Override
@@ -192,7 +196,11 @@ public class MovieServiceImpl implements MovieService {
                                 map.setOverview(movie.getOverview());
                                 map.setRuntime(movie.getRuntime());
                             });
-
+                    map.setVoteAverage(c.getMovies()
+                            .stream()
+                            .mapToDouble(Movie::getVoteAverage)
+                            .average()
+                            .orElse(0));
                     return map;
                 })
                 .toList();

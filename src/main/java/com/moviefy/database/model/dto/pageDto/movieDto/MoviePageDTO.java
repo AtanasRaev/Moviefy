@@ -9,11 +9,21 @@ public class MoviePageDTO extends MovieDTO {
     @JsonProperty("poster_path")
     private String posterPath;
 
+    private Integer year;
+
     public String getPosterPath() {
         return posterPath;
     }
 
     public void setPosterPath(String posterPath) {
         this.posterPath = posterPath;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
     }
 }

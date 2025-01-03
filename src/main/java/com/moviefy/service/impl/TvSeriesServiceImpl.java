@@ -35,6 +35,7 @@ import org.springframework.web.client.RestClient;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
@@ -109,8 +110,16 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(Pageable pageable) {
-        int newestTvSeriesYear = this.tvSeriesRepository.findNewestTvSeriesYear();
-        return this.tvSeriesRepository.findAllByYearOrderByVoteCount(newestTvSeriesYear, pageable)
+        LocalDate today = LocalDate.now();
+        List<SeasonTvSeries> allByYearRange = this.seasonTvSeriesRepository.findAllByYearRange(today.minusYears(1).getYear(), today.getYear());
+
+        List<Long> ids = allByYearRange
+                .stream()
+                .mapToLong(s -> s.getTvSeries().getId())
+                .boxed()
+                .toList();
+
+        return this.tvSeriesRepository.findAllBySeasonsIds(ids, pageable)
                 .map(tvSeries -> {
                     TvSeriesTrendingPageDTO map = this.modelMapper.map(tvSeries, TvSeriesTrendingPageDTO.class);
                     mapAllGenresToPageDTO(map);
@@ -135,9 +144,22 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return this.tvSeriesRepository.count() == 0;
     }
 
+    @Override
+    public List<TvSeriesTrendingPageDTO> getHomeSeriesDTO(List<String> input) {
+        return this.tvSeriesRepository.findAllByNames(input)
+                .stream()
+                .map(tvSeries -> {
+                    TvSeriesTrendingPageDTO map = this.modelMapper.map(tvSeries, TvSeriesTrendingPageDTO.class);
+                    mapAllGenresToPageDTO(map);
+                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+                    return map;
+                })
+                .toList();
+    }
+
     private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
         TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
-
+        map.setYear(tvSeries.getFirstAirDate().getYear());
         List<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId());
         if (!seasons.isEmpty()) {
             mapSeasonsToPageDTO(new HashSet<>(seasons), map);

@@ -22,4 +22,6 @@ public interface TvSeriesService {
     Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable);
 
     boolean isEmpty();
+
+    List<TvSeriesTrendingPageDTO> getHomeSeriesDTO(List<String> input);
 }

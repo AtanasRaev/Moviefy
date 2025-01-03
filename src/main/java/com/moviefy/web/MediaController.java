@@ -4,6 +4,7 @@ import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import com.moviefy.service.MovieService;
 import com.moviefy.service.impl.MovieGenreServiceImpl;
 import com.moviefy.service.impl.SeriesGenreServiceImpl;
@@ -186,6 +187,29 @@ public class MediaController {
         return ResponseEntity.ok(Map.of(
                 "collections", collections)
         );
+    }
+
+    @GetMapping("series/collection")
+    public ResponseEntity<Map<String, Object>> getSeries(@RequestParam("names") List<String> input) {
+        if (input == null || input.isEmpty()) {
+            return buildErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid request",
+                    "The search must not be empty!"
+            );
+        }
+
+        List<TvSeriesTrendingPageDTO> series = this.tvSeriesService.getHomeSeriesDTO(input);
+
+        if (series.isEmpty()) {
+            return buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("Not found series '%s'", input)
+            );
+        }
+
+        return ResponseEntity.ok(Map.of("series", series));
     }
 
     @GetMapping("/ping")

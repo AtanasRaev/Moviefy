@@ -1,5 +1,6 @@
 package com.moviefy.database.repository;
 
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import com.moviefy.database.model.entity.media.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,13 +33,18 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate <= :startDate ORDER BY tv.firstAirDate DESC, tv.id")
     Page<TvSeries> findByFirstAirDate(@Param("startDate") LocalDate startDate, Pageable pageable);
 
-    @Query("SELECT tv FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = :year ORDER BY tv.voteCount DESC")
-    Page<TvSeries> findAllByYearOrderByVoteCount(@Param("year") int year, Pageable pageable);
+    @Query("SELECT tv FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) BETWEEN :startYear AND :endYear ORDER BY tv.voteCount DESC")
+    Page<TvSeries> findAllByYearRangeOrderByVoteCount(@Param("startYear") int startYear, @Param("endYear") int endYear, Pageable pageable);
+
+    @Query("SELECT tv FROM TvSeries tv WHERE tv.id IN :ids ORDER BY tv.voteCount DESC")
+    Page<TvSeries> findAllBySeasonsIds(@Param("ids") List<Long> ids, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres g WHERE g.name = :genreName")
     List<TvSeries> findByGenreName(@Param("genreName") String genreName);
 
-    @Query("SELECT tv FROM TvSeries tv")
+    @Query("SELECT tv FROM TvSeries tv ORDER BY tv.voteCount DESC")
     Page<TvSeries> findAllSortedByVoteCount(Pageable pageable);
 
+    @Query("SELECT tv FROM TvSeries tv WHERE tv.name IN :names")
+    List<TvSeries> findAllByNames(@Param("names") List<String> names);
 }

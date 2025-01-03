@@ -15,6 +15,8 @@ public class CollectionPageDTO {
 
     private Integer runtime;
 
+    private Double voteAverage;
+
     public String getName() {
         return name;
     }
@@ -53,5 +55,13 @@ public class CollectionPageDTO {
 
     public void setRuntime(Integer runtime) {
         this.runtime = runtime;
+    }
+
+    public Double getVoteAverage() {
+        return voteAverage;
+    }
+
+    public void setVoteAverage(Double voteAverage) {
+        this.voteAverage = voteAverage;
     }
 }
