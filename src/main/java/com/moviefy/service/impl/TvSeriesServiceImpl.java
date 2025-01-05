@@ -2,6 +2,7 @@ package com.moviefy.service.impl;
 
 import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
+import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import com.moviefy.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
@@ -28,14 +29,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
@@ -46,6 +45,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final CastService castService;
     private final CrewService crewService;
     private final SeasonTvSeriesRepository seasonTvSeriesRepository;
+    private final EpisodeTvSeriesRepository episodeTvSeriesRepository;
     private final ProductionCompanyService productionCompanyService;
     private final ApiConfig apiConfig;
     private final RestClient restClient;
@@ -64,6 +64,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                                CastService castService,
                                CrewService crewService,
                                SeasonTvSeriesRepository seasonTvSeriesRepository,
+                               EpisodeTvSeriesRepository episodeTvSeriesRepository,
                                ProductionCompanyService productionCompanyService,
                                ApiConfig apiConfig,
                                RestClient restClient,
@@ -77,6 +78,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.castService = castService;
         this.crewService = crewService;
         this.seasonTvSeriesRepository = seasonTvSeriesRepository;
+        this.episodeTvSeriesRepository = episodeTvSeriesRepository;
         this.productionCompanyService = productionCompanyService;
         this.apiConfig = apiConfig;
         this.restClient = restClient;
@@ -154,6 +156,15 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
                     return map;
                 })
+                .toList();
+    }
+
+    @Override
+    public List<EpisodeDTO> getEpisodesFromSeason(Long seasonId) {
+        return this.episodeTvSeriesRepository.findAllBySeasonId(seasonId)
+                .stream()
+                .map(episode -> this.modelMapper.map(episode, EpisodeDTO.class))
+                .sorted(Comparator.comparing(EpisodeDTO::getEpisodeNumber))
                 .toList();
     }
 

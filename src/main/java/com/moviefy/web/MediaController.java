@@ -1,5 +1,6 @@
 package com.moviefy.web;
 
+import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
@@ -33,8 +34,10 @@ public class MediaController {
     private final MovieGenreServiceImpl movieGenreService;
     private final SeriesGenreServiceImpl seriesGenreService;
 
-    public MediaController(MovieService movieService, TvSeriesServiceImpl tvSeriesService,
-                           MovieGenreServiceImpl movieGenreService, SeriesGenreServiceImpl seriesGenreService) {
+    public MediaController(MovieService movieService,
+                           TvSeriesServiceImpl tvSeriesService,
+                           MovieGenreServiceImpl movieGenreService,
+                           SeriesGenreServiceImpl seriesGenreService) {
         this.movieService = movieService;
         this.tvSeriesService = tvSeriesService;
         this.movieGenreService = movieGenreService;
@@ -212,6 +215,21 @@ public class MediaController {
         return ResponseEntity.ok(Map.of("series", series));
     }
 
+    @GetMapping("series/season/{id}")
+    public ResponseEntity<Map<String, Object>> getEpisodesFromSeason(@PathVariable Long id) {
+        List<EpisodeDTO> episodes = this.tvSeriesService.getEpisodesFromSeason(id);
+
+        if (episodes.isEmpty()) {
+            return buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("Not found any episodes from season with id '%d'", id)
+            );
+        }
+
+        return ResponseEntity.ok(Map.of("episodes", episodes));
+    }
+
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("pong");
@@ -219,16 +237,6 @@ public class MediaController {
 
     private boolean isMediaTypeInvalid(String mediaType) {
         return !"movies".equalsIgnoreCase(mediaType) && !"series".equalsIgnoreCase(mediaType);
-    }
-
-    private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String error, String message) {
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("error", error);
-        response.put("message", message);
-
-        return ResponseEntity
-                .status(status)
-                .body(response);
     }
 
     private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable) {
@@ -261,5 +269,15 @@ public class MediaController {
                 "Invalid request",
                 String.format("The media type '%s' is invalid. It must be 'series' or 'movies'.", input)
         );
+    }
+
+    private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String error, String message) {
+        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+        response.put("error", error);
+        response.put("message", message);
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
     }
 }

@@ -4,18 +4,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EpisodeDTO {
     @JsonProperty("episode_number")
-    private String episodeNumber;
+    private Integer episodeNumber;
 
     private String name;
 
     @JsonProperty("still_path")
     private String stillPath;
 
-    public String getEpisodeNumber() {
+    public Integer getEpisodeNumber() {
         return episodeNumber;
     }
 
-    public void setEpisodeNumber(String episodeNumber) {
+    public void setEpisodeNumber(Integer episodeNumber) {
         this.episodeNumber = episodeNumber;
     }
 
