@@ -27,4 +27,6 @@ public interface TvSeriesService {
     List<TvSeriesTrendingPageDTO> getHomeSeriesDTO(List<String> input);
 
     List<EpisodeDTO> getEpisodesFromSeason(Long seasonId);
+
+    Integer getSeasonNumberById(Long seasonId);
 }

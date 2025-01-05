@@ -1,6 +1,7 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
+import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
@@ -217,6 +218,16 @@ public class MediaController {
 
     @GetMapping("series/season/{id}")
     public ResponseEntity<Map<String, Object>> getEpisodesFromSeason(@PathVariable Long id) {
+        Integer seasonNumber = this.tvSeriesService.getSeasonNumberById(id);
+
+        if (seasonNumber == null) {
+            return buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("Not found season with id '%d'", id)
+            );
+        }
+
         List<EpisodeDTO> episodes = this.tvSeriesService.getEpisodesFromSeason(id);
 
         if (episodes.isEmpty()) {
@@ -227,7 +238,7 @@ public class MediaController {
             );
         }
 
-        return ResponseEntity.ok(Map.of("episodes", episodes));
+        return ResponseEntity.ok(Map.of(seasonNumber.toString(), episodes));
     }
 
     @GetMapping("/ping")

@@ -168,6 +168,13 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .toList();
     }
 
+    @Override
+    public Integer getSeasonNumberById(Long seasonId) {
+        return this.seasonTvSeriesRepository.findById(seasonId)
+                .map(SeasonTvSeries::getSeasonNumber)
+                .orElse(null);
+    }
+
     private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
         TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
         map.setYear(tvSeries.getFirstAirDate().getYear());
