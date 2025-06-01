@@ -47,4 +47,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.name IN :names")
     List<TvSeries> findAllByNames(@Param("names") List<String> names);
+
+    @Query("SELECT tv FROM TvSeries tv WHERE LOWER(tv.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(tv.originalName) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<TvSeries> searchByName(@Param("query") String query, Pageable pageable);
 }
