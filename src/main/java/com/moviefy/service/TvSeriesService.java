@@ -29,4 +29,6 @@ public interface TvSeriesService {
     List<EpisodeDTO> getEpisodesFromSeason(Long seasonId);
 
     Integer getSeasonNumberById(Long seasonId);
+
+    Page<TvSeriesPageWithGenreDTO> searchTvSeries(String query, Pageable pageable);
 }
