@@ -206,6 +206,16 @@ public class MovieServiceImpl implements MovieService {
                 .toList();
     }
 
+    @Override
+    public Page<MoviePageWithGenreDTO> searchMovies(String query, Pageable pageable) {
+        return this.movieRepository.searchByTitle(query, pageable)
+                .map(movie -> {
+                    MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
+                    mapOneGenreToPageDTO(map);
+                    return map;
+                });
+    }
+
 
     //    @Scheduled(fixedDelay = 100000000)
     //TODO
