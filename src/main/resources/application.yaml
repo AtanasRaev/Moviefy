@@ -34,8 +34,9 @@ logging:
     blog: WARN
     runtime: INFO
     instance class: INFO
-
 tmdb:
   api:
     url: "https://api.themoviedb.org/3"
     key: ${TMDB_API_KEY}
+server:
+  port: ${PORT:8080}
