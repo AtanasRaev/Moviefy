@@ -7,9 +7,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 public class SearchResultDTO {
     private Long id;
     
-    private String type; // "movie" or "series"
+    private String type;
     
-    private String title; // movie title or series name
+    private String title;
     
     @JsonProperty("poster_path")
     private String posterPath;
@@ -23,10 +23,8 @@ public class SearchResultDTO {
     
     private String trailer;
     
-    // Additional fields for movies
     private Integer runtime;
     
-    // Additional fields for TV series
     @JsonProperty("seasons")
     private Integer seasonsCount;
     
