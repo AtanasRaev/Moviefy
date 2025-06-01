@@ -175,6 +175,17 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .orElse(null);
     }
 
+    @Override
+    public Page<TvSeriesPageWithGenreDTO> searchTvSeries(String query, Pageable pageable) {
+        return this.tvSeriesRepository.searchByName(query, pageable)
+                .map(tvSeries -> {
+                    TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
+                    mapOneGenreToPageDTO(map);
+                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+                    return map;
+                });
+    }
+
     private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
         TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
         map.setYear(tvSeries.getFirstAirDate().getYear());
