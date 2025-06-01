@@ -4,9 +4,13 @@ import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.SearchResultDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
+import com.moviefy.database.model.entity.media.Media;
 import com.moviefy.service.MovieService;
 import com.moviefy.service.impl.MovieGenreServiceImpl;
 import com.moviefy.service.impl.SeriesGenreServiceImpl;
@@ -24,9 +28,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 public class MediaController {
@@ -244,6 +250,92 @@ public class MediaController {
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("pong");
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchMedia(
+            @RequestParam("query") String query,
+            @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
+
+        if (query == null || query.isBlank()) {
+            return buildErrorResponse(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid request",
+                    "The search query must not be empty!"
+            );
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size / 2);
+
+        Page<MoviePageWithGenreDTO> movies = movieService.searchMovies(query, pageable);
+        Page<TvSeriesPageWithGenreDTO> series = tvSeriesService.searchTvSeries(query, pageable);
+
+        List<SearchResultDTO> movieResults = movies.getContent().stream()
+                .map(movie -> {
+                    SearchResultDTO result = new SearchResultDTO();
+                    result.setId(movie.getId());
+                    result.setType("movie");
+                    result.setTitle(movie.getTitle());
+                    result.setPosterPath(movie.getPosterPath());
+                    result.setVoteAverage(movie.getVoteAverage());
+                    result.setYear(movie.getYear());
+                    result.setGenre(movie.getGenre());
+                    result.setTrailer(movie.getTrailer());
+                    result.setRuntime(movie.getRuntime());
+                    return result;
+                })
+                .toList();
+
+        List<SearchResultDTO> seriesResults = series.getContent().stream()
+                .map(tvSeries -> {
+                    SearchResultDTO result = new SearchResultDTO();
+                    result.setId(tvSeries.getId());
+                    result.setType("series");
+                    result.setTitle(tvSeries.getName());
+                    result.setPosterPath(tvSeries.getPosterPath());
+                    result.setVoteAverage(tvSeries.getVoteAverage());
+                    result.setYear(tvSeries.getYear());
+                    result.setGenre(tvSeries.getGenre());
+                    result.setTrailer(tvSeries.getTrailer());
+                    result.setSeasonsCount(tvSeries.getSeasonsCount());
+                    result.setEpisodesCount(tvSeries.getEpisodesCount());
+                    return result;
+                })
+                .toList();
+
+        List<SearchResultDTO> combinedResults = new ArrayList<>();
+        combinedResults.addAll(movieResults);
+        combinedResults.addAll(seriesResults);
+
+        String queryLower = query.toLowerCase();
+        combinedResults.sort((a, b) -> {
+            boolean aExactMatch = a.getTitle().toLowerCase().contains(queryLower);
+            boolean bExactMatch = b.getTitle().toLowerCase().contains(queryLower);
+
+            if (aExactMatch && !bExactMatch) {
+                return -1;
+            } else if (!aExactMatch && bExactMatch) {
+                return 1;
+            } else {
+                return b.getVoteAverage().compareTo(a.getVoteAverage());
+            }
+        });
+
+        int start = Math.min((page - 1) * size, combinedResults.size());
+        int end = Math.min(start + size, combinedResults.size());
+        List<SearchResultDTO> paginatedResults = combinedResults.subList(start, end);
+
+        long totalItems = movies.getTotalElements() + series.getTotalElements();
+        int totalPages = (int) Math.ceil((double) totalItems / size);
+
+        return ResponseEntity.ok(Map.of(
+                "items_on_page", paginatedResults.size(),
+                "total_items", totalItems,
+                "total_pages", totalPages,
+                "current_page", page,
+                "results", paginatedResults
+        ));
     }
 
     private boolean isMediaTypeInvalid(String mediaType) {
