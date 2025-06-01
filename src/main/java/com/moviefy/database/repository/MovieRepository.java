@@ -38,6 +38,15 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m")
     Page<Movie> findAllSortedByVoteCount(Pageable pageable);
 
-    @Query("SELECT m FROM Movie m WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(m.originalTitle) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query("""
+            SELECT m FROM Movie m
+            WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :query, '%'))
+               OR LOWER(m.originalTitle) LIKE LOWER(CONCAT('%', :query, '%'))
+            ORDER BY
+               CASE WHEN LOWER(m.title) = LOWER(:query) THEN 0
+                    WHEN LOWER(m.title) LIKE LOWER(CONCAT(:query, '%')) THEN 1
+                    ELSE 2 END,
+               m.title
+            """)
     Page<Movie> searchByTitle(@Param("query") String query, Pageable pageable);
 }
