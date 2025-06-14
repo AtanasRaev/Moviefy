@@ -22,7 +22,9 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
+                .cors(cors -> {
+
+                });
 
         return http.build();
     }
