@@ -11,8 +11,11 @@ COPY gradle /app/gradle/
 # Copy the application source code
 COPY src /app/src/
 
-# Ensure the Gradle wrapper is executable
-RUN chmod +x gradlew
+# Install dos2unix to fix line endings
+RUN apt-get update && apt-get install -y dos2unix
+
+# Ensure the Gradle wrapper has proper line endings and is executable
+RUN dos2unix gradlew && chmod +x gradlew
 
 # Build the application
 RUN ./gradlew bootJar
@@ -22,5 +25,3 @@ EXPOSE 8080
 
 # Run the Spring Boot application
 CMD ["java", "-jar", "build/libs/WatchItNow-0.0.1-SNAPSHOT.jar"]
-
-
