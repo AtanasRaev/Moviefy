@@ -12,9 +12,11 @@ import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreD
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import com.moviefy.database.model.entity.media.Media;
 import com.moviefy.service.MovieService;
+import com.moviefy.service.TvSeriesService;
 import com.moviefy.service.impl.MovieGenreServiceImpl;
 import com.moviefy.service.impl.SeriesGenreServiceImpl;
 import com.moviefy.service.impl.TvSeriesServiceImpl;
+import com.moviefy.utils.ErrorResponseUtil;
 import com.moviefy.utils.SearchMediaUtil;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -38,18 +40,12 @@ import java.util.stream.Collectors;
 @RestController
 public class MediaController {
     private final MovieService movieService;
-    private final TvSeriesServiceImpl tvSeriesService;
-    private final MovieGenreServiceImpl movieGenreService;
-    private final SeriesGenreServiceImpl seriesGenreService;
+    private final TvSeriesService tvSeriesService;
 
     public MediaController(MovieService movieService,
-                           TvSeriesServiceImpl tvSeriesService,
-                           MovieGenreServiceImpl movieGenreService,
-                           SeriesGenreServiceImpl seriesGenreService) {
+                           TvSeriesServiceImpl tvSeriesService) {
         this.movieService = movieService;
         this.tvSeriesService = tvSeriesService;
-        this.movieGenreService = movieGenreService;
-        this.seriesGenreService = seriesGenreService;
     }
 
     @GetMapping("/{mediaType}/latest")
@@ -87,7 +83,7 @@ public class MediaController {
         MediaDetailsDTO media = getMediaByIdPage(mediaType, id);
 
         if (media == null) {
-            return buildErrorResponse(
+            return ErrorResponseUtil.buildErrorResponse(
                     HttpStatus.NOT_FOUND,
                     "Resource not found",
                     String.format("Not found %s with id %d", mediaType, id)
@@ -143,111 +139,6 @@ public class MediaController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("movies/collection")
-    public ResponseEntity<Map<String, Object>> getCollectionMoviesSearch(@RequestParam("name") String input) {
-        if (input == null || input.isBlank()) {
-            return buildErrorResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid request",
-                    "The search must not be empty!"
-            );
-        }
-
-        MovieDetailsHomeDTO firstMovie = this.movieService.getFirstMovieByCollectionName(input);
-
-        if (firstMovie == null) {
-            return buildErrorResponse(
-                    HttpStatus.NOT_FOUND,
-                    "Resource not found",
-                    String.format("Not found collection '%s'", input)
-            );
-        }
-
-        Map<String, Object> map = new LinkedHashMap<>();
-
-        List<MovieHomeDTO> list = this.movieService.getMoviesByCollectionName(input)
-                .stream()
-                .skip(1)
-                .toList();
-
-        map.put("first_movie", firstMovie);
-        map.put("rest_movies", list);
-        return ResponseEntity.ok(map);
-    }
-
-    @GetMapping("movies/collections")
-    public ResponseEntity<Map<String, Object>> getCollectionSearch(@RequestParam("names") List<String> input) {
-        if (input == null || input.isEmpty()) {
-            return buildErrorResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid request",
-                    "The search must not be empty!"
-            );
-        }
-
-        List<CollectionPageDTO> collections = this.movieService.getCollectionsByName(input);
-
-        if (collections.isEmpty()) {
-            return buildErrorResponse(
-                    HttpStatus.NOT_FOUND,
-                    "Resource not found",
-                    String.format("Not found collections '%s'", input)
-            );
-        }
-
-        return ResponseEntity.ok(Map.of(
-                "collections", collections)
-        );
-    }
-
-    @GetMapping("series/collection")
-    public ResponseEntity<Map<String, Object>> getSeries(@RequestParam("names") List<String> input) {
-        if (input == null || input.isEmpty()) {
-            return buildErrorResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid request",
-                    "The search must not be empty!"
-            );
-        }
-
-        List<TvSeriesTrendingPageDTO> series = this.tvSeriesService.getHomeSeriesDTO(input);
-
-        if (series.isEmpty()) {
-            return buildErrorResponse(
-                    HttpStatus.NOT_FOUND,
-                    "Resource not found",
-                    String.format("Not found series '%s'", input)
-            );
-        }
-
-        return ResponseEntity.ok(Map.of("series", series));
-    }
-
-    @GetMapping("series/season/{id}")
-    public ResponseEntity<Map<String, Object>> getEpisodesFromSeason(@PathVariable Long id) {
-        Integer seasonNumber = this.tvSeriesService.getSeasonNumberById(id);
-
-        if (seasonNumber == null) {
-            return buildErrorResponse(
-                    HttpStatus.NOT_FOUND,
-                    "Resource not found",
-                    String.format("Not found season with id '%d'", id)
-            );
-        }
-
-        List<EpisodeDTO> episodes = this.tvSeriesService.getEpisodesFromSeason(id);
-
-        if (episodes.isEmpty()) {
-            return buildErrorResponse(
-                    HttpStatus.NOT_FOUND,
-                    "Resource not found",
-                    String.format("Not found any episodes from season with id '%d'", id)
-            );
-        }
-
-        return ResponseEntity.ok(Map.of(seasonNumber.toString(), episodes));
-    }
-
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("pong");
@@ -291,20 +182,10 @@ public class MediaController {
     }
 
     private ResponseEntity<Map<String, Object>> getInvalidRequest(String input) {
-        return buildErrorResponse(
+        return ErrorResponseUtil.buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 "Invalid request",
                 String.format("The media type '%s' is invalid. It must be 'series' or 'movies'.", input)
         );
-    }
-
-    private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String error, String message) {
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("error", error);
-        response.put("message", message);
-
-        return ResponseEntity
-                .status(status)
-                .body(response);
     }
 }

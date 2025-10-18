@@ -4,6 +4,7 @@ import com.moviefy.database.model.dto.pageDto.SearchResultDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
 import com.moviefy.service.MovieService;
+import com.moviefy.service.TvSeriesService;
 import com.moviefy.service.impl.TvSeriesServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,7 +35,7 @@ public class SearchMediaUtil {
             int size,
             int page,
             MovieService movieService,
-            TvSeriesServiceImpl tvSeriesService) {
+            TvSeriesService tvSeriesService) {
 
         ResponseEntity<Map<String, Object>> validationResponse = validateSearchQuery(query);
         if (validationResponse != null) {
