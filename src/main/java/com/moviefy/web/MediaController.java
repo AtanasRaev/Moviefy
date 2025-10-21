@@ -150,9 +150,7 @@ public class MediaController {
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
 
-        // When mediaType is "all", return a single combined list (movies + series) sorted by popularity desc
         if ("all".equalsIgnoreCase(mediaType)) {
-            // Fetch enough items from both sources to build the requested combined page
             Pageable fetchPageable = PageRequest.of(0, Math.max(size * page, size), Sort.by("popularity").descending());
 
             Page<MoviePageWithGenreDTO> moviesPage = movieService.getMoviesByGenres(genres, fetchPageable);
@@ -161,7 +159,6 @@ public class MediaController {
             long totalItems = moviesPage.getTotalElements() + seriesPage.getTotalElements();
             int totalPages = (int) Math.ceil((double) totalItems / size);
 
-            // Merge and sort by popularity desc
             List<MediaPageDTO> merged = new ArrayList<>();
             merged.addAll(moviesPage.getContent());
             merged.addAll(seriesPage.getContent());
@@ -171,15 +168,13 @@ public class MediaController {
                 if (pa == null && pb == null) return 0;
                 if (pa == null) return 1;
                 if (pb == null) return -1;
-                return pb.compareTo(pa); // desc
+                return pb.compareTo(pa);
             });
 
-            // Manual pagination over the combined list
             int start = Math.min((page - 1) * size, merged.size());
             int end = Math.min(start + size, merged.size());
             List<MediaPageDTO> pageSlice = merged.subList(start, end);
 
-            // Map to a unified result DTO similar to search results
             List<SearchResultDTO> results = pageSlice.stream().map(item -> {
                 SearchResultDTO r = new SearchResultDTO();
                 if (item instanceof MoviePageWithGenreDTO m) {

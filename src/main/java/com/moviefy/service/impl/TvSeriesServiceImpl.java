@@ -219,6 +219,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                         mapOneGenreToPageDTO(dto);
                     }
 
+                    dto.setYear(tvSeries.getFirstAirDate().getYear());
+
                     mapSeasonsToPageDTO(
                             new HashSet<>(seasonTvSeriesRepository.findAllByTvSeriesId(dto.getId())),
                             dto

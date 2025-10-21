@@ -226,6 +226,7 @@ public class MovieServiceImpl implements MovieService {
                     } else {
                         mapOneGenreToPageDTO(map);
                     }
+                    map.setYear(movie.getReleaseDate().getYear());
                     return map;
                 });
     }
