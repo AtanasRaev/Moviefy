@@ -32,4 +32,6 @@ public interface MovieService {
     List<CollectionPageDTO> getCollectionsByName(List<String> input);
 
     Page<MoviePageWithGenreDTO> searchMovies(String query, Pageable pageable);
+
+    Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable);
 }
