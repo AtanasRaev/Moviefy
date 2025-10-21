@@ -216,6 +216,19 @@ public class MovieServiceImpl implements MovieService {
                 });
     }
 
+    @Override
+    public Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable) {
+        return this.movieRepository.searchByGenres(genres, pageable)
+                .map(movie -> {
+                    MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
+                    if (genres.size() == 1) {
+                        map.setGenre(genres.get(0));
+                    } else {
+                        mapOneGenreToPageDTO(map);
+                    }
+                    return map;
+                });
+    }
 
     //    @Scheduled(fixedDelay = 100000000)
     //TODO
