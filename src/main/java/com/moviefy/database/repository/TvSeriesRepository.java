@@ -1,6 +1,5 @@
 package com.moviefy.database.repository;
 
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import com.moviefy.database.model.entity.media.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -59,4 +58,13 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                tv.name
             """)
     Page<TvSeries> searchByName(@Param("query") String query, Pageable pageable);
+
+
+    @Query("""
+                SELECT DISTINCT tv 
+                FROM TvSeries tv 
+                LEFT JOIN FETCH tv.genres g 
+                WHERE g.name IN :genres
+            """)
+    Page<TvSeries> searchByGenres(@Param("genres")List<String> genres, Pageable pageable);
 }
