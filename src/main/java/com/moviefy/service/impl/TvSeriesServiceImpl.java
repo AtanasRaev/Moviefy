@@ -186,6 +186,47 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 });
     }
 
+    @Override
+    public Page<TvSeriesPageWithGenreDTO> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
+        List<String> searchGenres = new ArrayList<>(genres);
+
+        List<String> lowerCaseGenres = searchGenres.stream()
+                .map(String::toLowerCase)
+                .toList();
+
+        if (lowerCaseGenres.contains("action") || lowerCaseGenres.contains("adventure")) {
+            searchGenres.removeIf(g -> g.equalsIgnoreCase("action") || g.equalsIgnoreCase("adventure"));
+            searchGenres.add("Action & Adventure");
+        }
+
+        if (lowerCaseGenres.contains("Science Fiction") || lowerCaseGenres.contains("fantasy")) {
+            searchGenres.removeIf(g -> g.equalsIgnoreCase("Science Fiction") || g.equalsIgnoreCase("fantasy"));
+            searchGenres.add("Sci-Fi & Fantasy");
+        }
+
+        if (lowerCaseGenres.contains("war") || lowerCaseGenres.contains("politics")) {
+            searchGenres.removeIf(g -> g.equalsIgnoreCase("war") || g.equalsIgnoreCase("politics"));
+            searchGenres.add("War & Politics");
+        }
+
+        return tvSeriesRepository.searchByGenres(searchGenres, pageable)
+                .map(tvSeries -> {
+                    TvSeriesPageWithGenreDTO dto = modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
+
+                    if (searchGenres.size() == 1) {
+                        dto.setGenre(searchGenres.get(0));
+                    } else {
+                        mapOneGenreToPageDTO(dto);
+                    }
+
+                    mapSeasonsToPageDTO(
+                            new HashSet<>(seasonTvSeriesRepository.findAllByTvSeriesId(dto.getId())),
+                            dto
+                    );
+                    return dto;
+                });
+    }
+
     private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
         TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
         map.setYear(tvSeries.getFirstAirDate().getYear());
