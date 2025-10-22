@@ -8,7 +8,10 @@ import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.*;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastMovie;
@@ -23,13 +26,12 @@ import com.moviefy.database.repository.MovieRepository;
 import com.moviefy.service.*;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
-import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -87,6 +89,11 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "latestMovies",
+            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable) {
         return movieRepository.findByReleaseDate(
                 getStartOfCurrentMonth(),
@@ -99,6 +106,11 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "movieDetailsById",
+            key = "#id",
+            unless = "#result == null"
+    )
     public MovieDetailsDTO getMovieDetailsById(Long id) {
         return this.movieRepository.findMovieById(id)
                 .map(this::mapToMovieDetailsDTO)
@@ -106,14 +118,11 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public Set<MoviePageDTO> getMoviesByGenre(String genreType) {
-        return this.movieRepository.findByGenreName(genreType)
-                .stream()
-                .map(movie -> modelMapper.map(movie, MoviePageDTO.class))
-                .collect(Collectors.toSet());
-    }
-
-    @Override
+    @Cacheable(
+            cacheNames = "trendingMovies",
+            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable) {
         return this.movieRepository.findAllByPopularityDesc(pageable)
                 .map(movie -> {
@@ -123,12 +132,12 @@ public class MovieServiceImpl implements MovieService {
                 });
     }
 
-    private void mapOneGenreToPageDTO(MoviePageWithGenreDTO map) {
-        Optional<MovieGenre> optional = this.movieGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
-        optional.ifPresent(genre -> map.setGenre(genre.getName()));
-    }
-
     @Override
+    @Cacheable(
+            cacheNames = "popularMovies",
+            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable) {
         return this.movieRepository.findAllSortedByVoteCount(pageable)
                 .map(movie -> {
@@ -144,6 +153,11 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "firstMovieByCollection",
+            key = "#name",
+            unless = "#result == null"
+    )
     public MovieDetailsHomeDTO getFirstMovieByCollectionName(String name) {
         List<Collection> collections = collectionService.getByName(name);
 
@@ -178,6 +192,10 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "collectionsByName",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<CollectionPageDTO> getCollectionsByName(List<String> input) {
         List<Collection> byName = this.collectionService.getByNames(input);
 
@@ -217,6 +235,11 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "moviesByGenres",
+            key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable) {
         return this.movieRepository.searchByGenres(genres, pageable)
                 .map(movie -> {
@@ -319,6 +342,11 @@ public class MovieServiceImpl implements MovieService {
                 .sorted(Comparator.comparing(CrewPageDTO::getId))
                 .map(crew -> modelMapper.map(crew, CrewHomePageDTO.class))
                 .toList();
+    }
+
+    private void mapOneGenreToPageDTO(MoviePageWithGenreDTO map) {
+        Optional<MovieGenre> optional = this.movieGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
+        optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
 
     private void fetchMovies() {
