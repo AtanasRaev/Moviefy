@@ -285,6 +285,7 @@ public class MovieServiceImpl implements MovieService {
                 .map(m -> {
                     MoviePageWithGenreDTO map = modelMapper.map(m, MoviePageWithGenreDTO.class);
                     mapOneGenreToPageDTO(map);
+                    map.setYear(m.getReleaseDate().getYear());
                     return map;
                 })
                 .toList();
