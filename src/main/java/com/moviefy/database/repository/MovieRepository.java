@@ -50,11 +50,19 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             """)
     Page<Movie> searchByTitle(@Param("query") String query, Pageable pageable);
 
-    @Query("""
-                SELECT DISTINCT m 
-                FROM Movie m 
-                LEFT JOIN FETCH m.genres g 
-                WHERE g.name IN :genres
-            """)
+    @Query(
+            value = """
+                    SELECT DISTINCT m
+                    FROM Movie m
+                    JOIN m.genres g
+                    WHERE g.name IN :genres
+                    """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT m.id)
+                    FROM Movie m
+                    JOIN m.genres g
+                    WHERE g.name IN :genres
+                    """
+    )
     Page<Movie> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
 }

@@ -59,12 +59,20 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             """)
     Page<TvSeries> searchByName(@Param("query") String query, Pageable pageable);
 
+    @Query(
+            value = """
+                    SELECT DISTINCT tv
+                    FROM TvSeries tv
+                    JOIN tv.genres g
+                    WHERE g.name IN :genres
+                    """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT tv.id)
+                    FROM TvSeries tv
+                    JOIN tv.genres g
+                    WHERE g.name IN :genres
+                    """
+    )
+    Page<TvSeries> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
 
-    @Query("""
-                SELECT DISTINCT tv 
-                FROM TvSeries tv 
-                LEFT JOIN FETCH tv.genres g 
-                WHERE g.name IN :genres
-            """)
-    Page<TvSeries> searchByGenres(@Param("genres")List<String> genres, Pageable pageable);
 }
