@@ -9,14 +9,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Set;
 
 public interface TvSeriesService {
     Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable);
 
     TvSeriesDetailsDTO getTvSeriesDetailsById(Long id);
-
-    Set<TvSeriesPageDTO> getTvSeriesByGenre(String genreType);
 
     Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(Pageable pageable);
 

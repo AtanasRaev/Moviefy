@@ -10,14 +10,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Set;
 
 public interface MovieService {
     Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable);
 
     MovieDetailsDTO getMovieDetailsById(Long id);
-
-    Set<MoviePageDTO> getMoviesByGenre(String genreType);
 
     Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable);
 
