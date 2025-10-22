@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -88,6 +89,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "latestTvSeries",
+            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable) {
         return this.tvSeriesRepository.findByFirstAirDate(
                 getStartOfCurrentMonth(),
@@ -96,6 +102,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "tvSeriesDetailsById",
+            key = "#id",
+            unless = "#result == null"
+    )
     public TvSeriesDetailsDTO getTvSeriesDetailsById(Long id) {
         return this.tvSeriesRepository.findTvSeriesById(id)
                 .map(this::mapToTvSeriesDetailsDTO)
@@ -103,14 +114,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public Set<TvSeriesPageDTO> getTvSeriesByGenre(String genreType) {
-        return this.tvSeriesRepository.findByGenreName(genreType)
-                .stream()
-                .map(tvSeries -> modelMapper.map(tvSeries, TvSeriesPageDTO.class))
-                .collect(Collectors.toSet());
-    }
-
-    @Override
+    @Cacheable(
+            cacheNames = "trendingTvSeries",
+            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(Pageable pageable) {
         LocalDate today = LocalDate.now();
         List<SeasonTvSeries> allByYearRange = this.seasonTvSeriesRepository.findAllByYearRange(today.minusYears(1).getYear(), today.getYear());
@@ -131,6 +139,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
+    @Cacheable(cacheNames = "popularTvSeries",
+            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable) {
         return this.tvSeriesRepository.findAllSortedByVoteCount(pageable)
                 .map(tvSeries -> {
@@ -147,6 +159,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "homeSeriesByCollection",
+            key = "#input",
+            unless = "#result == null"
+    )
     public List<TvSeriesTrendingPageDTO> getHomeSeriesDTO(List<String> input) {
         return this.tvSeriesRepository.findAllByNames(input)
                 .stream()
@@ -187,6 +204,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "tvSeriesByGenres",
+            key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<TvSeriesPageWithGenreDTO> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
         List<String> searchGenres = new ArrayList<>(genres);
 
