@@ -199,7 +199,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             searchGenres.add("Action & Adventure");
         }
 
-        if (lowerCaseGenres.contains("Science Fiction") || lowerCaseGenres.contains("fantasy")) {
+        if (lowerCaseGenres.contains("science fiction") || lowerCaseGenres.contains("fantasy")) {
             searchGenres.removeIf(g -> g.equalsIgnoreCase("Science Fiction") || g.equalsIgnoreCase("fantasy"));
             searchGenres.add("Sci-Fi & Fantasy");
         }
