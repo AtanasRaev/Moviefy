@@ -60,7 +60,5 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'com.maciejwalkowiak.spring:wiremock-spring-boot:2.1.2'
     runtimeOnly 'org.postgresql:postgresql'
-    runtimeOnly 'com.mysql:mysql-connector-j'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testRuntimeOnly 'org.hsqldb:hsqldb'
 }
