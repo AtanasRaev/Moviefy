@@ -9,9 +9,17 @@ public abstract class MediaPageDTO {
     @JsonProperty("vote_average")
     private Double voteAverage;
 
-    // Used for internal sorting/merging only; do not serialize in API responses
     @JsonIgnore
     private Double popularity;
+
+    public MediaPageDTO(Long id, Double voteAverage, Double popularity) {
+        this.id = id;
+        this.voteAverage = voteAverage;
+        this.popularity = popularity;
+    }
+
+    public MediaPageDTO() {
+    }
 
     public Long getId() {
         return id;
@@ -20,6 +28,8 @@ public abstract class MediaPageDTO {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public abstract String getType();
 
     public Double getVoteAverage() {
         return voteAverage;

@@ -7,6 +7,20 @@ public abstract class MovieDTO extends MediaPageDTO {
 
     private Integer runtime;
 
+    public MovieDTO(Long id, Double voteAverage, Double popularity, String title, Integer runtime) {
+        super(id, voteAverage, popularity);
+        this.title = title;
+        this.runtime = runtime;
+    }
+
+    public MovieDTO() {
+    }
+
+    @Override
+    public String getType() {
+        return "movie";
+    }
+
     public String getTitle() {
         return title;
     }

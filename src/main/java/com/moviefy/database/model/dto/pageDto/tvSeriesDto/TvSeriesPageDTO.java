@@ -10,6 +10,15 @@ public class TvSeriesPageDTO extends TvSeriesDTO {
 
     private Integer year;
 
+    public TvSeriesPageDTO(Long id, Double voteAverage, Double popularity, String name, Integer seasonsCount, Integer episodesCount, String posterPath, Integer year) {
+        super(id, voteAverage, popularity, name, seasonsCount, episodesCount);
+        this.posterPath = posterPath;
+        this.year = year;
+    }
+
+    public TvSeriesPageDTO() {
+    }
+
     public String getPosterPath() {
         return posterPath;
     }

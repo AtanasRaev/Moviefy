@@ -5,6 +5,15 @@ public class TvSeriesPageWithGenreDTO extends TvSeriesPageDTO {
 
     private String trailer;
 
+    public TvSeriesPageWithGenreDTO(Long id, Double voteAverage, Double popularity, String name, Integer seasonsCount, Integer episodesCount, String posterPath, Integer year, String genre, String trailer) {
+        super(id, voteAverage, popularity, name, seasonsCount, episodesCount, posterPath, year);
+        this.genre = genre;
+        this.trailer = trailer;
+    }
+
+    public TvSeriesPageWithGenreDTO() {
+    }
+
     public String getGenre() {
         return genre;
     }

@@ -12,6 +12,22 @@ public abstract class TvSeriesDTO extends MediaPageDTO {
     @JsonProperty("episodes")
     private Integer episodesCount;
 
+    public TvSeriesDTO(Long id, Double voteAverage, Double popularity, String name, Integer seasonsCount, Integer episodesCount) {
+        super(id, voteAverage, popularity);
+        this.name = name;
+        this.seasonsCount = seasonsCount;
+        this.episodesCount = episodesCount;
+    }
+
+    public TvSeriesDTO() {
+
+    }
+
+    @Override
+    public String getType() {
+        return "series";
+    }
+
     public String getName() {
         return name;
     }
