@@ -113,6 +113,13 @@ public class CacheConfig {
                         .build()
         );
 
+        CaffeineCache combinedByGenres = new CaffeineCache(
+                "combinedByGenres",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
                 movieDetailsById,
@@ -127,7 +134,8 @@ public class CacheConfig {
                 firstMovieByCollection,
                 homeSeriesByCollection,
                 moviesByGenres,
-                tvSeriesByGenres
+                tvSeriesByGenres,
+                combinedByGenres
         ));
         return manager;
     }
