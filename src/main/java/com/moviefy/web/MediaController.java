@@ -1,10 +1,7 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
-import com.moviefy.database.model.dto.pageDto.MediaPageDTO;
-import com.moviefy.database.model.dto.pageDto.SearchResultDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
+import com.moviefy.service.CombinedMediaService;
 import com.moviefy.service.MovieService;
 import com.moviefy.service.TvSeriesService;
 import com.moviefy.service.impl.TvSeriesServiceImpl;
@@ -23,8 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,11 +27,14 @@ import java.util.Map;
 public class MediaController {
     private final MovieService movieService;
     private final TvSeriesService tvSeriesService;
+    private final CombinedMediaService combinedMediaService;
 
     public MediaController(MovieService movieService,
-                           TvSeriesServiceImpl tvSeriesService) {
+                           TvSeriesServiceImpl tvSeriesService,
+                           CombinedMediaService combinedMediaService) {
         this.movieService = movieService;
         this.tvSeriesService = tvSeriesService;
+        this.combinedMediaService = combinedMediaService;
     }
 
     @GetMapping("/{mediaType}/latest")
@@ -151,64 +149,7 @@ public class MediaController {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
 
         if ("all".equalsIgnoreCase(mediaType)) {
-            Pageable fetchPageable = PageRequest.of(0, Math.max(size * page, size), Sort.by("popularity").descending());
-
-            Page<MoviePageWithGenreDTO> moviesPage = movieService.getMoviesByGenres(genres, fetchPageable);
-            Page<TvSeriesPageWithGenreDTO> seriesPage = tvSeriesService.getTvSeriesByGenres(genres, fetchPageable);
-
-            long totalItems = moviesPage.getTotalElements() + seriesPage.getTotalElements();
-            int totalPages = (int) Math.ceil((double) totalItems / size);
-
-            List<MediaPageDTO> merged = new ArrayList<>();
-            merged.addAll(moviesPage.getContent());
-            merged.addAll(seriesPage.getContent());
-            merged.sort((a, b) -> {
-                Double pa = a.getPopularity();
-                Double pb = b.getPopularity();
-                if (pa == null && pb == null) return 0;
-                if (pa == null) return 1;
-                if (pb == null) return -1;
-                return pb.compareTo(pa);
-            });
-
-            int start = Math.min((page - 1) * size, merged.size());
-            int end = Math.min(start + size, merged.size());
-            List<MediaPageDTO> pageSlice = merged.subList(start, end);
-
-            List<SearchResultDTO> results = pageSlice.stream().map(item -> {
-                SearchResultDTO r = new SearchResultDTO();
-                if (item instanceof MoviePageWithGenreDTO m) {
-                    r.setId(m.getId());
-                    r.setType("movie");
-                    r.setTitle(m.getTitle());
-                    r.setPosterPath(m.getPosterPath());
-                    r.setVoteAverage(m.getVoteAverage());
-                    r.setYear(m.getYear());
-                    r.setGenre(m.getGenre());
-                    r.setTrailer(m.getTrailer());
-                    r.setRuntime(m.getRuntime());
-                } else if (item instanceof TvSeriesPageWithGenreDTO s) {
-                    r.setId(s.getId());
-                    r.setType("series");
-                    r.setTitle(s.getName());
-                    r.setPosterPath(s.getPosterPath());
-                    r.setVoteAverage(s.getVoteAverage());
-                    r.setYear(s.getYear());
-                    r.setGenre(s.getGenre());
-                    r.setTrailer(s.getTrailer());
-                    r.setSeasonsCount(s.getSeasonsCount());
-                    r.setEpisodesCount(s.getEpisodesCount());
-                }
-                return r;
-            }).toList();
-
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("items_on_page", results.size());
-            response.put("total_items", totalItems);
-            response.put("total_pages", totalPages);
-            response.put("current_page", page);
-            response.put("results", results);
-
+            Map<String, Object> response = this.combinedMediaService.getCombinedMediaByGenres(genres, page, size);
             return ResponseEntity.ok(response);
         }
 
