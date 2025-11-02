@@ -39,22 +39,36 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     Page<Movie> findAllSortedByVoteCount(Pageable pageable);
 
     @Query(value = """
-              SELECT *
-              FROM movies m
-              WHERE LOWER(regexp_replace(m.title, '[^a-z0-9 ]', '', 'g'))
-                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
-                 OR LOWER(regexp_replace(m.original_title, '[^a-z0-9 ]', '', 'g'))
-                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
-              ORDER BY
-                 CASE
-                   WHEN LOWER(m.title) = LOWER(:query) THEN 0
-                   WHEN LOWER(m.title) LIKE LOWER(CONCAT(:query, '%')) THEN 1
-                   ELSE 2
-                 END,
-                 LENGTH(m.title), m.title
-            """, nativeQuery = true)
+            SELECT *
+            FROM movies m
+            WHERE
+              regexp_replace(unaccent(m.title), '[[:punct:]]', '', 'g')
+                ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+              OR
+              regexp_replace(unaccent(m.original_title), '[[:punct:]]', '', 'g')
+                ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+            ORDER BY
+              CASE
+                WHEN regexp_replace(unaccent(lower(m.title)), '[[:punct:]]', '', 'g')
+                     = regexp_replace(unaccent(lower(:query)), '[[:punct:]]', '', 'g') THEN 0
+                WHEN regexp_replace(unaccent(lower(m.title)), '[[:punct:]]', '', 'g')
+                     LIKE CONCAT(regexp_replace(unaccent(lower(:query)), '[[:punct:]]', '', 'g'), '%') THEN 1
+                ELSE 2
+              END,
+              LENGTH(m.title), m.title
+            """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM movies m
+                    WHERE
+                      regexp_replace(unaccent(m.title), '[[:punct:]]', '', 'g')
+                        ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+                      OR
+                      regexp_replace(unaccent(m.original_title), '[[:punct:]]', '', 'g')
+                        ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+                    """,
+            nativeQuery = true)
     Page<Movie> searchByTitle(@Param("query") String query, Pageable pageable);
-
 
     @Query(
             value = """

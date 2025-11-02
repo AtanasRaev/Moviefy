@@ -48,20 +48,35 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     List<TvSeries> findAllByNames(@Param("names") List<String> names);
 
     @Query(value = """
-              SELECT *
-              FROM tv_series t
-              WHERE LOWER(regexp_replace(t.name, '[^a-z0-9 ]', '', 'g'))
-                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
-                 OR LOWER(regexp_replace(t.original_name, '[^a-z0-9 ]', '', 'g'))
-                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
-              ORDER BY
-                 CASE
-                   WHEN LOWER(t.name) = LOWER(:query) THEN 0
-                   WHEN LOWER(t.name) LIKE LOWER(CONCAT(:query, '%')) THEN 1
-                   ELSE 2
-                 END,
-                 LENGTH(t.name), t.name
-            """, nativeQuery = true)
+            SELECT *
+            FROM tv_series t
+            WHERE
+              regexp_replace(unaccent(t.name), '[[:punct:]]', '', 'g')
+                ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+              OR
+              regexp_replace(unaccent(t.original_name), '[[:punct:]]', '', 'g')
+                ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+            ORDER BY
+              CASE
+                WHEN regexp_replace(unaccent(lower(t.name)), '[[:punct:]]', '', 'g')
+                     = regexp_replace(unaccent(lower(:query)), '[[:punct:]]', '', 'g') THEN 0
+                WHEN regexp_replace(unaccent(lower(t.name)), '[[:punct:]]', '', 'g')
+                     LIKE CONCAT(regexp_replace(unaccent(lower(:query)), '[[:punct:]]', '', 'g'), '%') THEN 1
+                ELSE 2
+              END,
+              LENGTH(t.name), t.name
+            """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM tv_series t
+                    WHERE
+                      regexp_replace(unaccent(t.name), '[[:punct:]]', '', 'g')
+                        ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+                      OR
+                      regexp_replace(unaccent(t.original_name), '[[:punct:]]', '', 'g')
+                        ILIKE CONCAT('%', regexp_replace(unaccent(:query), '[[:punct:]]', '', 'g'), '%')
+                    """,
+            nativeQuery = true)
     Page<TvSeries> searchByName(@Param("query") String query, Pageable pageable);
 
     @Query(

@@ -20,11 +20,11 @@ public class SearchMediaUtil {
 
     public static ResponseEntity<Map<String, Object>> validateSearchQuery(String query) {
         if (query == null) {
-            return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request", "The search query must not be empty!");
+            return ErrorResponseUtil.buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request", "The search query must not be empty!");
         }
         String normalized = normalizeQuery(query);
         if (normalized.isBlank() || normalized.length() < MIN_QUERY_LENGTH) {
-            return buildErrorResponse(
+            return ErrorResponseUtil.buildErrorResponse(
                     HttpStatus.BAD_REQUEST,
                     "Invalid request",
                     "The search query must be at least " + MIN_QUERY_LENGTH + " characters long."
@@ -136,12 +136,5 @@ public class SearchMediaUtil {
             }
             return titleA.compareTo(titleB);
         });
-    }
-
-    private static ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String error, String message) {
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("error", error);
-        response.put("message", message);
-        return ResponseEntity.status(status).body(response);
     }
 }
