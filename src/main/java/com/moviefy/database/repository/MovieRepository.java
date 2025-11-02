@@ -38,17 +38,23 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m")
     Page<Movie> findAllSortedByVoteCount(Pageable pageable);
 
-    @Query("""
-            SELECT m FROM Movie m
-            WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(m.originalTitle) LIKE LOWER(CONCAT('%', :query, '%'))
-            ORDER BY
-               CASE WHEN LOWER(m.title) = LOWER(:query) THEN 0
-                    WHEN LOWER(m.title) LIKE LOWER(CONCAT(:query, '%')) THEN 1
-                    ELSE 2 END,
-               m.title
-            """)
+    @Query(value = """
+              SELECT *
+              FROM movies m
+              WHERE LOWER(regexp_replace(m.title, '[^a-z0-9 ]', '', 'g'))
+                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
+                 OR LOWER(regexp_replace(m.original_title, '[^a-z0-9 ]', '', 'g'))
+                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
+              ORDER BY
+                 CASE
+                   WHEN LOWER(m.title) = LOWER(:query) THEN 0
+                   WHEN LOWER(m.title) LIKE LOWER(CONCAT(:query, '%')) THEN 1
+                   ELSE 2
+                 END,
+                 LENGTH(m.title), m.title
+            """, nativeQuery = true)
     Page<Movie> searchByTitle(@Param("query") String query, Pageable pageable);
+
 
     @Query(
             value = """

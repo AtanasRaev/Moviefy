@@ -5,26 +5,29 @@ import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
 import com.moviefy.service.MovieService;
 import com.moviefy.service.TvSeriesService;
-import com.moviefy.service.impl.TvSeriesServiceImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.Normalizer;
+import java.util.*;
 
 public class SearchMediaUtil {
 
+    private static final int MIN_QUERY_LENGTH = 2;
+
     public static ResponseEntity<Map<String, Object>> validateSearchQuery(String query) {
-        if (query == null || query.isBlank()) {
+        if (query == null) {
+            return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request", "The search query must not be empty!");
+        }
+        String normalized = normalizeQuery(query);
+        if (normalized.isBlank() || normalized.length() < MIN_QUERY_LENGTH) {
             return buildErrorResponse(
                     HttpStatus.BAD_REQUEST,
                     "Invalid request",
-                    "The search query must not be empty!"
+                    "The search query must be at least " + MIN_QUERY_LENGTH + " characters long."
             );
         }
         return null;
@@ -38,38 +41,43 @@ public class SearchMediaUtil {
             TvSeriesService tvSeriesService) {
 
         ResponseEntity<Map<String, Object>> validationResponse = validateSearchQuery(query);
-        if (validationResponse != null) {
-            return validationResponse;
-        }
+        if (validationResponse != null) return validationResponse;
 
-        Pageable pageable = PageRequest.of(page - 1, size / 2);
+        String normalized = normalizeQuery(query);
+        int fetch = Math.max(size * page, size);
+        Pageable fetchPageable = PageRequest.of(0, fetch);
 
-        Page<MoviePageWithGenreDTO> movies = movieService.searchMovies(query, pageable);
-        Page<TvSeriesPageWithGenreDTO> series = tvSeriesService.searchTvSeries(query, pageable);
+        Page<MoviePageWithGenreDTO> movies = movieService.searchMovies(normalized, fetchPageable);
+        Page<TvSeriesPageWithGenreDTO> series = tvSeriesService.searchTvSeries(normalized, fetchPageable);
 
-        List<SearchResultDTO> movieResults = convertMoviesToSearchResults(movies.getContent());
-        List<SearchResultDTO> seriesResults = convertTvSeriesToSearchResults(series.getContent());
+        List<SearchResultDTO> combined = new ArrayList<>(
+                movies.getNumberOfElements() + series.getNumberOfElements());
+        combined.addAll(convertMoviesToSearchResults(movies.getContent()));
+        combined.addAll(convertTvSeriesToSearchResults(series.getContent()));
 
-        List<SearchResultDTO> combinedResults = new ArrayList<>();
-        combinedResults.addAll(movieResults);
-        combinedResults.addAll(seriesResults);
+        sortSearchResults(combined, normalized.toLowerCase(Locale.ROOT));
 
-        sortSearchResults(combinedResults, query.toLowerCase());
-        
-        int start = Math.min((page - 1) * size, combinedResults.size());
-        int end = Math.min(start + size, combinedResults.size());
-        List<SearchResultDTO> paginatedResults = combinedResults.subList(start, end);
+        int start = Math.min((page - 1) * size, combined.size());
+        int end   = Math.min(start + size, combined.size());
+        List<SearchResultDTO> paginatedResults = combined.subList(start, end);
 
         long totalItems = movies.getTotalElements() + series.getTotalElements();
         int totalPages = (int) Math.ceil((double) totalItems / size);
 
         return ResponseEntity.ok(Map.of(
+                "query", normalized,
                 "items_on_page", paginatedResults.size(),
                 "total_items", totalItems,
                 "total_pages", totalPages,
                 "current_page", page,
                 "results", paginatedResults
         ));
+    }
+
+    private static String normalizeQuery(String q) {
+        String s = q.trim().replaceAll("\\s+", " ");
+        s = Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        return s;
     }
 
     private static List<SearchResultDTO> convertMoviesToSearchResults(List<MoviePageWithGenreDTO> movies) {
@@ -111,17 +119,16 @@ public class SearchMediaUtil {
 
     private static void sortSearchResults(List<SearchResultDTO> results, String queryLower) {
         results.sort((a, b) -> {
-            String titleA = a.getTitle().toLowerCase();
-            String titleB = b.getTitle().toLowerCase();
+            String titleA = Optional.ofNullable(a.getTitle()).orElse("").toLowerCase(Locale.ROOT);
+            String titleB = Optional.ofNullable(b.getTitle()).orElse("").toLowerCase(Locale.ROOT);
 
             int indexA = titleA.indexOf(queryLower);
             int indexB = titleB.indexOf(queryLower);
 
             if (indexA >= 0 && indexB >= 0) {
-                if (indexA != indexB) {
-                    return Integer.compare(indexA, indexB);
-                }
-                return Integer.compare(titleA.length(), titleB.length());
+                if (indexA != indexB) return Integer.compare(indexA, indexB);
+                if (titleA.length() != titleB.length()) return Integer.compare(titleA.length(), titleB.length());
+                return titleA.compareTo(titleB);
             } else if (indexA >= 0) {
                 return -1;
             } else if (indexB >= 0) {
@@ -135,9 +142,6 @@ public class SearchMediaUtil {
         LinkedHashMap<String, Object> response = new LinkedHashMap<>();
         response.put("error", error);
         response.put("message", message);
-
-        return ResponseEntity
-                .status(status)
-                .body(response);
+        return ResponseEntity.status(status).body(response);
     }
 }

@@ -47,16 +47,21 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     @Query("SELECT tv FROM TvSeries tv WHERE tv.name IN :names")
     List<TvSeries> findAllByNames(@Param("names") List<String> names);
 
-    @Query("""
-            SELECT tv FROM TvSeries tv
-            WHERE LOWER(tv.name) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(tv.originalName) LIKE LOWER(CONCAT('%', :query, '%'))
-            ORDER BY
-               CASE WHEN LOWER(tv.name) = LOWER(:query) THEN 0
-                    WHEN LOWER(tv.name) LIKE LOWER(CONCAT(:query, '%')) THEN 1
-                    ELSE 2 END,
-               tv.name
-            """)
+    @Query(value = """
+              SELECT *
+              FROM tv_series t
+              WHERE LOWER(regexp_replace(t.name, '[^a-z0-9 ]', '', 'g'))
+                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
+                 OR LOWER(regexp_replace(t.original_name, '[^a-z0-9 ]', '', 'g'))
+                    LIKE LOWER(CONCAT('%', regexp_replace(:query, '[^a-z0-9 ]', '', 'g'), '%'))
+              ORDER BY
+                 CASE
+                   WHEN LOWER(t.name) = LOWER(:query) THEN 0
+                   WHEN LOWER(t.name) LIKE LOWER(CONCAT(:query, '%')) THEN 1
+                   ELSE 2
+                 END,
+                 LENGTH(t.name), t.name
+            """, nativeQuery = true)
     Page<TvSeries> searchByName(@Param("query") String query, Pageable pageable);
 
     @Query(
