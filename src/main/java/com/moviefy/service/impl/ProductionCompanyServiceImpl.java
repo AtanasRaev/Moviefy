@@ -7,7 +7,7 @@ import com.moviefy.database.model.dto.databaseDto.ProductionCompanyDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.Media;
 import com.moviefy.database.model.entity.media.Movie;
-import com.moviefy.database.model.entity.media.TvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.ProductionCompanyRepository;
 import com.moviefy.service.ProductionCompanyService;
 import org.modelmapper.ModelMapper;

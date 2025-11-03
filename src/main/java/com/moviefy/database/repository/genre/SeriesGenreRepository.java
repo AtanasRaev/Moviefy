@@ -1,4 +1,4 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.genre;
 
 import com.moviefy.database.model.entity.genre.SeriesGenre;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,4 +1,4 @@
-package com.moviefy.database.model.entity.media;
+package com.moviefy.database.model.entity.media.tvSeries;
 
 import jakarta.persistence.*;
 

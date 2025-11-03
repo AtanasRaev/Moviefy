@@ -1,4 +1,4 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.media;
 
 import com.moviefy.database.model.entity.media.Collection;
 import org.springframework.data.jpa.repository.JpaRepository;

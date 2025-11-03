@@ -3,9 +3,9 @@ package com.moviefy.utils;
 import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
-import com.moviefy.database.model.entity.media.StatusTvSeries;
-import com.moviefy.database.model.entity.media.TvSeries;
-import com.moviefy.database.repository.StatusTvSeriesRepository;
+import com.moviefy.database.model.entity.media.tvSeries.StatusTvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
+import com.moviefy.database.repository.media.tvSeries.StatusTvSeriesRepository;
 import com.moviefy.service.SeriesGenreService;
 import org.springframework.stereotype.Component;
 

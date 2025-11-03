@@ -1,4 +1,4 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.media;
 
 import com.moviefy.database.model.entity.media.Movie;
 import org.springframework.data.domain.Page;

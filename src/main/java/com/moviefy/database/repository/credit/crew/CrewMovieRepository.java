@@ -1,4 +1,4 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.credit.crew;
 
 import com.moviefy.database.model.entity.credit.crew.CrewMovie;
 import org.springframework.data.jpa.repository.JpaRepository;

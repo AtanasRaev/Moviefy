@@ -1,4 +1,4 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.credit.cast;
 
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import org.springframework.data.jpa.repository.JpaRepository;

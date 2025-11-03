@@ -1,7 +1,7 @@
 package com.moviefy.database.model.entity;
 
 import com.moviefy.database.model.entity.media.Movie;
-import com.moviefy.database.model.entity.media.TvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;

@@ -1,6 +1,6 @@
 package com.moviefy.database.model.entity.genre;
 
-import com.moviefy.database.model.entity.media.TvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import jakarta.persistence.*;
 
 import java.util.List;

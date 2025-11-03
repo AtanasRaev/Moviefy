@@ -1,6 +1,6 @@
 package com.moviefy.database.model.entity.credit;
 
-import com.moviefy.database.model.entity.media.TvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import jakarta.persistence.*;
 
 @MappedSuperclass

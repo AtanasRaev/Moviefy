@@ -1,6 +1,6 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.media.tvSeries;
 
-import com.moviefy.database.model.entity.media.StatusTvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.StatusTvSeries;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -20,9 +20,9 @@ import com.moviefy.database.model.entity.credit.crew.CrewMovie;
 import com.moviefy.database.model.entity.genre.MovieGenre;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
-import com.moviefy.database.repository.CastMovieRepository;
-import com.moviefy.database.repository.CrewMovieRepository;
-import com.moviefy.database.repository.MovieRepository;
+import com.moviefy.database.repository.credit.cast.CastMovieRepository;
+import com.moviefy.database.repository.credit.crew.CrewMovieRepository;
+import com.moviefy.database.repository.media.MovieRepository;
 import com.moviefy.service.*;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -349,7 +350,8 @@ public class MovieServiceImpl implements MovieService {
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
 
-    private void fetchMovies() {
+    @Scheduled(fixedDelay = 100000000)
+    public void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
         int year = START_YEAR;

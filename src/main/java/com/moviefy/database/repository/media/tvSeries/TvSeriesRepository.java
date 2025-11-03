@@ -1,6 +1,6 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.media.tvSeries;
 
-import com.moviefy.database.model.entity.media.TvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

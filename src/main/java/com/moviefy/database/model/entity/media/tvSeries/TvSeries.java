@@ -1,7 +1,8 @@
-package com.moviefy.database.model.entity.media;
+package com.moviefy.database.model.entity.media.tvSeries;
 
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.genre.SeriesGenre;
+import com.moviefy.database.model.entity.media.Media;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;

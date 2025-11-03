@@ -2,7 +2,7 @@ package com.moviefy.service.impl;
 
 import com.moviefy.database.model.dto.pageDto.CombinedMediaProjection;
 import com.moviefy.database.model.dto.pageDto.SearchResultDTO;
-import com.moviefy.database.repository.CombinedMediaRepository;
+import com.moviefy.database.repository.media.CombinedMediaRepository;
 import com.moviefy.service.CombinedMediaService;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
