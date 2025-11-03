@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.productionCompanies;
 
 import com.moviefy.database.model.dto.databaseDto.ProductionCompanyDTO;
 import com.moviefy.database.model.entity.ProductionCompany;

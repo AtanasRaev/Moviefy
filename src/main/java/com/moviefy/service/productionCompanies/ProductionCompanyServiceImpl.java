@@ -1,4 +1,4 @@
-package com.moviefy.service.impl;
+package com.moviefy.service.productionCompanies;
 
 import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.ProductionApiDTO;
@@ -9,7 +9,6 @@ import com.moviefy.database.model.entity.media.Media;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.ProductionCompanyRepository;
-import com.moviefy.service.ProductionCompanyService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 

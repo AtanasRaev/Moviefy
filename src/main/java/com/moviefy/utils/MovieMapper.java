@@ -4,7 +4,7 @@ import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.entity.media.Movie;
-import com.moviefy.service.MovieGenreService;
+import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import org.springframework.stereotype.Component;
 
 @Component

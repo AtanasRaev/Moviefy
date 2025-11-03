@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.genre.movieGenre;
 
 import java.util.List;
 import java.util.Set;

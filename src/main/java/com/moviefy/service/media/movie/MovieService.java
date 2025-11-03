@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.media.movie;
 
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;

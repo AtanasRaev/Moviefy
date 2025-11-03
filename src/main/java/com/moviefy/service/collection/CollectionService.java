@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.collection;
 
 import com.moviefy.database.model.dto.apiDto.CollectionApiDTO;
 import com.moviefy.database.model.entity.media.Collection;

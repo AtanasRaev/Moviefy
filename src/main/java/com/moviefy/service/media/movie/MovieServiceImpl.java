@@ -1,4 +1,4 @@
-package com.moviefy.service.impl;
+package com.moviefy.service.media.movie;
 
 import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
@@ -23,7 +23,11 @@ import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
 import com.moviefy.database.repository.credit.crew.CrewMovieRepository;
 import com.moviefy.database.repository.media.MovieRepository;
-import com.moviefy.service.*;
+import com.moviefy.service.collection.CollectionService;
+import com.moviefy.service.credit.cast.CastService;
+import com.moviefy.service.credit.crew.CrewService;
+import com.moviefy.service.genre.movieGenre.MovieGenreService;
+import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
 import org.modelmapper.ModelMapper;

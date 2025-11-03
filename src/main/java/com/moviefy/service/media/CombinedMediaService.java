@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.media;
 
 import java.util.List;
 import java.util.Map;

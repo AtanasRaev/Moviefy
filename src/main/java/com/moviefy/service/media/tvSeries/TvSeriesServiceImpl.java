@@ -1,4 +1,4 @@
-package com.moviefy.service.impl;
+package com.moviefy.service.media.tvSeries;
 
 import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
@@ -25,7 +25,10 @@ import com.moviefy.database.repository.credit.crew.CrewTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.EpisodeTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.SeasonTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
-import com.moviefy.service.*;
+import com.moviefy.service.credit.cast.CastService;
+import com.moviefy.service.credit.crew.CrewService;
+import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
+import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
 import org.modelmapper.ModelMapper;

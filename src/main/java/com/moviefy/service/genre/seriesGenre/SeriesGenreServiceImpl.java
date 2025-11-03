@@ -1,10 +1,9 @@
-package com.moviefy.service.impl;
+package com.moviefy.service.genre.seriesGenre;
 
 import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.GenreResponseApiDTO;
 import com.moviefy.database.model.entity.genre.SeriesGenre;
 import com.moviefy.database.repository.genre.SeriesGenreRepository;
-import com.moviefy.service.SeriesGenreService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 

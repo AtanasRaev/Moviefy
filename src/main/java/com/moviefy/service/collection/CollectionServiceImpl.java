@@ -1,10 +1,9 @@
-package com.moviefy.service.impl;
+package com.moviefy.service.collection;
 
 import com.moviefy.database.model.dto.apiDto.CollectionApiDTO;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.media.CollectionRepository;
-import com.moviefy.service.CollectionService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

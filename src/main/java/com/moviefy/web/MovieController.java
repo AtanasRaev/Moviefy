@@ -3,7 +3,7 @@ package com.moviefy.web;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
-import com.moviefy.service.MovieService;
+import com.moviefy.service.media.movie.MovieService;
 import com.moviefy.utils.ErrorResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

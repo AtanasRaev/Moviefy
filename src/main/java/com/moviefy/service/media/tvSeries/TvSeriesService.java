@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.media.tvSeries;
 
 import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;

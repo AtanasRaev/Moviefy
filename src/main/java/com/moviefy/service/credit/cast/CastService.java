@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.credit.cast;
 
 import com.moviefy.database.model.dto.apiDto.CastApiApiDTO;
 import com.moviefy.database.model.dto.apiDto.MediaResponseCreditsDTO;

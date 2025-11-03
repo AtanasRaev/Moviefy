@@ -6,7 +6,7 @@ import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
 import com.moviefy.database.model.entity.media.tvSeries.StatusTvSeries;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.media.tvSeries.StatusTvSeriesRepository;
-import com.moviefy.service.SeriesGenreService;
+import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import org.springframework.stereotype.Component;
 
 @Component

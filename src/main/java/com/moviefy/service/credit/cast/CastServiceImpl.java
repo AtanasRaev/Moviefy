@@ -1,4 +1,4 @@
-package com.moviefy.service.impl;
+package com.moviefy.service.credit.cast;
 
 import com.moviefy.database.model.dto.apiDto.CastApiApiDTO;
 import com.moviefy.database.model.dto.apiDto.CreditApiDTO;
@@ -11,7 +11,6 @@ import com.moviefy.database.model.entity.credit.Credit;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
 import com.moviefy.database.repository.credit.cast.CastRepository;
 import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
-import com.moviefy.service.CastService;
 import com.moviefy.utils.CastMapper;
 import com.moviefy.utils.CreditRetrievalUtil;
 import org.springframework.stereotype.Service;

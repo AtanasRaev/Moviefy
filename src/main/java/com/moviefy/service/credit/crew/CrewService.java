@@ -1,4 +1,4 @@
-package com.moviefy.service;
+package com.moviefy.service.credit.crew;
 
 import com.moviefy.database.model.dto.apiDto.CrewApiDTO;
 import com.moviefy.database.model.dto.apiDto.MediaResponseCreditsDTO;

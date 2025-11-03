@@ -1,7 +1,7 @@
 package com.moviefy.init;
 
-import com.moviefy.service.MovieGenreService;
-import com.moviefy.service.SeriesGenreService;
+import com.moviefy.service.genre.movieGenre.MovieGenreService;
+import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 

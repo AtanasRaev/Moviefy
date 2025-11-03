@@ -1,10 +1,10 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
-import com.moviefy.service.CombinedMediaService;
-import com.moviefy.service.MovieService;
-import com.moviefy.service.TvSeriesService;
-import com.moviefy.service.impl.TvSeriesServiceImpl;
+import com.moviefy.service.media.CombinedMediaService;
+import com.moviefy.service.media.movie.MovieService;
+import com.moviefy.service.media.tvSeries.TvSeriesService;
+import com.moviefy.service.media.tvSeries.TvSeriesServiceImpl;
 import com.moviefy.utils.ErrorResponseUtil;
 import com.moviefy.utils.SearchMediaUtil;
 import jakarta.validation.constraints.Max;

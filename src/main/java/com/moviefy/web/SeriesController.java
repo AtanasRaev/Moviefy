@@ -2,7 +2,7 @@ package com.moviefy.web;
 
 import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
-import com.moviefy.service.TvSeriesService;
+import com.moviefy.service.media.tvSeries.TvSeriesService;
 import com.moviefy.utils.ErrorResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
