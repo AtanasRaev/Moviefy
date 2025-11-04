@@ -1,27 +1,29 @@
-# Use an official OpenJDK runtime as a base image
-FROM openjdk:17-jdk-slim
+# syntax=docker/dockerfile:1
 
-# Set the working directory
+# ---------- Build stage ----------
+FROM gradle:8.10-jdk17-alpine AS build
 WORKDIR /app
 
-# Copy the Gradle wrapper and build files
-COPY gradlew gradlew.bat build.gradle settings.gradle /app/
-COPY gradle /app/gradle/
+# Copy wrapper and build files first to leverage cache
+COPY gradle gradle
+COPY gradlew settings.gradle build.gradle ./
 
-# Copy the application source code
-COPY src /app/src/
+# Ensure gradlew uses LF and is executable (Windows-safe)
+RUN apk add --no-cache dos2unix \
+ && dos2unix gradlew \
+ && chmod +x gradlew \
+ && ./gradlew --version
 
-# Install dos2unix to fix line endings
-RUN apt-get update && apt-get install -y dos2unix
+# Copy sources and build
+COPY src src
+# Skip tests if you want faster/cleaner image builds:
+RUN ./gradlew --no-daemon clean bootJar -x test
 
-# Ensure the Gradle wrapper has proper line endings and is executable
-RUN dos2unix gradlew && chmod +x gradlew
-
-# Build the application
-RUN ./gradlew bootJar
-
-# Expose the port your Spring Boot app runs on
+# ---------- Runtime stage ----------
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring
+COPY --from=build /app/build/libs/*SNAPSHOT.jar /app/app.jar
 EXPOSE 8080
-
-# Run the Spring Boot application
-CMD ["java", "-jar", "build/libs/WatchItNow-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java","-jar","/app/app.jar"]
