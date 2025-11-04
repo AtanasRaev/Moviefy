@@ -31,6 +31,7 @@ import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
+import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,12 +153,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     )
     public Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable) {
         return this.tvSeriesRepository.findAllSortedByVoteCount(pageable)
-                .map(tvSeries -> {
-                    TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
-                    mapOneGenreToPageDTO(map);
-                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
-                    return map;
-                });
+                .map(this::mapTvSeriesPageWithGenreDTO);
     }
 
     @Override
@@ -202,12 +198,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Override
     public Page<TvSeriesPageWithGenreDTO> searchTvSeries(String query, Pageable pageable) {
         return this.tvSeriesRepository.searchByName(query, pageable)
-                .map(tvSeries -> {
-                    TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
-                    mapOneGenreToPageDTO(map);
-                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
-                    return map;
-                });
+                .map(this::mapTvSeriesPageWithGenreDTO);
     }
 
     @Override
@@ -601,5 +592,13 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
             return null;
         }
+    }
+
+    private TvSeriesPageWithGenreDTO mapTvSeriesPageWithGenreDTO(TvSeries tvSeries) {
+        TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
+        map.setYear(tvSeries.getFirstAirDate().getYear());
+        mapOneGenreToPageDTO(map);
+        mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+        return map;
     }
 }
