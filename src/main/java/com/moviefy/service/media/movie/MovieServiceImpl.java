@@ -30,6 +30,7 @@ import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
+import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,11 +131,7 @@ public class MovieServiceImpl implements MovieService {
     )
     public Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable) {
         return this.movieRepository.findAllByPopularityDesc(pageable)
-                .map(movie -> {
-                    MoviePageWithGenreDTO map = modelMapper.map(movie, MoviePageWithGenreDTO.class);
-                    mapOneGenreToPageDTO(map);
-                    return map;
-                });
+                .map(this::mapMoviePageWithGenreDTO);
     }
 
     @Override
@@ -145,11 +142,7 @@ public class MovieServiceImpl implements MovieService {
     )
     public Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable) {
         return this.movieRepository.findAllSortedByVoteCount(pageable)
-                .map(movie -> {
-                    MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
-                    mapOneGenreToPageDTO(map);
-                    return map;
-                });
+                .map(this::mapMoviePageWithGenreDTO);
     }
 
     @Override
@@ -232,11 +225,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public Page<MoviePageWithGenreDTO> searchMovies(String query, Pageable pageable) {
         return this.movieRepository.searchByTitle(query, pageable)
-                .map(movie -> {
-                    MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
-                    mapOneGenreToPageDTO(map);
-                    return map;
-                });
+                .map(this::mapMoviePageWithGenreDTO);
     }
 
     @Override
@@ -257,11 +246,6 @@ public class MovieServiceImpl implements MovieService {
                     map.setYear(movie.getReleaseDate().getYear());
                     return map;
                 });
-    }
-
-    //    @Scheduled(fixedDelay = 100000000)
-    //TODO
-    private void updateMovies() {
     }
 
     private LocalDate getStartOfCurrentMonth() {
@@ -352,6 +336,14 @@ public class MovieServiceImpl implements MovieService {
     private void mapOneGenreToPageDTO(MoviePageWithGenreDTO map) {
         Optional<MovieGenre> optional = this.movieGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
+    }
+
+    //    @Scheduled(fixedDelay = 100000000)
+    //TODO
+    private void updateMovies() {
+        logger.info("Starting to update movies...");
+
+
     }
 
 //    @Scheduled(fixedDelay = 100000000)
@@ -552,5 +544,12 @@ public class MovieServiceImpl implements MovieService {
             System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
             return null;
         }
+    }
+
+    private MoviePageWithGenreDTO mapMoviePageWithGenreDTO(Movie movie) {
+        MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
+        map.setYear(movie.getReleaseDate().getYear());
+        mapOneGenreToPageDTO(map);
+        return map;
     }
 }
