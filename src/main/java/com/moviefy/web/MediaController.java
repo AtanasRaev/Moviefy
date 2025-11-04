@@ -128,13 +128,35 @@ public class MediaController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/search")
+    @GetMapping("/{mediaType}/search")
     public ResponseEntity<Map<String, Object>> searchMedia(
+            @PathVariable String mediaType,
             @RequestParam("query") String query,
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
-        return SearchMediaUtil.searchMedia(query, size, page, movieService, tvSeriesService);
+        if (!"all".equalsIgnoreCase(mediaType) && isMediaTypeInvalid(mediaType)) {
+            return getInvalidRequest(mediaType);
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<?> mediaPage;
+
+        switch (mediaType) {
+            case "movies" -> mediaPage = movieService.searchMovies(query, pageable);
+            case "series" -> mediaPage = tvSeriesService.searchTvSeries(query, pageable);
+            default -> {
+                return SearchMediaUtil.searchMedia(query, size, page, movieService, tvSeriesService);
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "items_on_page", mediaPage.getNumberOfElements(),
+                "total_items", mediaPage.getTotalElements(),
+                "total_pages", mediaPage.getTotalPages(),
+                "current_page", mediaPage.getNumber() + 1,
+                mediaType, mediaPage.getContent()
+        ));
     }
 
     @GetMapping("/{mediaType}/genres")
