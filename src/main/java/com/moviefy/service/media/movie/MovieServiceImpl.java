@@ -354,7 +354,7 @@ public class MovieServiceImpl implements MovieService {
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
 
-    @Scheduled(fixedDelay = 100000000)
+//    @Scheduled(fixedDelay = 100000000)
     public void fetchMovies() {
         logger.info("Starting to fetch movies...");
 

@@ -59,6 +59,7 @@ public class CombinedMediaServiceImpl implements CombinedMediaService {
             dto.setYear(row.getYear());
             dto.setSeasonsCount(row.getSeasonsCount());
             dto.setEpisodesCount(row.getEpisodesCount());
+            dto.setRuntime(row.getRuntime());
             return dto;
         }).toList();
 

@@ -10,4 +10,5 @@ public interface CombinedMediaProjection {
     String getType();
     Integer getSeasonsCount();
     Integer getEpisodesCount();
+    Integer getRuntime();
 }

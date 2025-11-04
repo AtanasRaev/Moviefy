@@ -21,7 +21,8 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                    u.year,
                    u.type,
                    u.seasons_count AS seasonsCount,
-                   u.episodes_count AS episodesCount
+                   u.episodes_count AS episodesCount,
+                   u.runtime
             FROM (
                 SELECT m.id,
                        m.title,
@@ -31,7 +32,8 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                        CAST(date_part('year', m.release_date) AS integer) AS year,
                        'movie' AS type,
                        CAST(NULL AS integer) AS seasons_count,
-                       CAST(NULL AS integer) AS episodes_count
+                       CAST(NULL AS integer) AS episodes_count,
+                       m.runtime
                 FROM movies m
                 JOIN movie_genre mg ON mg.movie_id = m.id
                 JOIN movies_genres g ON g.id = mg.genre_id
@@ -47,7 +49,8 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                        CAST(date_part('year', tv.first_air_date) AS integer) AS year,
                        'series' AS type,
                        s.seasons_count,
-                       s.episodes_count
+                       s.episodes_count,
+                       CAST(NULL AS integer) AS runtime
                 FROM tv_series tv
                 JOIN series_genre tsg ON tsg.series_id = tv.id
                 JOIN series_genres g ON g.id = tsg.genre_id
