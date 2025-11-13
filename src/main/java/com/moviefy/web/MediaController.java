@@ -28,13 +28,16 @@ public class MediaController {
     private final MovieService movieService;
     private final TvSeriesService tvSeriesService;
     private final CombinedMediaService combinedMediaService;
+    private final SearchMediaUtil searchMediaUtil;
 
     public MediaController(MovieService movieService,
                            TvSeriesServiceImpl tvSeriesService,
-                           CombinedMediaService combinedMediaService) {
+                           CombinedMediaService combinedMediaService,
+                           SearchMediaUtil searchMediaUtil) {
         this.movieService = movieService;
         this.tvSeriesService = tvSeriesService;
         this.combinedMediaService = combinedMediaService;
+        this.searchMediaUtil = searchMediaUtil;
     }
 
     @GetMapping("/{mediaType}/latest")
@@ -60,22 +63,22 @@ public class MediaController {
     }
 
 
-    @GetMapping("/{mediaType}/{id}")
-    public ResponseEntity<Map<String, Object>> getMediaById(
+    @GetMapping("/{mediaType}/{apiId}")
+    public ResponseEntity<Map<String, Object>> getMediaByApiId(
             @PathVariable String mediaType,
-            @PathVariable Long id) {
+            @PathVariable Long apiId) {
 
         if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
-        MediaDetailsDTO media = getMediaByIdPage(mediaType, id);
+        MediaDetailsDTO media = getMediaByApiIdPage(mediaType, apiId);
 
         if (media == null) {
             return ErrorResponseUtil.buildErrorResponse(
                     HttpStatus.NOT_FOUND,
                     "Resource not found",
-                    String.format("Not found %s with id %d", mediaType, id)
+                    String.format("Not found %s with apiId %d", mediaType, apiId)
             );
         }
 
@@ -131,31 +134,22 @@ public class MediaController {
     @GetMapping("/{mediaType}/search")
     public ResponseEntity<Map<String, Object>> searchMedia(
             @PathVariable String mediaType,
-            @RequestParam("query") String query,
-            @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
-            @RequestParam(defaultValue = "1") @Min(1) int page) {
-
+            @RequestParam("query") String query) {
         if (!"all".equalsIgnoreCase(mediaType) && isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<?> mediaPage;
+        List<?> result;
 
         switch (mediaType) {
-            case "movies" -> mediaPage = movieService.searchMovies(query, pageable);
-            case "series" -> mediaPage = tvSeriesService.searchTvSeries(query, pageable);
-            default -> {
-                return SearchMediaUtil.searchMedia(query, size, page, movieService, tvSeriesService);
-            }
+            case "movies" -> result = this.movieService.searchMovies(query);
+            case "series" -> result = this.tvSeriesService.searchTvSeries(query);
+            default -> result = this.searchMediaUtil.search(query);
         }
 
         return ResponseEntity.ok(Map.of(
-                "items_on_page", mediaPage.getNumberOfElements(),
-                "total_items", mediaPage.getTotalElements(),
-                "total_pages", mediaPage.getTotalPages(),
-                "current_page", mediaPage.getNumber() + 1,
-                mediaType, mediaPage.getContent()
+                "items_on_page", result.size(),
+                "results", result
         ));
     }
 
@@ -210,10 +204,10 @@ public class MediaController {
                 : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
     }
 
-    private MediaDetailsDTO getMediaByIdPage(String mediaType, Long id) {
+    private MediaDetailsDTO getMediaByApiIdPage(String mediaType, Long apiId) {
         return "movies".equalsIgnoreCase(mediaType)
-                ? movieService.getMovieDetailsById(id)
-                : tvSeriesService.getTvSeriesDetailsById(id);
+                ? movieService.getMovieDetailsByApiId(apiId)
+                : tvSeriesService.getTvSeriesDetailsByApiId(apiId);
     }
 
     private ResponseEntity<Map<String, Object>> getInvalidRequest(String input) {
