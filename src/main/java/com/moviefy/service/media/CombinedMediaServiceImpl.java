@@ -1,7 +1,7 @@
 package com.moviefy.service.media;
 
 import com.moviefy.database.model.dto.pageDto.CombinedMediaProjection;
-import com.moviefy.database.model.dto.pageDto.SearchResultDTO;
+import com.moviefy.database.model.dto.pageDto.SearchResultPageDTO;
 import com.moviefy.database.repository.media.CombinedMediaRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -49,9 +49,10 @@ public class CombinedMediaServiceImpl implements CombinedMediaService {
         long totalItems = combinedMediaRepository.countCombinedByGenres(genres, seriesGenres);
         int totalPages = (size > 0) ? (int) Math.ceil((double) totalItems / (double) size) : 0;
 
-        List<SearchResultDTO> results = combinedRows.stream().map(row -> {
-            SearchResultDTO dto = new SearchResultDTO();
+        List<SearchResultPageDTO> results = combinedRows.stream().map(row -> {
+            SearchResultPageDTO dto = new SearchResultPageDTO();
             dto.setId(row.getId());
+            dto.setApiId(row.getApi_id());
             dto.setType(row.getType());
             dto.setTitle(row.getTitle());
             dto.setPosterPath(row.getPosterPath());
