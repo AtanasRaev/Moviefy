@@ -12,10 +12,14 @@ public abstract class MediaPageDTO {
     @JsonIgnore
     private Double popularity;
 
-    public MediaPageDTO(Long id, Double voteAverage, Double popularity) {
+    @JsonProperty("api_id")
+    private Long apiId;
+
+    public MediaPageDTO(Long id, Double voteAverage, Double popularity, Long apiId) {
         this.id = id;
         this.voteAverage = voteAverage;
         this.popularity = popularity;
+        this.apiId = apiId;
     }
 
     public MediaPageDTO() {
@@ -45,5 +49,13 @@ public abstract class MediaPageDTO {
 
     public void setPopularity(Double popularity) {
         this.popularity = popularity;
+    }
+
+    public Long getApiId() {
+        return apiId;
+    }
+
+    public void setApiId(Long apiId) {
+        this.apiId = apiId;
     }
 }
