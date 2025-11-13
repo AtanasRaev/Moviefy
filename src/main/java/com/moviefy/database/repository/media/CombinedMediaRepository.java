@@ -14,6 +14,7 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
 
     @Query(value = """
             SELECT u.id,
+                   u.api_id,
                    u.title,
                    u.popularity,
                    u.poster_path AS posterPath,
@@ -25,6 +26,7 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                    u.runtime
             FROM (
                 SELECT m.id,
+                       m.api_id,
                        m.title,
                        m.popularity,
                        m.poster_path,
@@ -42,6 +44,7 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                 UNION ALL
             
                 SELECT tv.id,
+                       tv.api_id,
                        tv.name AS title,
                        tv.popularity,
                        tv.poster_path,
