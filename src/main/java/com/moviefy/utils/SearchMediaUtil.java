@@ -1,140 +1,157 @@
 package com.moviefy.utils;
 
-import com.moviefy.database.model.dto.pageDto.SearchResultDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
-import com.moviefy.service.media.movie.MovieService;
-import com.moviefy.service.media.tvSeries.TvSeriesService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.moviefy.config.ApiConfig;
+import com.moviefy.database.model.dto.apiDto.MediaApiDTO;
+import com.moviefy.database.model.dto.apiDto.SearchResponseApiDTO;
+import com.moviefy.database.model.dto.pageDto.SearchResultPageDTO;
+import com.moviefy.database.model.entity.media.Movie;
+import com.moviefy.database.model.entity.media.tvSeries.SeasonTvSeries;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
+import com.moviefy.database.repository.media.MovieRepository;
+import com.moviefy.database.repository.media.tvSeries.SeasonTvSeriesRepository;
+import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
-import java.text.Normalizer;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+@Component
 public class SearchMediaUtil {
+
+    private final ApiConfig apiConfig;
+    private final RestClient restClient;
+    private final MovieRepository movieRepository;
+    private final TvSeriesRepository tvSeriesRepository;
+    private final SeasonTvSeriesRepository seasonTvSeriesRepository;
+    private final ModelMapper modelMapper;
 
     private static final int MIN_QUERY_LENGTH = 2;
 
-    public static ResponseEntity<Map<String, Object>> validateSearchQuery(String query) {
-        if (query == null) {
-            return ErrorResponseUtil.buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request", "The search query must not be empty!");
+    public SearchMediaUtil(ApiConfig apiConfig,
+                           RestClient restClient,
+                           MovieRepository movieRepository,
+                           TvSeriesRepository tvSeriesRepository,
+                           SeasonTvSeriesRepository seasonTvSeriesRepository,
+                           ModelMapper modelMapper) {
+        this.apiConfig = apiConfig;
+        this.restClient = restClient;
+        this.movieRepository = movieRepository;
+        this.tvSeriesRepository = tvSeriesRepository;
+        this.seasonTvSeriesRepository = seasonTvSeriesRepository;
+        this.modelMapper = modelMapper;
+    }
+
+    public List<SearchResultPageDTO> search(String query) {
+        SearchResponseApiDTO searchResponseApiDTO = this.searchQueryApi(query);
+
+        if (searchResponseApiDTO == null || searchResponseApiDTO.getResults() == null || searchResponseApiDTO.getResults().isEmpty()) {
+            return List.of();
         }
-        String normalized = normalizeQuery(query);
-        if (normalized.isBlank() || normalized.length() < MIN_QUERY_LENGTH) {
-            return ErrorResponseUtil.buildErrorResponse(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid request",
-                    "The search query must be at least " + MIN_QUERY_LENGTH + " characters long."
-            );
+
+        Set<Long> tvApiIds = searchResponseApiDTO.getResults().stream()
+                .filter(m -> "tv".equals(m.getMediaType()))
+                .map(MediaApiDTO::getId)
+                .collect(Collectors.toSet());
+
+        Set<Long> movieApiIds = searchResponseApiDTO.getResults().stream()
+                .filter(m -> "movie".equals(m.getMediaType()))
+                .map(MediaApiDTO::getId)
+                .collect(Collectors.toSet());
+
+        List<TvSeries> seriesByApiId = tvApiIds.isEmpty()
+                ? List.of()
+                : this.tvSeriesRepository.findAllByApiIdIn(tvApiIds);
+
+        List<Movie> moviesByApiId = movieApiIds.isEmpty()
+                ? List.of()
+                : this.movieRepository.findAllByApiIdIn(movieApiIds);
+
+        if (seriesByApiId.isEmpty() && moviesByApiId.isEmpty()) {
+            return List.of();
         }
-        return null;
-    }
 
-    public static ResponseEntity<Map<String, Object>> searchMedia(
-            String query,
-            int size,
-            int page,
-            MovieService movieService,
-            TvSeriesService tvSeriesService) {
+        Map<Long, TvSeries> tvByApiId = seriesByApiId.stream()
+                .collect(Collectors.toMap(TvSeries::getApiId, Function.identity()));
 
-        ResponseEntity<Map<String, Object>> validationResponse = validateSearchQuery(query);
-        if (validationResponse != null) return validationResponse;
+        Map<Long, Movie> movieByApiId = moviesByApiId.stream()
+                .collect(Collectors.toMap(Movie::getApiId, Function.identity()));
 
-        String normalized = normalizeQuery(query);
-        int fetch = Math.max(size * page, size);
-        Pageable fetchPageable = PageRequest.of(0, fetch);
+        return searchResponseApiDTO.getResults().stream()
+                .map(dto -> {
+                    String mediaType = dto.getMediaType();
 
-        Page<MoviePageWithGenreDTO> movies = movieService.searchMovies(normalized, fetchPageable);
-        Page<TvSeriesPageWithGenreDTO> series = tvSeriesService.searchTvSeries(normalized, fetchPageable);
+                    if ("tv".equals(mediaType)) {
+                        TvSeries tvSeries = tvByApiId.get(dto.getId());
+                        if (tvSeries == null) {
+                            return null;
+                        }
 
-        List<SearchResultDTO> combined = new ArrayList<>(
-                movies.getNumberOfElements() + series.getNumberOfElements());
-        combined.addAll(convertMoviesToSearchResults(movies.getContent()));
-        combined.addAll(convertTvSeriesToSearchResults(series.getContent()));
+                        SearchResultPageDTO seriesDTO = this.modelMapper.map(tvSeries, SearchResultPageDTO.class);
 
-        sortSearchResults(combined, normalized.toLowerCase(Locale.ROOT));
+                        if (tvSeries.getFirstAirDate() != null) {
+                            seriesDTO.setYear(tvSeries.getFirstAirDate().getYear());
+                        }
 
-        int start = Math.min((page - 1) * size, combined.size());
-        int end   = Math.min(start + size, combined.size());
-        List<SearchResultDTO> paginatedResults = combined.subList(start, end);
+                        seriesDTO.setTitle(dto.getName());
+                        seriesDTO.setType("series");
 
-        long totalItems = movies.getTotalElements() + series.getTotalElements();
-        int totalPages = (int) Math.ceil((double) totalItems / size);
+                        List<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(seriesDTO.getId());
+                        seasons.stream()
+                                .max(Comparator.comparing(SeasonTvSeries::getSeasonNumber))
+                                .ifPresent(lastSeason -> {
+                                    seriesDTO.setSeasonsCount(
+                                            lastSeason.getSeasonNumber() > 411
+                                                    ? lastSeason.getSeasonNumber()
+                                                    : seasons.size()
+                                    );
+                                    seriesDTO.setEpisodesCount(lastSeason.getEpisodeCount());
+                                });
 
-        return ResponseEntity.ok(Map.of(
-                "query", normalized,
-                "items_on_page", paginatedResults.size(),
-                "total_items", totalItems,
-                "total_pages", totalPages,
-                "current_page", page,
-                "results", paginatedResults
-        ));
-    }
+                        return seriesDTO;
+                    }
 
-    private static String normalizeQuery(String q) {
-        String s = q.trim().replaceAll("\\s+", " ");
-        s = Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        return s;
-    }
+                    if ("movie".equals(mediaType)) {
+                        Movie movie = movieByApiId.get(dto.getId());
+                        if (movie == null) {
+                            return null;
+                        }
 
-    private static List<SearchResultDTO> convertMoviesToSearchResults(List<MoviePageWithGenreDTO> movies) {
-        return movies.stream()
-                .map(movie -> {
-                    SearchResultDTO result = new SearchResultDTO();
-                    result.setId(movie.getId());
-                    result.setType("movie");
-                    result.setTitle(movie.getTitle());
-                    result.setPosterPath(movie.getPosterPath());
-                    result.setVoteAverage(movie.getVoteAverage());
-                    result.setYear(movie.getYear());
-                    result.setGenre(movie.getGenre());
-                    result.setTrailer(movie.getTrailer());
-                    result.setRuntime(movie.getRuntime());
-                    return result;
+                        SearchResultPageDTO movieDTO = this.modelMapper.map(movie, SearchResultPageDTO.class);
+
+                        movieDTO.setType("movie");
+
+                        if (movie.getReleaseDate() != null) {
+                            movieDTO.setYear(movie.getReleaseDate().getYear());
+                        }
+
+                        return movieDTO;
+                    }
+
+                    return null;
                 })
+                .filter(Objects::nonNull)
                 .toList();
     }
 
-    private static List<SearchResultDTO> convertTvSeriesToSearchResults(List<TvSeriesPageWithGenreDTO> tvSeries) {
-        return tvSeries.stream()
-                .map(series -> {
-                    SearchResultDTO result = new SearchResultDTO();
-                    result.setId(series.getId());
-                    result.setType("series");
-                    result.setTitle(series.getName());
-                    result.setPosterPath(series.getPosterPath());
-                    result.setVoteAverage(series.getVoteAverage());
-                    result.setYear(series.getYear());
-                    result.setGenre(series.getGenre());
-                    result.setTrailer(series.getTrailer());
-                    result.setSeasonsCount(series.getSeasonsCount());
-                    result.setEpisodesCount(series.getEpisodesCount());
-                    return result;
-                })
-                .toList();
-    }
 
-    private static void sortSearchResults(List<SearchResultDTO> results, String queryLower) {
-        results.sort((a, b) -> {
-            String titleA = Optional.ofNullable(a.getTitle()).orElse("").toLowerCase(Locale.ROOT);
-            String titleB = Optional.ofNullable(b.getTitle()).orElse("").toLowerCase(Locale.ROOT);
+    private SearchResponseApiDTO searchQueryApi(String query) {
+        String url = String.format(this.apiConfig.getUrl()
+                        + "/search/multi?api_key=%s&page=1&query=%s",
+                this.apiConfig.getKey(), query);
 
-            int indexA = titleA.indexOf(queryLower);
-            int indexB = titleB.indexOf(queryLower);
+        try {
+            return this.restClient
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .body(SearchResponseApiDTO.class);
+        } catch (Exception e) {
+            System.err.println("Error searching movies" + "- " + e.getMessage());
+            return null;
+        }
 
-            if (indexA >= 0 && indexB >= 0) {
-                if (indexA != indexB) return Integer.compare(indexA, indexB);
-                if (titleA.length() != titleB.length()) return Integer.compare(titleA.length(), titleB.length());
-                return titleA.compareTo(titleB);
-            } else if (indexA >= 0) {
-                return -1;
-            } else if (indexB >= 0) {
-                return 1;
-            }
-            return titleA.compareTo(titleB);
-        });
     }
 }
