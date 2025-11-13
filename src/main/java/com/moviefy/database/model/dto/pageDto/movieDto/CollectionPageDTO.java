@@ -8,13 +8,14 @@ public class CollectionPageDTO {
     @JsonProperty("poster_path")
     private String posterPath;
 
-    @JsonProperty("first_movie_api_id")
-    private Long firstMovieApiId;
+    @JsonProperty("api_id")
+    private Long apiId;
 
     private String overview;
 
     private Integer runtime;
 
+    @JsonProperty("vote_average")
     private Double voteAverage;
 
     public String getName() {
@@ -33,12 +34,12 @@ public class CollectionPageDTO {
         this.posterPath = posterPath;
     }
 
-    public Long getFirstMovieApiId() {
-        return firstMovieApiId;
+    public Long getApiId() {
+        return apiId;
     }
 
-    public void setFirstMovieApiId(Long firstMovieApiId) {
-        this.firstMovieApiId = firstMovieApiId;
+    public void setApiId(Long apiId) {
+        this.apiId = apiId;
     }
 
     public String getOverview() {
