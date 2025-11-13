@@ -28,8 +28,6 @@ public class SearchMediaUtil {
     private final SeasonTvSeriesRepository seasonTvSeriesRepository;
     private final ModelMapper modelMapper;
 
-    private static final int MIN_QUERY_LENGTH = 2;
-
     public SearchMediaUtil(ApiConfig apiConfig,
                            RestClient restClient,
                            MovieRepository movieRepository,
