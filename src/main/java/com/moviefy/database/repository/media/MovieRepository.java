@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
@@ -23,8 +24,8 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT MAX(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m")
     Integer findNewestMovieYear();
 
-    @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres LEFT JOIN FETCH m.productionCompanies WHERE m.id = :id")
-    Optional<Movie> findMovieById(@Param("id") Long id);
+    @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres LEFT JOIN FETCH m.productionCompanies WHERE m.apiId = :apiId")
+    Optional<Movie> findMovieByApiId(@Param("apiId") Long apiId);
 
     @Query("SELECT m FROM Movie m WHERE m.releaseDate <= :startDate ORDER BY m.releaseDate DESC, m.id")
     Page<Movie> findByReleaseDate(@Param("startDate") LocalDate startDate, Pageable pageable);
@@ -37,6 +38,9 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     @Query("SELECT m FROM Movie m")
     Page<Movie> findAllSortedByVoteCount(Pageable pageable);
+
+    @Query("SELECT m FROM Movie m WHERE m.apiId IN :apiIds")
+    List<Movie> findAllByApiIdIn(Set<Long> apiIds);
 
     @Query(
             value = """
