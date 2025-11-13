@@ -21,8 +21,7 @@ public class MovieDetailsHomeDTO extends MovieDTO {
 
     private String trailer;
 
-    @JsonProperty("release_date")
-    private LocalDate releaseDate;
+    private Integer year;
 
     public String getBackdropPath() {
         return backdropPath;
@@ -65,11 +64,11 @@ public class MovieDetailsHomeDTO extends MovieDTO {
     }
 
 
-    public LocalDate getReleaseDate() {
-        return releaseDate;
+    public Integer getYear() {
+        return year;
     }
 
-    public void setReleaseDate(LocalDate releaseDate) {
-        this.releaseDate = releaseDate;
+    public void setYear(Integer year) {
+        this.year = year;
     }
 }
