@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     @Query("SELECT COUNT(tv) FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = " +
@@ -26,8 +27,8 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             "LEFT JOIN FETCH tv.productionCompanies " +
             "LEFT JOIN FETCH tv.seasons " +
             "LEFT JOIN FETCH tv.statusTvSeries " +
-            "WHERE tv.id = :id")
-    Optional<TvSeries> findTvSeriesById(@Param("id") Long id);
+            "WHERE tv.apiId = :apiId")
+    Optional<TvSeries> findTvSeriesByApiId(@Param("apiId") Long apiId);
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate <= :startDate ORDER BY tv.firstAirDate DESC, tv.id")
     Page<TvSeries> findByFirstAirDate(@Param("startDate") LocalDate startDate, Pageable pageable);
@@ -260,4 +261,6 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     )
     Page<TvSeries> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
 
+    @Query("SELECT tv FROM TvSeries tv WHERE tv.apiId IN :apiIds")
+    List<TvSeries> findAllByApiIdIn(@Param("apiIds") Set<Long> apiIds);
 }
