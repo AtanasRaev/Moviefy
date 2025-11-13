@@ -85,15 +85,29 @@ public class CacheConfig {
                         .build()
         );
 
-        CaffeineCache firstMovieByCollection = new CaffeineCache(
-                "firstMovieByCollection",
+        CaffeineCache moviesHomeByCollection = new CaffeineCache(
+                "moviesHomeByCollection",
                 Caffeine.newBuilder()
                         .maximumSize(1)
                         .build()
         );
 
+        CaffeineCache moviesByApiId = new CaffeineCache(
+                "moviesByApiId",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
         CaffeineCache homeSeriesByCollection = new CaffeineCache(
                 "homeSeriesByCollection",
+                Caffeine.newBuilder()
+                        .maximumSize(1)
+                        .build()
+        );
+
+        CaffeineCache popularCollections = new CaffeineCache(
+                "popularCollections",
                 Caffeine.newBuilder()
                         .maximumSize(1)
                         .build()
@@ -131,8 +145,10 @@ public class CacheConfig {
                 popularMovies,
                 popularTvSeries,
                 collectionsByName,
-                firstMovieByCollection,
+                moviesHomeByCollection,
+                moviesByApiId,
                 homeSeriesByCollection,
+                popularCollections,
                 moviesByGenres,
                 tvSeriesByGenres,
                 combinedByGenres
