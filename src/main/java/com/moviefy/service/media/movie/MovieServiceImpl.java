@@ -30,14 +30,12 @@ import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
-import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -114,11 +112,11 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Cacheable(
             cacheNames = "movieDetailsById",
-            key = "#id",
+            key = "#apiId",
             unless = "#result == null"
     )
-    public MovieDetailsDTO getMovieDetailsById(Long id) {
-        return this.movieRepository.findMovieById(id)
+    public MovieDetailsDTO getMovieDetailsByApiId(Long apiId) {
+        return this.movieRepository.findMovieByApiId(apiId)
                 .map(this::mapToMovieDetailsDTO)
                 .orElse(null);
     }
@@ -206,9 +204,9 @@ public class MovieServiceImpl implements MovieService {
                     CollectionPageDTO map = this.modelMapper.map(c, CollectionPageDTO.class);
                     c.getMovies()
                             .stream()
-                            .min(Comparator.comparing(Movie::getId))
+                            .min(Comparator.comparing(Movie::getReleaseDate))
                             .ifPresent(movie -> {
-                                map.setFirstMovieId(movie.getId());
+                                map.setFirstMovieApiId(movie.getApiId());
                                 map.setOverview(movie.getOverview());
                                 map.setRuntime(movie.getRuntime());
                             });
@@ -223,9 +221,24 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public Page<MoviePageWithGenreDTO> searchMovies(String query, Pageable pageable) {
-        return this.movieRepository.searchByTitle(query, pageable)
-                .map(this::mapMoviePageWithGenreDTO);
+    public List<MoviePageWithGenreDTO> searchMovies(String query) {
+        MovieResponseApiDTO movieResponseApiDTO = this.searchQueryApi(query);
+
+        if (movieResponseApiDTO == null || movieResponseApiDTO.getResults() == null) {
+            return List.of();
+        }
+
+        Set<Long> apiIds = movieResponseApiDTO.getResults().stream()
+                .map(MediaApiDTO::getId)
+                .collect(Collectors.toSet());
+
+        if (apiIds.isEmpty()) {
+            return List.of();
+        }
+
+        return this.movieRepository.findAllByApiIdIn(apiIds).stream()
+                .map(this::mapMoviePageWithGenreDTO)
+                .toList();
     }
 
     @Override
@@ -316,7 +329,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private List<ProductionHomePageDTO> getProductionCompanies(Movie movie) {
-        return movieRepository.findMovieById(movie.getId())
+        return movieRepository.findMovieByApiId(movie.getApiId())
                 .map(foundMovie -> foundMovie.getProductionCompanies()
                         .stream()
                         .sorted(Comparator.comparing(ProductionCompany::getId))
@@ -346,7 +359,7 @@ public class MovieServiceImpl implements MovieService {
 
     }
 
-//    @Scheduled(fixedDelay = 100000000)
+    //    @Scheduled(fixedDelay = 100000000)
     public void fetchMovies() {
         logger.info("Starting to fetch movies...");
 
@@ -544,6 +557,24 @@ public class MovieServiceImpl implements MovieService {
             System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
             return null;
         }
+    }
+
+    private MovieResponseApiDTO searchQueryApi(String query) {
+        String url = String.format(this.apiConfig.getUrl()
+                        + "/search/movie?api_key=%s&page=1&query=%s",
+                this.apiConfig.getKey(), query);
+
+        try {
+            return this.restClient
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .body(MovieResponseApiDTO.class);
+        } catch (Exception e) {
+            System.err.println("Error searching movies" + "- " + e.getMessage());
+            return null;
+        }
+
     }
 
     private MoviePageWithGenreDTO mapMoviePageWithGenreDTO(Movie movie) {
