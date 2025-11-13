@@ -3,13 +3,18 @@ package com.moviefy.database.model.dto.pageDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-@JsonPropertyOrder({"id", "type", "title", "poster_path", "vote_average", "year", "genre", "trailer"})
-public class SearchResultDTO {
+@JsonPropertyOrder({"id", "api_id", "type", "title", "vote_count", "poster_path", "vote_average", "year", "genre", "trailer"})
+public class SearchResultPageDTO {
     private Long id;
+
+    @JsonProperty("api_id")
+    private Long apiId;
     
     private String type;
     
     private String title;
+
+    private Integer voteCount;
     
     @JsonProperty("poster_path")
     private String posterPath;
@@ -18,11 +23,7 @@ public class SearchResultDTO {
     private Double voteAverage;
     
     private Integer year;
-    
-    private String genre;
-    
-    private String trailer;
-    
+
     private Integer runtime;
     
     @JsonProperty("seasons")
@@ -39,6 +40,14 @@ public class SearchResultDTO {
         this.id = id;
     }
 
+    public Long getApiId() {
+        return apiId;
+    }
+
+    public void setApiId(Long apiId) {
+        this.apiId = apiId;
+    }
+
     public String getType() {
         return type;
     }
@@ -53,6 +62,14 @@ public class SearchResultDTO {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public Integer getVoteCount() {
+        return voteCount;
+    }
+
+    public void setVoteCount(Integer voteCount) {
+        this.voteCount = voteCount;
     }
 
     public String getPosterPath() {
@@ -77,22 +94,6 @@ public class SearchResultDTO {
 
     public void setYear(Integer year) {
         this.year = year;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
-    }
-
-    public String getTrailer() {
-        return trailer;
-    }
-
-    public void setTrailer(String trailer) {
-        this.trailer = trailer;
     }
 
     public Integer getRuntime() {

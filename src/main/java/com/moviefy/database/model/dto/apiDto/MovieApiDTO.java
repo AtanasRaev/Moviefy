@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDate;
 
-public class MovieApiDTO extends MediaApiDTO{
+public class MovieApiDTO extends MediaApiDTO {
     private String title;
 
     @JsonProperty("original_title")
