@@ -1,21 +1,42 @@
 package com.moviefy.service.collection;
 
 import com.moviefy.database.model.dto.apiDto.CollectionApiDTO;
+import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
+import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
+import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
+import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
+import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.media.CollectionRepository;
+import com.moviefy.service.credit.crew.CrewService;
+import org.jetbrains.annotations.NotNull;
+import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class CollectionServiceImpl implements CollectionService {
     private final CollectionRepository collectionRepository;
+    private final CrewService crewService;
+    private final ModelMapper modelMapper;
 
-    public CollectionServiceImpl(CollectionRepository collectionRepository) {
+    public CollectionServiceImpl(CollectionRepository collectionRepository,
+                                 CrewService crewService,
+                                 ModelMapper modelMapper) {
         this.collectionRepository = collectionRepository;
+        this.crewService = crewService;
+        this.modelMapper = modelMapper;
     }
 
     @Override
@@ -69,7 +90,126 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    public List<Collection> getByNames(List<String> name) {
-        return this.collectionRepository.findAllByNameIn(name);
+    @Cacheable(
+            cacheNames = "collectionsByName",
+            key = "#input",
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public List<CollectionPageDTO> getCollectionsByName(List<String> input) {
+        return this.collectionRepository.findAllByNameIn(input).stream()
+                .map(this::mapCollectionPageDTO)
+                .toList();
+    }
+
+    @Override
+    @Cacheable(
+            cacheNames = "moviesByApiId",
+            key = "#apiId",
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Map<String, List<MoviePageDTO>> getMoviesByApiId(Long apiId) {
+        Collection collection = this.findByApiId(apiId);
+        return Map.of(collection.getName(), collection.getMovies().stream()
+                .sorted(Comparator.comparing(Movie::getReleaseDate))
+                .map(movie -> {
+                    MoviePageDTO dto = this.modelMapper.map(movie, MoviePageDTO.class);
+                    dto.setYear(movie.getReleaseDate().getYear());
+                    return dto;
+                })
+                .toList());
+    }
+
+    @Override
+    @Cacheable(
+            cacheNames = "popularCollections",
+            key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()",
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<CollectionPageDTO> getPopular(Pageable pageable) {
+        return this.collectionRepository.findAllByVoteCountAverageDesc(pageable)
+                .map(this::mapCollectionPageDTO);
+    }
+
+    @Override
+    @Cacheable(
+            cacheNames = "moviesHomeByCollection",
+            key = "#input",
+            unless = "#result == null"
+    )
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMoviesHomeByCollection(String input) {
+        List<Collection> collections = this.getByName(input);
+
+        if (collections.isEmpty()) {
+            return null;
+        }
+
+        Collection collection = collections.get(0);
+        Set<Movie> movies = collection.getMovies();
+
+        Map<String, Object> result = new HashMap<>();
+
+        movies.stream()
+                .min(Comparator.comparing(Movie::getReleaseDate))
+                .ifPresent(movie -> result.put("first_movie", mapFirstMovie(movie)));
+
+        List<MovieHomeDTO> restMovies = movies.size() > 1
+                ? movies.stream()
+                .sorted(Comparator.comparing(Movie::getReleaseDate))
+                .map(movie -> this.modelMapper.map(movie, MovieHomeDTO.class))
+                .skip(1)
+                .toList()
+                : List.of();
+
+        result.put("rest_movies", restMovies);
+
+        return result;
+    }
+
+    private MovieDetailsHomeDTO mapFirstMovie(Movie movie) {
+        MovieDetailsHomeDTO movieDTO = this.modelMapper.map(movie, MovieDetailsHomeDTO.class);
+
+        movieDTO.setYear(movie.getReleaseDate().getYear());
+
+        movieDTO.setProductionCompany(
+                movie.getProductionCompanies().stream()
+                        .sorted(Comparator.comparing(ProductionCompany::getId))
+                        .map(company -> this.modelMapper.map(company, ProductionHomePageDTO.class))
+                        .toList()
+        );
+
+        movieDTO.setCrew(
+                this.crewService.getCrewByMediaId("movie", movie.getId()).stream()
+                        .sorted(Comparator.comparing(CrewPageDTO::getId))
+                        .map(crew -> this.modelMapper.map(crew, CrewHomePageDTO.class))
+                        .toList()
+        );
+
+        return movieDTO;
+    }
+
+    private CollectionPageDTO mapCollectionPageDTO(Collection collection) {
+        CollectionPageDTO map = this.modelMapper.map(collection, CollectionPageDTO.class);
+        collection.getMovies()
+                .stream()
+                .min(Comparator.comparing(Movie::getReleaseDate))
+                .stream()
+                .findFirst()
+                .ifPresent(m -> {
+                    map.setOverview(m.getOverview());
+                    map.setRuntime(m.getRuntime());
+                    map.setVoteAverage(m.getVoteAverage());
+                });
+        map.setVoteAverage(
+                Math.round(
+                        collection.getMovies()
+                                .stream()
+                                .mapToDouble(Movie::getVoteAverage)
+                                .average()
+                                .orElse(0) * 100.0
+                ) / 100.0
+        );
+
+        return map;
     }
 }
