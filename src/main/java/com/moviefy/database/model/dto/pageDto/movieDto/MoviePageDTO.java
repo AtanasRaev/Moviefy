@@ -11,8 +11,8 @@ public class MoviePageDTO extends MovieDTO {
 
     private Integer year;
 
-    public MoviePageDTO(Long id, Double voteAverage, Double popularity, String title, Integer runtime, String posterPath, Integer year) {
-        super(id, voteAverage, popularity, title, runtime);
+    public MoviePageDTO(Long id, Double voteAverage, Double popularity, Long apiId, String title, Integer runtime, String posterPath, Integer year) {
+        super(id, voteAverage, popularity, apiId, title, runtime);
         this.posterPath = posterPath;
         this.year = year;
     }
