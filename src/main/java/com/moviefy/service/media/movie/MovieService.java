@@ -22,12 +22,6 @@ public interface MovieService {
 
     boolean isEmpty();
 
-    MovieDetailsHomeDTO getFirstMovieByCollectionName(String name);
-
-    List<MovieHomeDTO> getMoviesByCollectionName(String name);
-
-    List<CollectionPageDTO> getCollectionsByName(List<String> input);
-
     List<MoviePageWithGenreDTO> searchMovies(String query);
 
     Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable);
