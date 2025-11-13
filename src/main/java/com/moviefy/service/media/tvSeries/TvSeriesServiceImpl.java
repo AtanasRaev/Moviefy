@@ -112,11 +112,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Override
     @Cacheable(
             cacheNames = "tvSeriesDetailsById",
-            key = "#id",
+            key = "#apiId",
             unless = "#result == null"
     )
-    public TvSeriesDetailsDTO getTvSeriesDetailsById(Long id) {
-        return this.tvSeriesRepository.findTvSeriesById(id)
+    public TvSeriesDetailsDTO getTvSeriesDetailsByApiId(Long apiId) {
+        return this.tvSeriesRepository.findTvSeriesByApiId(apiId)
                 .map(this::mapToTvSeriesDetailsDTO)
                 .orElse(null);
     }
@@ -196,9 +196,24 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    public Page<TvSeriesPageWithGenreDTO> searchTvSeries(String query, Pageable pageable) {
-        return this.tvSeriesRepository.searchByName(query, pageable)
-                .map(this::mapTvSeriesPageWithGenreDTO);
+    public List<TvSeriesPageWithGenreDTO> searchTvSeries(String query) {
+        TvSeriesResponseApiDTO tvSeriesResponseApiDTO = this.searchQueryApi(query);
+
+        if (tvSeriesResponseApiDTO == null || tvSeriesResponseApiDTO.getResults() == null) {
+            return List.of();
+        }
+
+        Set<Long> apiIds = tvSeriesResponseApiDTO.getResults().stream()
+                .map(TvSeriesApiDTO::getId)
+                .collect(Collectors.toSet());
+
+        if (apiIds.isEmpty()) {
+            return List.of();
+        }
+
+        return this.tvSeriesRepository.findAllByApiIdIn(apiIds).stream()
+                .map(this::mapTvSeriesPageWithGenreDTO)
+                .toList();
     }
 
     @Override
@@ -592,6 +607,24 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
             return null;
         }
+    }
+
+    private TvSeriesResponseApiDTO searchQueryApi(String query) {
+        String url = String.format(this.apiConfig.getUrl()
+                        + "/search/tv?api_key=%s&page=1&query=%s",
+                this.apiConfig.getKey(), query);
+
+        try {
+            return this.restClient
+                    .get()
+                    .uri(url)
+                    .retrieve()
+                    .body(TvSeriesResponseApiDTO.class);
+        } catch (Exception e) {
+            System.err.println("Error searching movies" + "- " + e.getMessage());
+            return null;
+        }
+
     }
 
     private TvSeriesPageWithGenreDTO mapTvSeriesPageWithGenreDTO(TvSeries tvSeries) {
