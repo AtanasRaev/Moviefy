@@ -13,7 +13,7 @@ import java.util.List;
 public interface TvSeriesService {
     Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable);
 
-    TvSeriesDetailsDTO getTvSeriesDetailsById(Long id);
+    TvSeriesDetailsDTO getTvSeriesDetailsByApiId(Long apiId);
 
     Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(Pageable pageable);
 
@@ -27,7 +27,7 @@ public interface TvSeriesService {
 
     Integer getSeasonNumberById(Long seasonId);
 
-    Page<TvSeriesPageWithGenreDTO> searchTvSeries(String query, Pageable pageable);
+    List<TvSeriesPageWithGenreDTO> searchTvSeries(String query);
 
     Page<TvSeriesPageWithGenreDTO> getTvSeriesByGenres(List<String> genres, Pageable pageable);
 }
