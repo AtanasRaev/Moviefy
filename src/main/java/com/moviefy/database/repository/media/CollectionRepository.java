@@ -1,6 +1,8 @@
 package com.moviefy.database.repository.media;
 
 import com.moviefy.database.model.entity.media.Collection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +23,7 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
 
     @Query("SELECT c FROM Collection c JOIN c.movies m WHERE m.id = :movieId")
     Optional<Collection> findCollectionsByMovieId(@Param("movieId") Long movieId);
+
+    @Query("SELECT c FROM Collection c ORDER BY c.voteCountAverage DESC")
+    Page<Collection> findAllByVoteCountAverageDesc(Pageable pageable);
 }
