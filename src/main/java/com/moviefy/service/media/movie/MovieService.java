@@ -14,7 +14,7 @@ import java.util.List;
 public interface MovieService {
     Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable);
 
-    MovieDetailsDTO getMovieDetailsById(Long id);
+    MovieDetailsDTO getMovieDetailsByApiId(Long apiId);
 
     Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable);
 
@@ -28,7 +28,7 @@ public interface MovieService {
 
     List<CollectionPageDTO> getCollectionsByName(List<String> input);
 
-    Page<MoviePageWithGenreDTO> searchMovies(String query, Pageable pageable);
+    List<MoviePageWithGenreDTO> searchMovies(String query);
 
     Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable);
 }
