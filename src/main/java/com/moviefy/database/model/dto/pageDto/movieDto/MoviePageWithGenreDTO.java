@@ -8,12 +8,13 @@ public class MoviePageWithGenreDTO extends MoviePageDTO {
     public MoviePageWithGenreDTO(Long id,
                                  Double voteAverage,
                                  Double popularity,
+                                 Long apiId,
                                  String title,
                                  Integer runtime,
                                  String posterPath,
                                  Integer year,
                                  String genre) {
-        super(id, voteAverage, popularity, title, runtime, posterPath, year);
+        super(id, voteAverage, popularity, apiId, title, runtime, posterPath, year);
         this.genre = genre;
     }
 
