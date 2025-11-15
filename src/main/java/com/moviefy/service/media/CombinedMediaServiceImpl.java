@@ -25,28 +25,33 @@ public class CombinedMediaServiceImpl implements CombinedMediaService {
     public Map<String, Object> getCombinedMediaByGenres(List<String> genres, int page, int size) {
         int offset = (page - 1) * size;
 
-        List<String> seriesGenres = new ArrayList<>(genres);
-        Set<String> lowerCaseGenres = new HashSet<>();
-        for (String g : genres) {
-            if (g != null) lowerCaseGenres.add(g.toLowerCase());
+        List<String> lowerCaseSeriesGenres = new ArrayList<>(genres.stream().map(String::toLowerCase).toList());
+        List<String> lowerCaseMoviesGenres = genres.stream()
+                .map(String::toLowerCase)
+                .toList();
+
+        if (lowerCaseSeriesGenres.contains("action") || lowerCaseSeriesGenres.contains("adventure")) {
+            lowerCaseSeriesGenres.remove("action");
+            lowerCaseSeriesGenres.remove("adventure");
+            lowerCaseSeriesGenres.add("action & adventure");
         }
-        if (lowerCaseGenres.contains("action") || lowerCaseGenres.contains("adventure")) {
-            seriesGenres.removeIf(g -> g != null && (g.equalsIgnoreCase("action") || g.equalsIgnoreCase("adventure")));
-            seriesGenres.add("Action & Adventure");
+
+        if (lowerCaseSeriesGenres.contains("science fiction") || lowerCaseSeriesGenres.contains("fantasy")) {
+            lowerCaseSeriesGenres.remove("science fiction");
+            lowerCaseSeriesGenres.remove("fantasy");
+            lowerCaseSeriesGenres.add("sci-fi & fantasy");
         }
-        if (lowerCaseGenres.contains("science fiction") || lowerCaseGenres.contains("fantasy")) {
-            seriesGenres.removeIf(g -> g != null && (g.equalsIgnoreCase("Science Fiction") || g.equalsIgnoreCase("fantasy")));
-            seriesGenres.add("Sci-Fi & Fantasy");
-        }
-        if (lowerCaseGenres.contains("war") || lowerCaseGenres.contains("politics")) {
-            seriesGenres.removeIf(g -> g != null && (g.equalsIgnoreCase("war") || g.equalsIgnoreCase("politics")));
-            seriesGenres.add("War & Politics");
+
+        if (lowerCaseSeriesGenres.contains("war") || lowerCaseSeriesGenres.contains("politics")) {
+            lowerCaseSeriesGenres.remove("war");
+            lowerCaseSeriesGenres.remove("politics");
+            lowerCaseSeriesGenres.add("war & politics");
         }
 
         List<CombinedMediaProjection> combinedRows =
-                combinedMediaRepository.findCombinedByGenres(genres, seriesGenres, size, offset);
+                combinedMediaRepository.findCombinedByGenres(lowerCaseMoviesGenres, lowerCaseSeriesGenres, size, offset);
 
-        long totalItems = combinedMediaRepository.countCombinedByGenres(genres, seriesGenres);
+        long totalItems = combinedMediaRepository.countCombinedByGenres(lowerCaseMoviesGenres, lowerCaseSeriesGenres);
         int totalPages = (size > 0) ? (int) Math.ceil((double) totalItems / (double) size) : 0;
 
         List<SearchResultPageDTO> results = combinedRows.stream().map(row -> {
