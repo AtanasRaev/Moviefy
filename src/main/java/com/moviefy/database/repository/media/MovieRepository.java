@@ -243,14 +243,15 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                     SELECT DISTINCT m
                     FROM Movie m
                     JOIN m.genres g
-                    WHERE g.name IN :genres
+                    WHERE LOWER(g.name) IN :genres
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT m.id)
                     FROM Movie m
                     JOIN m.genres g
-                    WHERE g.name IN :genres
+                    WHERE LOWER(g.name) IN :genres
                     """
     )
     Page<Movie> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
+
 }
