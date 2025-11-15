@@ -39,7 +39,7 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                 FROM movies m
                 JOIN movie_genre mg ON mg.movie_id = m.id
                 JOIN movies_genres g ON g.id = mg.genre_id
-                WHERE g.name IN (:movieGenres)
+                WHERE LOWER(g.name) IN (:movieGenres)
             
                 UNION ALL
             
@@ -64,7 +64,7 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                     FROM seasons stv
                     GROUP BY stv.tv_series_id
                 ) s ON s.tv_series_id = tv.id
-                WHERE g.name IN (:seriesGenres)
+                WHERE LOWER(g.name) IN (:seriesGenres)
             ) u
             ORDER BY u.popularity DESC, u.id
             LIMIT :limit OFFSET :offset
@@ -82,15 +82,15 @@ public interface CombinedMediaRepository extends JpaRepository<Movie, Long> {
                 FROM movies m
                 JOIN movie_genre mg ON mg.movie_id = m.id
                 JOIN movies_genres g ON g.id = mg.genre_id
-                WHERE g.name IN (:movieGenres)
-                
+                WHERE LOWER(g.name) IN (:movieGenres)
+            
                 UNION ALL
-                
+            
                 SELECT tv.id
                 FROM tv_series tv
                 JOIN series_genre tsg ON tsg.series_id = tv.id
                 JOIN series_genres g ON g.id = tsg.genre_id
-                WHERE g.name IN (:seriesGenres)
+                WHERE LOWER(g.name) IN (:seriesGenres)
             ) u
             """, nativeQuery = true)
     long countCombinedByGenres(
