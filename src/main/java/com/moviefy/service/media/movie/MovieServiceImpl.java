@@ -175,7 +175,10 @@ public class MovieServiceImpl implements MovieService {
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable) {
-        return this.movieRepository.searchByGenres(genres, pageable)
+        List<String> loweredGenreList = genres.stream()
+                .map(String::toLowerCase)
+                .toList();
+        return this.movieRepository.searchByGenres(loweredGenreList, pageable)
                 .map(movie -> {
                     MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
                     if (genres.size() == 1) {
