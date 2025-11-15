@@ -250,13 +250,13 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                     SELECT DISTINCT tv
                     FROM TvSeries tv
                     JOIN tv.genres g
-                    WHERE g.name IN :genres
+                    WHERE LOWER(g.name) IN :genres
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT tv.id)
                     FROM TvSeries tv
                     JOIN tv.genres g
-                    WHERE g.name IN :genres
+                    WHERE LOWER(g.name) IN :genres
                     """
     )
     Page<TvSeries> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
