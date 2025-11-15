@@ -223,33 +223,34 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<TvSeriesPageWithGenreDTO> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
-        List<String> searchGenres = new ArrayList<>(genres);
-
-        List<String> lowerCaseGenres = searchGenres.stream()
+        List<String> lowerCaseGenres = new ArrayList<>(genres.stream()
                 .map(String::toLowerCase)
-                .toList();
+                .toList());
 
         if (lowerCaseGenres.contains("action") || lowerCaseGenres.contains("adventure")) {
-            searchGenres.removeIf(g -> g.equalsIgnoreCase("action") || g.equalsIgnoreCase("adventure"));
-            searchGenres.add("Action & Adventure");
+            lowerCaseGenres.remove("action");
+            lowerCaseGenres.remove("adventure");
+            lowerCaseGenres.add("action & adventure");
         }
 
         if (lowerCaseGenres.contains("science fiction") || lowerCaseGenres.contains("fantasy")) {
-            searchGenres.removeIf(g -> g.equalsIgnoreCase("Science Fiction") || g.equalsIgnoreCase("fantasy"));
-            searchGenres.add("Sci-Fi & Fantasy");
+            lowerCaseGenres.remove("science fiction");
+            lowerCaseGenres.remove("fantasy");
+            lowerCaseGenres.add("sci-fi & fantasy");
         }
 
         if (lowerCaseGenres.contains("war") || lowerCaseGenres.contains("politics")) {
-            searchGenres.removeIf(g -> g.equalsIgnoreCase("war") || g.equalsIgnoreCase("politics"));
-            searchGenres.add("War & Politics");
+            lowerCaseGenres.remove("war");
+            lowerCaseGenres.remove("politics");
+            lowerCaseGenres.add("war & politics");
         }
 
-        return tvSeriesRepository.searchByGenres(searchGenres, pageable)
+        return tvSeriesRepository.searchByGenres(lowerCaseGenres, pageable)
                 .map(tvSeries -> {
                     TvSeriesPageWithGenreDTO dto = modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
 
-                    if (searchGenres.size() == 1) {
-                        dto.setGenre(searchGenres.get(0));
+                    if (genres.size() == 1) {
+                        dto.setGenre(genres.get(0));
                     } else {
                         mapOneGenreToPageDTO(dto);
                     }
