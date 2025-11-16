@@ -1,5 +1,6 @@
 package com.moviefy.database.repository.media;
 
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
 import com.moviefy.database.model.entity.media.Movie;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,11 +28,41 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres LEFT JOIN FETCH m.productionCompanies WHERE m.apiId = :apiId")
     Optional<Movie> findMovieByApiId(@Param("apiId") Long apiId);
 
-    @Query("SELECT m FROM Movie m WHERE m.releaseDate <= :startDate ORDER BY m.releaseDate DESC, m.id")
-    Page<Movie> findByReleaseDate(@Param("startDate") LocalDate startDate, Pageable pageable);
+    @Query(
+            value = """
+                    SELECT DISTINCT
+                        m.id AS id,
+                        m.api_id AS apiId,
+                        m.title AS title,
+                        m.popularity AS popularity,
+                        m.poster_path AS posterPath,
+                        m.vote_average AS voteAverage,
+                        CAST(date_part('year', m.release_date) AS integer) AS year,
+                        m.release_date AS releaseDate,     
+                        'movie' AS type,
+                        m.runtime AS runtime
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                      AND m.release_date <= :startDate
+                    """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT m.id)
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                      AND m.release_date <= :startDate
+                    """,
+            nativeQuery = true
+    )
+    Page<MoviePageProjection> findByReleaseDateAndGenres(
+            @Param("startDate") LocalDate startDate,
+            @Param("genres") List<String> genres,
+            Pageable pageable
+    );
 
-    @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.genres g WHERE g.name = :genreName")
-    List<Movie> findByGenreName(@Param("genreName") String genreName);
 
     @Query("SELECT m FROM Movie m ORDER BY m.popularity DESC")
     Page<Movie> findAllByPopularityDesc(Pageable pageable);
