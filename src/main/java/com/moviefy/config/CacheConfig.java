@@ -127,8 +127,15 @@ public class CacheConfig {
                         .build()
         );
 
-        CaffeineCache combinedByGenres = new CaffeineCache(
-                "combinedByGenres",
+        CaffeineCache mediaByGenres = new CaffeineCache(
+                "mediaByGenres",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache latestMedia = new CaffeineCache(
+                "latestMedia",
                 Caffeine.newBuilder()
                         .maximumSize(100)
                         .build()
@@ -151,7 +158,8 @@ public class CacheConfig {
                 popularCollections,
                 moviesByGenres,
                 tvSeriesByGenres,
-                combinedByGenres
+                mediaByGenres,
+                latestMedia
         ));
         return manager;
     }
