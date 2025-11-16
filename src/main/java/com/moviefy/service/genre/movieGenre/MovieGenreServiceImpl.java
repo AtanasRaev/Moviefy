@@ -59,6 +59,11 @@ public class MovieGenreServiceImpl implements MovieGenreService {
                 .toList();
     }
 
+    @Override
+    public List<String> getAllGenresNames() {
+        return this.genreRepository.findAllNames();
+    }
+
     private GenreResponseApiDTO getResponse() {
         String url = this.apiConfig.getUrl() + "/genre/movie/list?api_key=" + this.apiConfig.getKey();
 
