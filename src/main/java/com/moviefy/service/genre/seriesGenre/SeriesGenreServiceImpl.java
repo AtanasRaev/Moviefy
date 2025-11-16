@@ -58,6 +58,11 @@ public class SeriesGenreServiceImpl implements SeriesGenreService {
                 .toList();
     }
 
+    @Override
+    public List<String> getAllGenresNames() {
+        return this.genreRepository.findAllNames();
+    }
+
     private GenreResponseApiDTO getResponse() {
         String url = this.apiConfig.getUrl() + "/genre/tv/list?api_key=" + this.apiConfig.getKey();
 
