@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -17,4 +18,7 @@ public interface MovieGenreRepository extends JpaRepository<MovieGenre, Long> {
 
     @Query("SELECT mg FROM MovieGenre mg JOIN mg.movies m WHERE m.id = :movieId")
     Set<MovieGenre> findByMovieId(@Param("movieId") Long movieId);
+
+    @Query("SELECT mg.name FROM MovieGenre mg")
+    List<String> findAllNames();
 }
