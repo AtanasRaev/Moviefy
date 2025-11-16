@@ -1,10 +1,7 @@
 package com.moviefy.service.media.movie;
 
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
-import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface MovieService {
-    Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable);
+    Page<MoviePageProjection> getMoviesFromCurrentMonth(Pageable pageable, List<String> genres);
 
     MovieDetailsDTO getMovieDetailsByApiId(Long apiId);
 
