@@ -1,7 +1,7 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
-import com.moviefy.service.media.CombinedMediaService;
+import com.moviefy.service.media.MediaService;
 import com.moviefy.service.media.movie.MovieService;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
 import com.moviefy.service.media.tvSeries.TvSeriesServiceImpl;
@@ -27,22 +27,23 @@ import java.util.Map;
 public class MediaController {
     private final MovieService movieService;
     private final TvSeriesService tvSeriesService;
-    private final CombinedMediaService combinedMediaService;
+    private final MediaService mediaService;
     private final SearchMediaUtil searchMediaUtil;
 
     public MediaController(MovieService movieService,
                            TvSeriesServiceImpl tvSeriesService,
-                           CombinedMediaService combinedMediaService,
+                           MediaService mediaService,
                            SearchMediaUtil searchMediaUtil) {
         this.movieService = movieService;
         this.tvSeriesService = tvSeriesService;
-        this.combinedMediaService = combinedMediaService;
+        this.mediaService = mediaService;
         this.searchMediaUtil = searchMediaUtil;
     }
 
     @GetMapping("/{mediaType}/latest")
     public ResponseEntity<Map<String, Object>> getLatestMedia(
             @PathVariable String mediaType,
+            @RequestParam(required = false) List<String> genres,
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
@@ -50,8 +51,15 @@ public class MediaController {
             return getInvalidRequest(mediaType);
         }
 
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<?> mediaPage = getLatestMediaPage(mediaType, pageable);
+        Pageable pageable;
+
+        switch (mediaType) {
+            case "movies" -> pageable = PageRequest.of(page - 1, size, Sort.by("release_date").descending());
+            case "series" -> pageable = PageRequest.of(page - 1, size, Sort.by("first_air_date").descending());
+            default -> pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
+        }
+
+        Page<?> mediaPage = getLatestMediaPage(mediaType, pageable, genres);
 
         return ResponseEntity.ok(Map.of(
                 "items_on_page", mediaPage.getNumberOfElements(),
@@ -135,7 +143,7 @@ public class MediaController {
     public ResponseEntity<Map<String, Object>> searchMedia(
             @PathVariable String mediaType,
             @RequestParam("query") String query) {
-        if (!"all".equalsIgnoreCase(mediaType) && isMediaTypeInvalid(mediaType)) {
+        if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -158,17 +166,11 @@ public class MediaController {
                                                                @RequestParam("genres") List<String> genres,
                                                                @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
                                                                @RequestParam(defaultValue = "1") @Min(1) int page) {
-        if (!"all".equalsIgnoreCase(mediaType) && isMediaTypeInvalid(mediaType)) {
+        if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
-
-        if ("all".equalsIgnoreCase(mediaType)) {
-            Map<String, Object> response = this.combinedMediaService.getCombinedMediaByGenres(genres, page, size);
-            return ResponseEntity.ok(response);
-        }
-
         Page<?> mediaPage = getMediaByGenres(mediaType, genres, pageable);
 
         Map<String, Object> response = Map.of(
@@ -183,7 +185,7 @@ public class MediaController {
     }
 
     private boolean isMediaTypeInvalid(String mediaType) {
-        return !"movies".equalsIgnoreCase(mediaType) && !"series".equalsIgnoreCase(mediaType);
+        return !"all".equalsIgnoreCase(mediaType) && !"movies".equalsIgnoreCase(mediaType) && !"series".equalsIgnoreCase(mediaType);
     }
 
     private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable) {
@@ -198,10 +200,12 @@ public class MediaController {
                 : tvSeriesService.getPopularTvSeries(pageable);
     }
 
-    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable) {
+    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, List<String> genres) {
         return "movies".equalsIgnoreCase(mediaType)
-                ? movieService.getMoviesFromCurrentMonth(pageable)
-                : tvSeriesService.getTvSeriesFromCurrentMonth(pageable);
+                ? this.movieService.getMoviesFromCurrentMonth(pageable, genres)
+                : "series".equalsIgnoreCase(mediaType)
+                ? this.tvSeriesService.getTvSeriesFromCurrentMonth(pageable, genres)
+                : this.mediaService.getLatestMedia(genres, pageable);
     }
 
     private MediaDetailsDTO getMediaByApiIdPage(String mediaType, Long apiId) {
@@ -221,6 +225,8 @@ public class MediaController {
     private Page<?> getMediaByGenres(String mediaType, List<String> genres, Pageable pageable) {
         return "movies".equalsIgnoreCase(mediaType)
                 ? this.movieService.getMoviesByGenres(genres, pageable)
-                : this.tvSeriesService.getTvSeriesByGenres(genres, pageable);
+                : "series".equalsIgnoreCase(mediaType)
+                ? this.tvSeriesService.getTvSeriesByGenres(genres, pageable)
+                : this.mediaService.getMediaByGenres(genres, pageable);
     }
 }
