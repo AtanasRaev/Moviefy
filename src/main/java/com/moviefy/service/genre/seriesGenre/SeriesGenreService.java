@@ -13,4 +13,6 @@ public interface SeriesGenreService {
     Set<SeriesGenre> getAllGenresByApiIds(Set<Long> genres);
 
     List<SeriesGenre> getAllGenresByMovieId(Long id);
+
+    List<String> getAllGenresNames();
 }
