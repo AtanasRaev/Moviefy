@@ -7,10 +7,7 @@ import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import com.moviefy.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.*;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
@@ -31,7 +28,6 @@ import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
-import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,14 +95,20 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Override
     @Cacheable(
             cacheNames = "latestTvSeries",
-            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = "T(java.util.Objects).hash(#pageable.pageNumber, #pageable.pageSize, #pageable.sort.toString(), #genres)",
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesPageDTO> getTvSeriesFromCurrentMonth(Pageable pageable) {
-        return this.tvSeriesRepository.findByFirstAirDate(
+    public Page<TvSeriesPageProjection> getTvSeriesFromCurrentMonth(Pageable pageable, List<String> genres) {
+        if (genres == null || genres.isEmpty()) {
+            genres = this.seriesGenreService.getAllGenresNames();
+        }
+
+        genres = getLowerCaseGenres(genres);
+        return this.tvSeriesRepository.findByFirstAirDateAndGenres(
                 getStartOfCurrentMonth(),
+                genres,
                 pageable
-        ).map(this::mapTvSeriesPageDTO);
+        );
     }
 
     @Override
@@ -223,6 +225,30 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<TvSeriesPageWithGenreDTO> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
+        List<String> lowerCaseGenres = getLowerCaseGenres(genres);
+
+        return tvSeriesRepository.searchByGenres(lowerCaseGenres, pageable)
+                .map(tvSeries -> {
+                    TvSeriesPageWithGenreDTO dto = modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
+
+                    if (genres.size() == 1) {
+                        dto.setGenre(genres.get(0));
+                    } else {
+                        mapOneGenreToPageDTO(dto);
+                    }
+
+                    dto.setYear(tvSeries.getFirstAirDate().getYear());
+
+                    mapSeasonsToPageDTO(
+                            new HashSet<>(seasonTvSeriesRepository.findAllByTvSeriesId(dto.getId())),
+                            dto
+                    );
+                    return dto;
+                });
+    }
+
+    @Override
+    public List<String> getLowerCaseGenres(List<String> genres) {
         List<String> lowerCaseGenres = new ArrayList<>(genres.stream()
                 .map(String::toLowerCase)
                 .toList());
@@ -244,25 +270,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             lowerCaseGenres.remove("politics");
             lowerCaseGenres.add("war & politics");
         }
-
-        return tvSeriesRepository.searchByGenres(lowerCaseGenres, pageable)
-                .map(tvSeries -> {
-                    TvSeriesPageWithGenreDTO dto = modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
-
-                    if (genres.size() == 1) {
-                        dto.setGenre(genres.get(0));
-                    } else {
-                        mapOneGenreToPageDTO(dto);
-                    }
-
-                    dto.setYear(tvSeries.getFirstAirDate().getYear());
-
-                    mapSeasonsToPageDTO(
-                            new HashSet<>(seasonTvSeriesRepository.findAllByTvSeriesId(dto.getId())),
-                            dto
-                    );
-                    return dto;
-                });
+        return lowerCaseGenres;
     }
 
     private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
