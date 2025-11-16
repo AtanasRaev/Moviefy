@@ -3,13 +3,9 @@ package com.moviefy.service.media.movie;
 import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
-import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
-import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
-import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
-import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
@@ -94,18 +90,23 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Cacheable(
             cacheNames = "latestMovies",
-            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = "T(java.util.Objects).hash(#pageable.pageNumber, #pageable.pageSize, #pageable.sort.toString(), #genres)",
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<MoviePageDTO> getMoviesFromCurrentMonth(Pageable pageable) {
-        return movieRepository.findByReleaseDate(
+    public Page<MoviePageProjection> getMoviesFromCurrentMonth(Pageable pageable, List<String> genres) {
+        if (genres == null || genres.isEmpty()) {
+           genres = this.movieGenreService.getAllGenresNames();
+        }
+
+        genres = genres.stream()
+                .map(String::toLowerCase)
+                .toList();
+
+        return movieRepository.findByReleaseDateAndGenres(
                 getStartOfCurrentMonth(),
+                genres,
                 pageable
-        ).map(movie -> {
-            MoviePageDTO map = modelMapper.map(movie, MoviePageDTO.class);
-            map.setYear(movie.getReleaseDate().getYear());
-            return map;
-        });
+        );
     }
 
     @Override
