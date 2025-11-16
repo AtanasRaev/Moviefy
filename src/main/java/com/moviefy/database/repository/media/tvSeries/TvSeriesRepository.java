@@ -1,5 +1,7 @@
 package com.moviefy.database.repository.media.tvSeries;
 
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageDTO;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageProjection;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,11 +32,50 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             "WHERE tv.apiId = :apiId")
     Optional<TvSeries> findTvSeriesByApiId(@Param("apiId") Long apiId);
 
-    @Query("SELECT tv FROM TvSeries tv WHERE tv.firstAirDate <= :startDate ORDER BY tv.firstAirDate DESC, tv.id")
-    Page<TvSeries> findByFirstAirDate(@Param("startDate") LocalDate startDate, Pageable pageable);
+    @Query(
+            value = """
+                    SELECT DISTINCT
+                        tv.id AS id,
+                        tv.api_id AS apiId,
+                        tv.name AS name,
+                        tv.popularity AS popularity,
+                        tv.poster_path AS posterPath,
+                        tv.vote_average AS voteAverage,
+                        CAST(date_part('year', tv.first_air_date) AS integer) AS year,
+                        tv.first_air_date AS firstAirDate,
+                        'series' AS type,
+                        s.seasons_count AS seasonsCount,
+                        s.episodes_count AS episodesCount
+                    FROM tv_series tv
+                    JOIN series_genre tsg ON tsg.series_id = tv.id
+                    JOIN series_genres g ON g.id = tsg.genre_id
+                    LEFT JOIN (
+                        SELECT
+                            stv.tv_series_id,
+                            COUNT(*) AS seasons_count,
+                            COALESCE(SUM(stv.episode_count), 0) AS episodes_count
+                        FROM seasons stv
+                        GROUP BY stv.tv_series_id
+                    ) s ON s.tv_series_id = tv.id
+                    WHERE LOWER(g.name) IN (:genres)
+                      AND tv.first_air_date <= :startDate
+                    """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT tv.id)
+                    FROM tv_series tv
+                    JOIN series_genre tsg ON tsg.series_id = tv.id
+                    JOIN series_genres g ON g.id = tsg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                      AND tv.first_air_date <= :startDate
+                    """,
+            nativeQuery = true
+    )
+    Page<TvSeriesPageProjection> findByFirstAirDateAndGenres(
+            @Param("startDate") LocalDate startDate,
+            @Param("genres") List<String> genres,
+            Pageable pageable
+    );
 
-    @Query("SELECT tv FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) BETWEEN :startYear AND :endYear ORDER BY tv.voteCount DESC")
-    Page<TvSeries> findAllByYearRangeOrderByVoteCount(@Param("startYear") int startYear, @Param("endYear") int endYear, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.id IN :ids ORDER BY tv.voteCount DESC")
     Page<TvSeries> findAllBySeasonsIds(@Param("ids") List<Long> ids, Pageable pageable);
