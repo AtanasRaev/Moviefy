@@ -9,6 +9,7 @@ import com.moviefy.utils.ErrorResponseUtil;
 import com.moviefy.utils.SearchMediaUtil;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -61,13 +62,7 @@ public class MediaController {
 
         Page<?> mediaPage = getLatestMediaPage(mediaType, pageable, genres);
 
-        return ResponseEntity.ok(Map.of(
-                "items_on_page", mediaPage.getNumberOfElements(),
-                "total_items", mediaPage.getTotalElements(),
-                "total_pages", mediaPage.getTotalPages(),
-                "current_page", mediaPage.getNumber() + 1,
-                mediaType, mediaPage.getContent()
-        ));
+        return getMapResponseEntity(mediaType, mediaPage);
     }
 
 
@@ -106,13 +101,7 @@ public class MediaController {
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<?> mediaPage = getTrendingMediaPage(mediaType, pageable);
 
-        return ResponseEntity.ok(Map.of(
-                "items_on_page", mediaPage.getNumberOfElements(),
-                "total_items", mediaPage.getTotalElements(),
-                "total_pages", mediaPage.getTotalPages(),
-                "current_page", mediaPage.getNumber() + 1,
-                mediaType, mediaPage.getContent()
-        ));
+        return getMapResponseEntity(mediaType, mediaPage);
     }
 
     @GetMapping("/{mediaType}/popular")
@@ -128,15 +117,7 @@ public class MediaController {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("voteCount").descending());
         Page<?> mediaPage = getPopularMediaPage(mediaType, pageable);
 
-        Map<String, Object> response = Map.of(
-                "items_on_page", mediaPage.getNumberOfElements(),
-                "total_items", mediaPage.getTotalElements(),
-                "total_pages", mediaPage.getTotalPages(),
-                "current_page", mediaPage.getNumber() + 1,
-                mediaType, mediaPage.getContent()
-        );
-
-        return ResponseEntity.ok(response);
+        return getMapResponseEntity(mediaType, mediaPage);
     }
 
     @GetMapping("/{mediaType}/search")
@@ -172,6 +153,19 @@ public class MediaController {
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
         Page<?> mediaPage = getMediaByGenres(mediaType, genres, pageable);
+
+        return getMapResponseEntity(mediaType, mediaPage);
+    }
+
+    @NotNull
+    private ResponseEntity<Map<String, Object>> getMapResponseEntity(@PathVariable String mediaType, Page<?> mediaPage) {
+        if (mediaPage == null || mediaPage.isEmpty()) {
+            return ErrorResponseUtil.buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("There are no %s", mediaType)
+            );
+        }
 
         Map<String, Object> response = Map.of(
                 "items_on_page", mediaPage.getNumberOfElements(),
