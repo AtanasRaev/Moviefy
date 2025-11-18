@@ -32,6 +32,7 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -129,7 +130,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(Pageable pageable) {
+    public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(List<String> genres, Pageable pageable) {
         LocalDate today = LocalDate.now();
         List<SeasonTvSeries> allByYearRange = this.seasonTvSeriesRepository.findAllByYearRange(today.minusYears(1).getYear(), today.getYear());
 
@@ -224,27 +225,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesPageWithGenreDTO> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
+    public Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
         List<String> lowerCaseGenres = getLowerCaseGenres(genres);
 
-        return tvSeriesRepository.searchByGenres(lowerCaseGenres, pageable)
-                .map(tvSeries -> {
-                    TvSeriesPageWithGenreDTO dto = modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
-
-                    if (genres.size() == 1) {
-                        dto.setGenre(genres.get(0));
-                    } else {
-                        mapOneGenreToPageDTO(dto);
-                    }
-
-                    dto.setYear(tvSeries.getFirstAirDate().getYear());
-
-                    mapSeasonsToPageDTO(
-                            new HashSet<>(seasonTvSeriesRepository.findAllByTvSeriesId(dto.getId())),
-                            dto
-                    );
-                    return dto;
-                });
+        return tvSeriesRepository.searchByGenres(lowerCaseGenres, pageable);
     }
 
     @Override
