@@ -13,7 +13,7 @@ public interface MovieService {
 
     MovieDetailsDTO getMovieDetailsByApiId(Long apiId);
 
-    Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable);
+    Page<MoviePageWithGenreDTO> getTrendingMovies(List<String> genres, Pageable pageable);
 
     Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable);
 
@@ -21,5 +21,5 @@ public interface MovieService {
 
     List<MoviePageWithGenreDTO> searchMovies(String query);
 
-    Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable);
+    Page<MoviePageProjection> getMoviesByGenres(List<String> genres, Pageable pageable);
 }
