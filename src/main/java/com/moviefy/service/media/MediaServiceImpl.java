@@ -7,12 +7,10 @@ import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -75,15 +73,15 @@ public class MediaServiceImpl implements MediaService {
                 .map(String::toLowerCase)
                 .toList();
 
-        Page<MediaProjection> page =
-                mediaRepository.findMediaByGenres(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
+        return this.mediaRepository.findLatestMedia(getStartOfCurrentMonth(), lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
+    }
 
-        LocalDate threshold = LocalDate.now().minusDays(7);
+    @Override
+    public Page<MediaProjection> getTrendingMedia(List<String> genres, Pageable pageable) {
+        return null;
+    }
 
-        List<MediaProjection> filtered = page.getContent().stream()
-                .filter(item -> !item.getReleaseDate().isAfter(threshold))
-                .toList();
-
-        return new PageImpl<>(filtered, pageable, filtered.size());
+    private LocalDate getStartOfCurrentMonth() {
+        return LocalDate.now().minusDays(7);
     }
 }

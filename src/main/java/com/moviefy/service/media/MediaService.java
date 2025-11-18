@@ -10,4 +10,6 @@ public interface MediaService {
     Page<MediaProjection> getMediaByGenres(List<String> genres, Pageable pageable);
 
     Page<MediaProjection> getLatestMedia(List<String> genres, Pageable pageable);
+
+    Page<MediaProjection> getTrendingMedia(List<String> genres, Pageable pageable);
 }
