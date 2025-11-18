@@ -38,7 +38,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         m.poster_path AS posterPath,
                         m.vote_average AS voteAverage,
                         CAST(date_part('year', m.release_date) AS integer) AS year,
-                        m.release_date AS releaseDate,     
+                        m.release_date AS releaseDate,
                         'movie' AS type,
                         m.runtime AS runtime
                     FROM movies m
@@ -62,7 +62,6 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             @Param("genres") List<String> genres,
             Pageable pageable
     );
-
 
     @Query("SELECT m FROM Movie m ORDER BY m.popularity DESC")
     Page<Movie> findAllByPopularityDesc(Pageable pageable);
@@ -271,18 +270,31 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 
     @Query(
             value = """
-                    SELECT DISTINCT m
-                    FROM Movie m
-                    JOIN m.genres g
-                    WHERE LOWER(g.name) IN :genres
+                    SELECT DISTINCT
+                        m.id AS id,
+                        m.api_id AS apiId,
+                        m.title AS title,
+                        m.popularity AS popularity,
+                        m.poster_path AS posterPath,
+                        m.vote_average AS voteAverage,
+                        CAST(date_part('year', m.release_date) AS integer) AS year,
+                        m.release_date AS releaseDate,
+                        'movie' AS type,
+                        m.runtime AS runtime
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT m.id)
-                    FROM Movie m
-                    JOIN m.genres g
-                    WHERE LOWER(g.name) IN :genres
-                    """
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            nativeQuery = true
     )
-    Page<Movie> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
+    Page<MoviePageProjection> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
 
 }
