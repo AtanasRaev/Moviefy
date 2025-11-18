@@ -1,6 +1,5 @@
 package com.moviefy.database.repository.media.tvSeries;
 
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageProjection;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import org.springframework.data.domain.Page;
@@ -42,7 +41,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         tv.poster_path AS posterPath,
                         tv.vote_average AS voteAverage,
                         CAST(date_part('year', tv.first_air_date) AS integer) AS year,
-                        tv.first_air_date AS firstAirDate,
+                        tv.first_air_date AS releaseDate,
                         'series' AS type,
                         s.seasons_count AS seasonsCount,
                         s.episodes_count AS episodesCount
@@ -79,9 +78,6 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.id IN :ids ORDER BY tv.voteCount DESC")
     Page<TvSeries> findAllBySeasonsIds(@Param("ids") List<Long> ids, Pageable pageable);
-
-    @Query("SELECT tv FROM TvSeries tv LEFT JOIN FETCH tv.genres g WHERE g.name = :genreName")
-    List<TvSeries> findByGenreName(@Param("genreName") String genreName);
 
     @Query("SELECT tv FROM TvSeries tv ORDER BY tv.voteCount DESC")
     Page<TvSeries> findAllSortedByVoteCount(Pageable pageable);
@@ -288,19 +284,41 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query(
             value = """
-                    SELECT DISTINCT tv
-                    FROM TvSeries tv
-                    JOIN tv.genres g
-                    WHERE LOWER(g.name) IN :genres
+                    SELECT DISTINCT
+                        tv.id AS id,
+                        tv.api_id AS apiId,
+                        tv.name AS name,
+                        tv.popularity AS popularity,
+                        tv.poster_path AS posterPath,
+                        tv.vote_average AS voteAverage,
+                        CAST(date_part('year', tv.first_air_date) AS integer) AS year,
+                        tv.first_air_date AS releaseDate,
+                        'series' AS type,
+                        s.seasons_count AS seasonsCount,
+                        s.episodes_count AS episodesCount
+                    FROM tv_series tv
+                    JOIN series_genre tsg ON tsg.series_id = tv.id
+                    JOIN series_genres g ON g.id = tsg.genre_id
+                    LEFT JOIN (
+                        SELECT
+                            stv.tv_series_id,
+                            COUNT(*) AS seasons_count,
+                            COALESCE(SUM(stv.episode_count), 0) AS episodes_count
+                        FROM seasons stv
+                        GROUP BY stv.tv_series_id
+                    ) s ON s.tv_series_id = tv.id
+                    WHERE LOWER(g.name) IN (:genres)
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT tv.id)
-                    FROM TvSeries tv
-                    JOIN tv.genres g
-                    WHERE LOWER(g.name) IN :genres
-                    """
+                    FROM tv_series tv
+                    JOIN series_genre tsg ON tsg.series_id = tv.id
+                    JOIN series_genres g ON g.id = tsg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            nativeQuery = true
     )
-    Page<TvSeries> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
+    Page<TvSeriesPageProjection> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.apiId IN :apiIds")
     List<TvSeries> findAllByApiIdIn(@Param("apiIds") Set<Long> apiIds);
