@@ -162,6 +162,7 @@ public class CollectionServiceImpl implements CollectionService {
                 : List.of();
 
         result.put("rest_movies", restMovies);
+        result.put("collection_api_id", collection.getApiId());
 
         return result;
     }
