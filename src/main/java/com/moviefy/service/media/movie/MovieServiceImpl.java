@@ -6,6 +6,7 @@ import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageTrendingProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
@@ -30,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -127,7 +129,7 @@ public class MovieServiceImpl implements MovieService {
             key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<MoviePageWithGenreDTO> getTrendingMovies(Pageable pageable) {
+    public Page<MoviePageWithGenreDTO> getTrendingMovies(List<String> genres, Pageable pageable) {
         return this.movieRepository.findAllByPopularityDesc(pageable)
                 .map(this::mapMoviePageWithGenreDTO);
     }
@@ -175,21 +177,11 @@ public class MovieServiceImpl implements MovieService {
             key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<MoviePageWithGenreDTO> getMoviesByGenres(List<String> genres, Pageable pageable) {
+    public Page<MoviePageProjection> getMoviesByGenres(List<String> genres, Pageable pageable) {
         List<String> loweredGenreList = genres.stream()
                 .map(String::toLowerCase)
                 .toList();
-        return this.movieRepository.searchByGenres(loweredGenreList, pageable)
-                .map(movie -> {
-                    MoviePageWithGenreDTO map = this.modelMapper.map(movie, MoviePageWithGenreDTO.class);
-                    if (genres.size() == 1) {
-                        map.setGenre(genres.get(0));
-                    } else {
-                        mapOneGenreToPageDTO(map);
-                    }
-                    map.setYear(movie.getReleaseDate().getYear());
-                    return map;
-                });
+        return this.movieRepository.searchByGenres(loweredGenreList, pageable);
     }
 
     private LocalDate getStartOfCurrentMonth() {
