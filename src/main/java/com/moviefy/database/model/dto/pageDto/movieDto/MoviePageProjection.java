@@ -30,4 +30,7 @@ public interface MoviePageProjection {
 
     @JsonIgnore
     LocalDate getReleaseDate();
+
+    @JsonIgnore
+    Integer getVoteCount();
 }
