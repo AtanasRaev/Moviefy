@@ -29,6 +29,9 @@ public class Collection {
     @Column(name = "vote_count_average")
     private Double voteCountAverage;
 
+    @Column(name = "has_movies")
+    private boolean hasMovies;
+
     public Collection() {
     }
 
@@ -38,6 +41,7 @@ public class Collection {
         this.posterPath = posterPath;
         this.movies = new LinkedHashSet<>();
         this.voteCountAverage = 0.0;
+        this.hasMovies = false;
     }
 
     public long getId() {
@@ -86,5 +90,13 @@ public class Collection {
 
     public void setVoteCountAverage(Double voteCountAverage) {
         this.voteCountAverage = voteCountAverage;
+    }
+
+    public boolean isHasMovies() {
+        return hasMovies;
+    }
+
+    public void setHasMovies(boolean hasMovies) {
+        this.hasMovies = hasMovies;
     }
 }
