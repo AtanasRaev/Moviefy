@@ -1,6 +1,7 @@
 package com.moviefy.database.repository.media.tvSeries;
 
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageProjection;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreProjection;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,212 +75,59 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             Pageable pageable
     );
 
-
-    @Query("SELECT tv FROM TvSeries tv WHERE tv.id IN :ids ORDER BY tv.voteCount DESC")
-    Page<TvSeries> findAllBySeasonsIds(@Param("ids") List<Long> ids, Pageable pageable);
+    @Query(
+            value = """
+                    SELECT DISTINCT
+                        tv.id AS id,
+                        tv.api_id AS apiId,
+                        tv.name AS name,
+                        tv.popularity AS popularity,
+                        tv.poster_path AS posterPath,
+                        tv.vote_average AS voteAverage,
+                        CAST(date_part('year', tv.first_air_date) AS integer) AS year,
+                        'series' AS mediaType,
+                        tv.trailer AS trailer,
+                        s.seasons_count AS seasonsCount,
+                        s.episodes_count AS episodesCount,
+                    
+                        (
+                            SELECT g2.name
+                            FROM series_genre mg2
+                            JOIN series_genres g2 ON g2.id = mg2.genre_id
+                            WHERE mg2.series_id = tv.id
+                            ORDER BY g2.name
+                            LIMIT 1
+                        ) AS genre
+                    
+                    FROM tv_series tv
+                    JOIN series_genre tsg ON tsg.series_id = tv.id
+                    JOIN series_genres g ON g.id = tsg.genre_id
+                    LEFT JOIN (
+                        SELECT
+                            stv.tv_series_id,
+                            COUNT(*) AS seasons_count,
+                            COALESCE(SUM(stv.episode_count), 0) AS episodes_count
+                        FROM seasons stv
+                        GROUP BY stv.tv_series_id
+                    ) s ON s.tv_series_id = tv.id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT tv.id)
+                    FROM tv_series tv
+                    JOIN series_genre tsg ON tsg.series_id = tv.id
+                    JOIN series_genres g ON g.id = tsg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            nativeQuery = true
+    )
+    Page<TvSeriesPageWithGenreProjection> findAllByPopularityDesc(@Param("genres") List<String> genres, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv ORDER BY tv.voteCount DESC")
     Page<TvSeries> findAllSortedByVoteCount(Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.name IN :names")
     List<TvSeries> findAllByNames(@Param("names") List<String> names);
-
-    @Query(
-            value = """
-                    WITH q AS (
-                      SELECT
-                        regexp_replace(
-                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
-                          '\\s+', ' ', 'g'
-                        ) AS q_sep,
-                        (
-                          '\\m' ||
-                          regexp_replace(
-                            regexp_replace(
-                              immutable_unaccent(lower(:query)),
-                              '([\\.\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|\\\\])', '\\\\\\\\1', 'g'
-                            ),
-                            '\\\\-', '[- ]', 'g'
-                          ) ||
-                          '\\M'
-                        ) AS q_phrase_rx,
-                        regexp_replace(
-                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
-                          '\\s+', '', 'g'
-                        ) AS q_compact
-                    ),
-                    tok AS (
-                      SELECT ARRAY(
-                        SELECT DISTINCT w
-                        FROM regexp_split_to_table((SELECT q_sep FROM q), '\\s+') AS w
-                        WHERE length(w) >= 2
-                          AND w NOT IN ('a','an','the','to','of','and','or','in','on')
-                      ) AS tokens
-                    ),
-                    ts AS ( SELECT plainto_tsquery('simple', (SELECT q_sep FROM q)) AS tsq ),
-                    cand AS (
-                      SELECT s.*,
-                             ts_rank_cd(s.search_vector, (SELECT tsq FROM ts)) AS fts_rank,
-                             GREATEST(
-                               similarity(s.name_norm,          (SELECT q_sep FROM q)),
-                               similarity(s.original_name_norm, (SELECT q_sep FROM q))
-                             ) AS tri_sim,
-                             GREATEST(
-                               similarity(regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g'), (SELECT q_compact FROM q)),
-                               similarity(regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g'), (SELECT q_compact FROM q))
-                             ) AS tri_sim_compact,
-                             CASE WHEN s.name_norm = (SELECT q_sep FROM q) THEN 1.0 ELSE 0 END AS exact_boost,
-                             CASE WHEN s.name_norm LIKE (SELECT q_sep FROM q) || '%' THEN 0.6 ELSE 0 END AS prefix_boost,
-                             CASE WHEN regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') = (SELECT q_compact FROM q) THEN 1.0 ELSE 0 END AS exact_boost_compact,
-                             CASE WHEN regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') LIKE (SELECT q_compact FROM q) || '%' THEN 0.6 ELSE 0 END AS prefix_boost_compact,
-                             regexp_replace(s.name_norm,          '[[:punct:]]', ' ', 'g') AS name_sep,
-                             regexp_replace(s.original_name_norm, '[[:punct:]]', ' ', 'g') AS orig_sep,
-                             regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') AS name_compact,
-                             regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') AS orig_compact
-                      FROM tv_series s
-                      WHERE
-                        (s.search_vector @@ (SELECT tsq FROM ts))
-                        OR (s.name_norm % (SELECT q_sep FROM q))
-                        OR (s.original_name_norm % (SELECT q_sep FROM q))
-                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
-                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
-                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
-                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
-                    ),
-                    must AS (
-                      SELECT
-                        c.*,
-                        CASE WHEN c.name_sep ~* (SELECT q_phrase_rx FROM q)
-                               OR c.orig_sep  ~* (SELECT q_phrase_rx FROM q)
-                             THEN 6.0 ELSE 0 END AS phrase_boost,
-                        s.hits,
-                        cardinality(t.tokens) AS need_hits,
-                        CASE WHEN s.hits = cardinality(t.tokens) THEN 2.0 ELSE 0 END AS all_token_boost,
-                        (cardinality(t.tokens) - s.hits) AS missing_tokens,
-                        (
-                          c.name_compact ILIKE ('%' || (SELECT q_compact FROM q) || '%')
-                          OR c.orig_compact  ILIKE ('%' || (SELECT q_compact FROM q) || '%')
-                          OR c.name_sep ~* (SELECT q_phrase_rx FROM q)
-                          OR c.orig_sep  ~* (SELECT q_phrase_rx FROM q)
-                        ) AS name_match
-                      FROM cand c
-                      CROSS JOIN tok t
-                      CROSS JOIN LATERAL (
-                        SELECT COALESCE(SUM(
-                                 CAST(
-                                   (
-                                     (c.name_sep     ~* ('\\m' || w || '\\M'))
-                                     OR (c.orig_sep   ~* ('\\m' || w || '\\M'))
-                                     OR (c.name_compact ILIKE ('%' || w || '%'))
-                                     OR (c.orig_compact  ILIKE ('%' || w || '%'))
-                                   ) AS int
-                                 )
-                               ), 0) AS hits
-                        FROM unnest(t.tokens) AS w
-                      ) s
-                    )
-                    SELECT *
-                    FROM must
-                    WHERE
-                      name_match
-                      AND hits >= CASE WHEN need_hits >= 3 THEN need_hits - 1 ELSE need_hits END
-                    ORDER BY
-                      (exact_boost_compact * 5.0) DESC,
-                      (prefix_boost_compact * 3.0) DESC,
-                      (exact_boost * 2.0) DESC,
-                      (prefix_boost * 1.5) DESC,
-                      (phrase_boost * 1.2) DESC,
-                      (tri_sim_compact * 1.0) DESC,
-                      (tri_sim * 0.6) DESC,
-                      (fts_rank * 0.8) DESC,
-                      (all_token_boost * 1.0) DESC,
-                      (missing_tokens * -1.5) DESC,
-                      name
-                    """,
-            countQuery = """
-                    WITH q AS (
-                      SELECT
-                        regexp_replace(
-                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
-                          '\\s+', ' ', 'g'
-                        ) AS q_sep,
-                        (
-                          '\\m' ||
-                          regexp_replace(
-                            regexp_replace(
-                              immutable_unaccent(lower(:query)),
-                              '([\\.\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|\\\\])', '\\\\\\\\1', 'g'
-                            ),
-                            '\\\\-', '[- ]', 'g'
-                          ) ||
-                          '\\M'
-                        ) AS q_phrase_rx,
-                        regexp_replace(
-                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
-                          '\\s+', '', 'g'
-                        ) AS q_compact
-                    ),
-                    tok AS (
-                      SELECT ARRAY(
-                        SELECT DISTINCT w
-                        FROM regexp_split_to_table((SELECT q_sep FROM q), '\\s+') AS w
-                        WHERE length(w) >= 2
-                          AND w NOT IN ('a','an','the','to','of','and','or','in','on')
-                      ) AS tokens
-                    ),
-                    ts AS ( SELECT plainto_tsquery('simple', (SELECT q_sep FROM q)) AS tsq ),
-                    cand AS (
-                      SELECT
-                        regexp_replace(s.name_norm,          '[[:punct:]]', ' ', 'g') AS name_sep,
-                        regexp_replace(s.original_name_norm, '[[:punct:]]', ' ', 'g') AS orig_sep,
-                        regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') AS name_compact,
-                        regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') AS orig_compact
-                      FROM tv_series s
-                      WHERE
-                        (s.search_vector @@ (SELECT tsq FROM ts))
-                        OR (s.name_norm % (SELECT q_sep FROM q))
-                        OR (s.original_name_norm % (SELECT q_sep FROM q))
-                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
-                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
-                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
-                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
-                    ),
-                    must AS (
-                      SELECT
-                        s.hits,
-                        cardinality(t.tokens) AS need_hits,
-                        (
-                          c.name_compact ILIKE ('%' || (SELECT q_compact FROM q) || '%')
-                          OR c.orig_compact  ILIKE ('%' || (SELECT q_compact FROM q) || '%')
-                          OR c.name_sep ~* (SELECT q_phrase_rx FROM q)
-                          OR c.orig_sep  ~* (SELECT q_phrase_rx FROM q)
-                        ) AS name_match
-                      FROM cand c
-                      CROSS JOIN tok t
-                      CROSS JOIN LATERAL (
-                        SELECT COALESCE(SUM(
-                                 CAST(
-                                   (
-                                     (c.name_sep     ~* ('\\m' || w || '\\M'))
-                                     OR (c.orig_sep   ~* ('\\m' || w || '\\M'))
-                                     OR (c.name_compact ILIKE ('%' || w || '%'))
-                                     OR (c.orig_compact  ILIKE ('%' || w || '%'))
-                                   ) AS int
-                                 )
-                               ), 0) AS hits
-                        FROM unnest(t.tokens) AS w
-                      ) s
-                    )
-                    SELECT COUNT(*)
-                    FROM must
-                    WHERE
-                      name_match
-                      AND hits >= CASE WHEN need_hits >= 3 THEN need_hits - 1 ELSE need_hits END
-                    """,
-            nativeQuery = true
-    )
-    Page<TvSeries> searchByName(@Param("query") String query, Pageable pageable);
-
 
     @Query(
             value = """
@@ -321,4 +169,200 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.apiId IN :apiIds")
     List<TvSeries> findAllByApiIdIn(@Param("apiIds") Set<Long> apiIds);
+
+//    @Query(
+//            value = """
+//                    WITH q AS (
+//                      SELECT
+//                        regexp_replace(
+//                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
+//                          '\\s+', ' ', 'g'
+//                        ) AS q_sep,
+//                        (
+//                          '\\m' ||
+//                          regexp_replace(
+//                            regexp_replace(
+//                              immutable_unaccent(lower(:query)),
+//                              '([\\.\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|\\\\])', '\\\\\\\\1', 'g'
+//                            ),
+//                            '\\\\-', '[- ]', 'g'
+//                          ) ||
+//                          '\\M'
+//                        ) AS q_phrase_rx,
+//                        regexp_replace(
+//                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
+//                          '\\s+', '', 'g'
+//                        ) AS q_compact
+//                    ),
+//                    tok AS (
+//                      SELECT ARRAY(
+//                        SELECT DISTINCT w
+//                        FROM regexp_split_to_table((SELECT q_sep FROM q), '\\s+') AS w
+//                        WHERE length(w) >= 2
+//                          AND w NOT IN ('a','an','the','to','of','and','or','in','on')
+//                      ) AS tokens
+//                    ),
+//                    ts AS ( SELECT plainto_tsquery('simple', (SELECT q_sep FROM q)) AS tsq ),
+//                    cand AS (
+//                      SELECT s.*,
+//                             ts_rank_cd(s.search_vector, (SELECT tsq FROM ts)) AS fts_rank,
+//                             GREATEST(
+//                               similarity(s.name_norm,          (SELECT q_sep FROM q)),
+//                               similarity(s.original_name_norm, (SELECT q_sep FROM q))
+//                             ) AS tri_sim,
+//                             GREATEST(
+//                               similarity(regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g'), (SELECT q_compact FROM q)),
+//                               similarity(regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g'), (SELECT q_compact FROM q))
+//                             ) AS tri_sim_compact,
+//                             CASE WHEN s.name_norm = (SELECT q_sep FROM q) THEN 1.0 ELSE 0 END AS exact_boost,
+//                             CASE WHEN s.name_norm LIKE (SELECT q_sep FROM q) || '%' THEN 0.6 ELSE 0 END AS prefix_boost,
+//                             CASE WHEN regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') = (SELECT q_compact FROM q) THEN 1.0 ELSE 0 END AS exact_boost_compact,
+//                             CASE WHEN regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') LIKE (SELECT q_compact FROM q) || '%' THEN 0.6 ELSE 0 END AS prefix_boost_compact,
+//                             regexp_replace(s.name_norm,          '[[:punct:]]', ' ', 'g') AS name_sep,
+//                             regexp_replace(s.original_name_norm, '[[:punct:]]', ' ', 'g') AS orig_sep,
+//                             regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') AS name_compact,
+//                             regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') AS orig_compact
+//                      FROM tv_series s
+//                      WHERE
+//                        (s.search_vector @@ (SELECT tsq FROM ts))
+//                        OR (s.name_norm % (SELECT q_sep FROM q))
+//                        OR (s.original_name_norm % (SELECT q_sep FROM q))
+//                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
+//                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
+//                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
+//                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
+//                    ),
+//                    must AS (
+//                      SELECT
+//                        c.*,
+//                        CASE WHEN c.name_sep ~* (SELECT q_phrase_rx FROM q)
+//                               OR c.orig_sep  ~* (SELECT q_phrase_rx FROM q)
+//                             THEN 6.0 ELSE 0 END AS phrase_boost,
+//                        s.hits,
+//                        cardinality(t.tokens) AS need_hits,
+//                        CASE WHEN s.hits = cardinality(t.tokens) THEN 2.0 ELSE 0 END AS all_token_boost,
+//                        (cardinality(t.tokens) - s.hits) AS missing_tokens,
+//                        (
+//                          c.name_compact ILIKE ('%' || (SELECT q_compact FROM q) || '%')
+//                          OR c.orig_compact  ILIKE ('%' || (SELECT q_compact FROM q) || '%')
+//                          OR c.name_sep ~* (SELECT q_phrase_rx FROM q)
+//                          OR c.orig_sep  ~* (SELECT q_phrase_rx FROM q)
+//                        ) AS name_match
+//                      FROM cand c
+//                      CROSS JOIN tok t
+//                      CROSS JOIN LATERAL (
+//                        SELECT COALESCE(SUM(
+//                                 CAST(
+//                                   (
+//                                     (c.name_sep     ~* ('\\m' || w || '\\M'))
+//                                     OR (c.orig_sep   ~* ('\\m' || w || '\\M'))
+//                                     OR (c.name_compact ILIKE ('%' || w || '%'))
+//                                     OR (c.orig_compact  ILIKE ('%' || w || '%'))
+//                                   ) AS int
+//                                 )
+//                               ), 0) AS hits
+//                        FROM unnest(t.tokens) AS w
+//                      ) s
+//                    )
+//                    SELECT *
+//                    FROM must
+//                    WHERE
+//                      name_match
+//                      AND hits >= CASE WHEN need_hits >= 3 THEN need_hits - 1 ELSE need_hits END
+//                    ORDER BY
+//                      (exact_boost_compact * 5.0) DESC,
+//                      (prefix_boost_compact * 3.0) DESC,
+//                      (exact_boost * 2.0) DESC,
+//                      (prefix_boost * 1.5) DESC,
+//                      (phrase_boost * 1.2) DESC,
+//                      (tri_sim_compact * 1.0) DESC,
+//                      (tri_sim * 0.6) DESC,
+//                      (fts_rank * 0.8) DESC,
+//                      (all_token_boost * 1.0) DESC,
+//                      (missing_tokens * -1.5) DESC,
+//                      name
+//                    """,
+//            countQuery = """
+//                    WITH q AS (
+//                      SELECT
+//                        regexp_replace(
+//                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
+//                          '\\s+', ' ', 'g'
+//                        ) AS q_sep,
+//                        (
+//                          '\\m' ||
+//                          regexp_replace(
+//                            regexp_replace(
+//                              immutable_unaccent(lower(:query)),
+//                              '([\\.\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|\\\\])', '\\\\\\\\1', 'g'
+//                            ),
+//                            '\\\\-', '[- ]', 'g'
+//                          ) ||
+//                          '\\M'
+//                        ) AS q_phrase_rx,
+//                        regexp_replace(
+//                          regexp_replace(immutable_unaccent(lower(:query)), '[[:punct:]]', ' ', 'g'),
+//                          '\\s+', '', 'g'
+//                        ) AS q_compact
+//                    ),
+//                    tok AS (
+//                      SELECT ARRAY(
+//                        SELECT DISTINCT w
+//                        FROM regexp_split_to_table((SELECT q_sep FROM q), '\\s+') AS w
+//                        WHERE length(w) >= 2
+//                          AND w NOT IN ('a','an','the','to','of','and','or','in','on')
+//                      ) AS tokens
+//                    ),
+//                    ts AS ( SELECT plainto_tsquery('simple', (SELECT q_sep FROM q)) AS tsq ),
+//                    cand AS (
+//                      SELECT
+//                        regexp_replace(s.name_norm,          '[[:punct:]]', ' ', 'g') AS name_sep,
+//                        regexp_replace(s.original_name_norm, '[[:punct:]]', ' ', 'g') AS orig_sep,
+//                        regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') AS name_compact,
+//                        regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') AS orig_compact
+//                      FROM tv_series s
+//                      WHERE
+//                        (s.search_vector @@ (SELECT tsq FROM ts))
+//                        OR (s.name_norm % (SELECT q_sep FROM q))
+//                        OR (s.original_name_norm % (SELECT q_sep FROM q))
+//                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
+//                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') % (SELECT q_compact FROM q))
+//                        OR (regexp_replace(s.name_norm,          '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
+//                        OR (regexp_replace(s.original_name_norm, '[[:punct:][:space:]]', '', 'g') ILIKE '%' || (SELECT q_compact FROM q) || '%')
+//                    ),
+//                    must AS (
+//                      SELECT
+//                        s.hits,
+//                        cardinality(t.tokens) AS need_hits,
+//                        (
+//                          c.name_compact ILIKE ('%' || (SELECT q_compact FROM q) || '%')
+//                          OR c.orig_compact  ILIKE ('%' || (SELECT q_compact FROM q) || '%')
+//                          OR c.name_sep ~* (SELECT q_phrase_rx FROM q)
+//                          OR c.orig_sep  ~* (SELECT q_phrase_rx FROM q)
+//                        ) AS name_match
+//                      FROM cand c
+//                      CROSS JOIN tok t
+//                      CROSS JOIN LATERAL (
+//                        SELECT COALESCE(SUM(
+//                                 CAST(
+//                                   (
+//                                     (c.name_sep     ~* ('\\m' || w || '\\M'))
+//                                     OR (c.orig_sep   ~* ('\\m' || w || '\\M'))
+//                                     OR (c.name_compact ILIKE ('%' || w || '%'))
+//                                     OR (c.orig_compact  ILIKE ('%' || w || '%'))
+//                                   ) AS int
+//                                 )
+//                               ), 0) AS hits
+//                        FROM unnest(t.tokens) AS w
+//                      ) s
+//                    )
+//                    SELECT COUNT(*)
+//                    FROM must
+//                    WHERE
+//                      name_match
+//                      AND hits >= CASE WHEN need_hits >= 3 THEN need_hits - 1 ELSE need_hits END
+//                    """,
+//            nativeQuery = true
+//    )
+//    Page<TvSeries> searchByName(@Param("query") String query, Pageable pageable);
 }
