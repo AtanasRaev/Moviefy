@@ -9,6 +9,8 @@ import java.util.List;
 
 @JsonPropertyOrder({
         "id",
+        "api_id",
+        "imdb_id",
         "title",
         "original_title",
         "poster_path",

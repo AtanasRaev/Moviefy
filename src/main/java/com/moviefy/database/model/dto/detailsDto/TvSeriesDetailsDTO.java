@@ -8,6 +8,8 @@ import java.util.Set;
 
 @JsonPropertyOrder({
         "id",
+        "api_id",
+        "imdb_id",
         "name",
         "original_name",
         "status",
@@ -26,7 +28,7 @@ public class TvSeriesDetailsDTO extends MediaDetailsDTO {
     private String name;
 
     @JsonProperty("status")
-    private String statusTvSeries;
+    private String status;
 
     @JsonProperty("original_name")
     private String originalName;
@@ -44,12 +46,12 @@ public class TvSeriesDetailsDTO extends MediaDetailsDTO {
         this.name = name;
     }
 
-    public String getStatusTvSeries() {
-        return statusTvSeries;
+    public String getStatus() {
+        return status;
     }
 
-    public void setStatusTvSeries(String statusTvSeries) {
-        this.statusTvSeries = statusTvSeries;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getOriginalName() {
