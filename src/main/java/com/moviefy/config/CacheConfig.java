@@ -65,6 +65,13 @@ public class CacheConfig {
                         .build()
         );
 
+        CaffeineCache trendingMedia = new CaffeineCache(
+                "trendingMedia",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
         CaffeineCache popularMovies = new CaffeineCache(
                 "popularMovies",
                 baseBuilderWithJan1Expiry()
@@ -149,6 +156,7 @@ public class CacheConfig {
                 latestTvSeries,
                 trendingMovies,
                 trendingTvSeries,
+                trendingMedia,
                 popularMovies,
                 popularTvSeries,
                 collectionsByName,
