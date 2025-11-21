@@ -1,6 +1,7 @@
 package com.moviefy.database.repository.media;
 
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreProjection;
 import com.moviefy.database.model.entity.media.Movie;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,8 +64,45 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             Pageable pageable
     );
 
-    @Query("SELECT m FROM Movie m ORDER BY m.popularity DESC")
-    Page<Movie> findAllByPopularityDesc(Pageable pageable);
+    @Query(
+            value = """
+                    SELECT DISTINCT
+                        m.id AS id,
+                        m.api_id AS apiId,
+                        m.title AS title,
+                        m.popularity AS popularity,
+                        m.poster_path AS posterPath,
+                        m.vote_average AS voteAverage,
+                        CAST(date_part('year', m.release_date) AS integer) AS year,
+                        m.release_date AS releaseDate,
+                        'movie' AS type,
+                        m.runtime AS runtime,
+                        m.trailer AS trailer,
+                    
+                        (
+                            SELECT g2.name
+                            FROM movie_genre mg2
+                            JOIN movies_genres g2 ON g2.id = mg2.genre_id
+                            WHERE mg2.movie_id = m.id
+                            ORDER BY g2.name
+                            LIMIT 1
+                        ) AS genre
+                    
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT m.id)
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            nativeQuery = true
+    )
+    Page<MoviePageWithGenreProjection> findAllByPopularityDesc(@Param("genres") List<String> genres, Pageable pageable);
 
     @Query("SELECT m FROM Movie m")
     Page<Movie> findAllSortedByVoteCount(Pageable pageable);

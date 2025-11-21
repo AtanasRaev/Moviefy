@@ -7,17 +7,26 @@ import java.time.LocalDate;
 
 public interface MoviePageProjection {
     Long getId();
+
     @JsonProperty("api_id")
     Long getApiId();
+
     String getTitle();
+
     Double getPopularity();
+
     @JsonProperty("poster_path")
     String getPosterPath();
+
     @JsonProperty("vote_average")
     Double getVoteAverage();
+
     Integer getYear();
+
     String getType();
+
     Integer getRuntime();
+
     @JsonIgnore
     LocalDate getReleaseDate();
 }
