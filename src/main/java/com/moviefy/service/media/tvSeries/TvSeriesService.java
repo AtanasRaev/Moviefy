@@ -18,7 +18,7 @@ public interface TvSeriesService {
 
     Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, List<String> types, Pageable pageable);
 
-    Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable);
+    Page<TvSeriesPageWithGenreProjection> getPopularTvSeries(List<String> genres, List<String> types, Pageable pageable);
 
     boolean isEmpty();
 
