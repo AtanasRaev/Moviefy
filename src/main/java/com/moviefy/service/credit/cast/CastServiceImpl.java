@@ -1,13 +1,12 @@
 package com.moviefy.service.credit.cast;
 
-import com.moviefy.database.model.dto.apiDto.CastApiApiDTO;
+import com.moviefy.database.model.dto.apiDto.CastApiDTO;
 import com.moviefy.database.model.dto.apiDto.CreditApiDTO;
-import com.moviefy.database.model.dto.apiDto.MediaResponseCreditsDTO;
 import com.moviefy.database.model.dto.pageDto.CastPageDTO;
+import com.moviefy.database.model.entity.credit.Credit;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastMovie;
 import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
-import com.moviefy.database.model.entity.credit.Credit;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
 import com.moviefy.database.repository.credit.cast.CastRepository;
 import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
@@ -41,7 +40,7 @@ public class CastServiceImpl implements CastService {
     }
 
     @Override
-    public Set<Cast> mapToSet(List<CastApiApiDTO> castDto) {
+    public Set<Cast> mapToSet(List<CastApiDTO> castDto) {
         return creditRetrievalUtil.creditRetrieval(
                 castDto,
                 this.castMapper::mapToCast,
@@ -56,9 +55,9 @@ public class CastServiceImpl implements CastService {
     }
 
     @Override
-    public List<CastApiApiDTO> filterCastApiDto(MediaResponseCreditsDTO creditsById) {
+    public List<CastApiDTO> filterCastApiDto(Set<CastApiDTO> castDTO) {
         Map<Long, String> uniqueIds = new HashMap<>();
-        return creditsById.getCast()
+        return castDTO
                 .stream()
                 .filter(cast -> cast.getName() != null && !cast.getName().isBlank()
                         && cast.getCharacter() != null && !cast.getCharacter().isBlank())
@@ -69,17 +68,17 @@ public class CastServiceImpl implements CastService {
                     uniqueIds.put(cast.getId(), cast.getCharacter());
                     return true;
                 })
-                .sorted(Comparator.comparing(CastApiApiDTO::getOrder))
+                .sorted(Comparator.comparing(CastApiDTO::getOrder))
                 .limit(10)
                 .toList();
     }
 
     @Override
     public <T, E> void processCast(
-            List<CastApiApiDTO> castDto,
+            List<CastApiDTO> castDto,
             T parentEntity,
-            Function<CastApiApiDTO, Optional<E>> findFunction,
-            BiFunction<CastApiApiDTO, T, E> entityCreator,
+            Function<CastApiDTO, Optional<E>> findFunction,
+            BiFunction<CastApiDTO, T, E> entityCreator,
             Function<E, E> saveFunction
     ) {
         castDto.forEach(c -> {
@@ -93,7 +92,7 @@ public class CastServiceImpl implements CastService {
 
     @Override
     public <T, E> E createCastEntity(
-            CastApiApiDTO dto,
+            CastApiDTO dto,
             T parentEntity,
             Set<Cast> castSet,
             Supplier<E> entityCreator,
