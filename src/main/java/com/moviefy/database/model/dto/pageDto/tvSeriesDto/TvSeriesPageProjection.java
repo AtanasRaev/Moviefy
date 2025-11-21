@@ -23,7 +23,8 @@ public interface TvSeriesPageProjection {
 
     Integer getYear();
 
-    String getType();
+    @JsonProperty("media_type")
+    String getMediaType();
 
     @JsonProperty("seasons")
     Integer getSeasonsCount();
