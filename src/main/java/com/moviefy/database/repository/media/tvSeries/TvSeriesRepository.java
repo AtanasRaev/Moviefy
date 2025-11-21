@@ -27,7 +27,6 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             "LEFT JOIN FETCH tv.genres " +
             "LEFT JOIN FETCH tv.productionCompanies " +
             "LEFT JOIN FETCH tv.seasons " +
-            "LEFT JOIN FETCH tv.statusTvSeries " +
             "WHERE tv.apiId = :apiId")
     Optional<TvSeries> findTvSeriesByApiId(@Param("apiId") Long apiId);
 
