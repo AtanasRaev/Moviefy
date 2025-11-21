@@ -60,9 +60,9 @@ public class CrewServiceImpl implements CrewService {
     }
 
     @Override
-    public List<CrewApiDTO> filterCrewApiDto(MediaResponseCreditsDTO creditsById) {
+    public List<CrewApiDTO> filterCrewApiDto(Set<CrewApiDTO> crewDTO) {
         Map<Long, String> uniqueIds = new HashMap<>();
-        return creditsById.getCrew()
+        return crewDTO
                 .stream()
                 .sorted(Comparator.comparing(CrewApiDTO::getPopularity).reversed())
                 .filter(crew ->
