@@ -24,6 +24,6 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
     @Query("SELECT c FROM Collection c JOIN c.movies m WHERE m.id = :movieId")
     Optional<Collection> findCollectionsByMovieId(@Param("movieId") Long movieId);
 
-    @Query("SELECT c FROM Collection c WHERE c.posterPath IS NOT NULL ORDER BY c.voteCountAverage DESC")
+    @Query("SELECT c FROM Collection c WHERE c.posterPath IS NOT NULL AND c.hasMovies = TRUE ORDER BY c.voteCountAverage DESC")
     Page<Collection> findAllByVoteCountAverageDesc(Pageable pageable);
 }
