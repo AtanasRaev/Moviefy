@@ -1,6 +1,7 @@
 package com.moviefy.service.media;
 
 import com.moviefy.database.model.dto.pageDto.MediaProjection;
+import com.moviefy.database.model.dto.pageDto.MediaWithGenreProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -11,5 +12,5 @@ public interface MediaService {
 
     Page<MediaProjection> getLatestMedia(List<String> genres, Pageable pageable);
 
-    Page<MediaProjection> getTrendingMedia(List<String> genres, Pageable pageable);
+    Page<MediaWithGenreProjection> getTrendingMedia(List<String> genres, Pageable pageable);
 }
