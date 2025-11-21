@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -140,18 +139,23 @@ public class MovieServiceImpl implements MovieService {
     )
     public Page<MoviePageWithGenreProjection> getTrendingMovies(List<String> genres, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
-        return this.movieRepository.findAllByPopularityDesc(processedGenres, pageable);
+        return this.movieRepository.findAllByGenresMapped(processedGenres, pageable);
     }
 
     @Override
     @Cacheable(
             cacheNames = "popularMovies",
-            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable) {
-        return this.movieRepository.findAllSortedByVoteCount(pageable)
-                .map(this::mapMoviePageWithGenreDTO);
+    public Page<MoviePageWithGenreProjection> getPopularMovies(List<String> genres, Pageable pageable) {
+        List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
+        return this.movieRepository.findAllByGenresMapped(processedGenres, pageable);
     }
 
     @Override
