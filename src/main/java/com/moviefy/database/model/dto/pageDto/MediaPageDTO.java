@@ -33,7 +33,7 @@ public abstract class MediaPageDTO {
         this.id = id;
     }
 
-    public abstract String getType();
+    public abstract String getMediaType();
 
     public Double getVoteAverage() {
         return voteAverage;
