@@ -1,6 +1,6 @@
 package com.moviefy.database.model.dto.apiDto;
 
-public class CastApiApiDTO extends CreditApiDTO {
+public class CastApiDTO extends CreditApiDTO {
     private String character;
 
     private int order;

@@ -1,7 +1,6 @@
 package com.moviefy.service.credit.cast;
 
-import com.moviefy.database.model.dto.apiDto.CastApiApiDTO;
-import com.moviefy.database.model.dto.apiDto.MediaResponseCreditsDTO;
+import com.moviefy.database.model.dto.apiDto.CastApiDTO;
 import com.moviefy.database.model.dto.pageDto.CastPageDTO;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 
@@ -14,20 +13,20 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface CastService {
-    Set<Cast> mapToSet(List<CastApiApiDTO> castDto);
+    Set<Cast> mapToSet(List<CastApiDTO> castDto);
 
-    List<CastApiApiDTO> filterCastApiDto(MediaResponseCreditsDTO creditsById);
+    List<CastApiDTO> filterCastApiDto(Set<CastApiDTO> castDTO);
 
     <T, E> void processCast(
-            List<CastApiApiDTO> castDto,
+            List<CastApiDTO> castDto,
             T parentEntity,
-            Function<CastApiApiDTO, Optional<E>> findFunction,
-            BiFunction<CastApiApiDTO, T, E> entityCreator,
+            Function<CastApiDTO, Optional<E>> findFunction,
+            BiFunction<CastApiDTO, T, E> entityCreator,
             Function<E, E> saveFunction
     );
 
     <T, E> E createCastEntity(
-            CastApiApiDTO dto,
+            CastApiDTO dto,
             T parentEntity,
             Set<Cast> castSet,
             Supplier<E> entityCreator,
