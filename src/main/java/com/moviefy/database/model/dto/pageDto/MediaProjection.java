@@ -36,4 +36,7 @@ public interface MediaProjection {
 
     @JsonIgnore
     LocalDate getReleaseDate();
+
+    @JsonIgnore
+    Integer getVoteCount();
 }
