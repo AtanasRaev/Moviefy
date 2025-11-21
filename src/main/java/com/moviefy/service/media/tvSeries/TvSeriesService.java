@@ -30,6 +30,4 @@ public interface TvSeriesService {
     List<TvSeriesPageWithGenreDTO> searchTvSeries(String query);
 
     Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, Pageable pageable);
-
-    List<String> getLowerCaseGenres(List<String> genres);
 }

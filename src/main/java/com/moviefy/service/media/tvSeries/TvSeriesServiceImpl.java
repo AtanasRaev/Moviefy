@@ -26,19 +26,21 @@ import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.utils.GenreNormalizationUtil;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,9 +60,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final TrailerMappingUtil trailerMappingUtil;
     private final ModelMapper modelMapper;
     private final TvSeriesMapper tvSeriesMapper;
+    private final GenreNormalizationUtil genreNormalizationUtil;
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesServiceImpl.class);
     private static final int START_YEAR = 1970;
-    private static final int MAX_TV_SERIES_PER_YEAR = 1200;
+    private static final int MAX_TV_SERIES_PER_YEAR = 600;
     private static final double API_TV_SERIES_PER_PAGE = 20.0;
 
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
@@ -76,7 +79,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                                RestClient restClient,
                                TrailerMappingUtil trailerMappingUtil,
                                ModelMapper modelMapper,
-                               TvSeriesMapper tvSeriesMapper) {
+                               TvSeriesMapper tvSeriesMapper,
+                               GenreNormalizationUtil genreNormalizationUtil) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;
@@ -91,20 +95,22 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.trailerMappingUtil = trailerMappingUtil;
         this.modelMapper = modelMapper;
         this.tvSeriesMapper = tvSeriesMapper;
+        this.genreNormalizationUtil = genreNormalizationUtil;
     }
 
     @Override
     @Cacheable(
             cacheNames = "latestTvSeries",
-            key = "T(java.util.Objects).hash(#pageable.pageNumber, #pageable.pageSize, #pageable.sort.toString(), #genres)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<TvSeriesPageProjection> getTvSeriesFromCurrentMonth(Pageable pageable, List<String> genres) {
-        if (genres == null || genres.isEmpty()) {
-            genres = this.seriesGenreService.getAllGenresNames();
-        }
-
-        genres = getLowerCaseGenres(genres);
+        genres = this.genreNormalizationUtil.processSeriesGenres(genres);
         return this.tvSeriesRepository.findByFirstAirDateAndGenres(
                 getStartOfCurrentMonth(),
                 genres,
@@ -127,7 +133,12 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Override
     @Cacheable(
             cacheNames = "trendingTvSeries",
-            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(List<String> genres, Pageable pageable) {
@@ -222,39 +233,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Override
     @Cacheable(
             cacheNames = "tvSeriesByGenres",
-            key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.getSeriesLowerCaseGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
-        List<String> lowerCaseGenres = getLowerCaseGenres(genres);
+        List<String> lowerCaseGenres = this.genreNormalizationUtil.getSeriesLowerCaseGenres(genres);
 
         return tvSeriesRepository.searchByGenres(lowerCaseGenres, pageable);
-    }
-
-    @Override
-    public List<String> getLowerCaseGenres(List<String> genres) {
-        List<String> lowerCaseGenres = new ArrayList<>(genres.stream()
-                .map(String::toLowerCase)
-                .toList());
-
-        if (lowerCaseGenres.contains("action") || lowerCaseGenres.contains("adventure")) {
-            lowerCaseGenres.remove("action");
-            lowerCaseGenres.remove("adventure");
-            lowerCaseGenres.add("action & adventure");
-        }
-
-        if (lowerCaseGenres.contains("science fiction") || lowerCaseGenres.contains("fantasy")) {
-            lowerCaseGenres.remove("science fiction");
-            lowerCaseGenres.remove("fantasy");
-            lowerCaseGenres.add("sci-fi & fantasy");
-        }
-
-        if (lowerCaseGenres.contains("war") || lowerCaseGenres.contains("politics")) {
-            lowerCaseGenres.remove("war");
-            lowerCaseGenres.remove("politics");
-            lowerCaseGenres.add("war & politics");
-        }
-        return lowerCaseGenres;
     }
 
     private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
@@ -307,8 +297,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return LocalDate.now().minusDays(7);
     }
 
-    private void fetchSeries() {
-        logger.info("Starting to fetch tv series...");
+//    @Scheduled(fixedDelay = 100)
+    public void fetchSeries() {
+        logger.info("\u001B[36mStarting to fetch tv series...\u001B[0m");
+        LocalDateTime start = LocalDateTime.now();
 
         int year = START_YEAR;
 
@@ -332,17 +324,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
 
         while (count < MAX_TV_SERIES_PER_YEAR) {
-            logger.info("TV series - Fetching page {} of year {}", page, year);
+
+            logger.info("\u001B[36mTV series - Fetching page {} of year {}\u001B[0m", page, year);
 
             TvSeriesResponseApiDTO response = getTvSeriesResponseByDateAndVoteCount(page, year);
 
             if (response == null || response.getResults() == null) {
-                logger.warn("No results returned for page {} of year {}", page, year);
+                logger.warn("\u001B[33mNo results returned for page {} of year {}\u001B[0m", page, year);
                 break;
             }
 
             if (page > response.getTotalPages()) {
-                logger.info("Reached the last page for year {}.", year);
+                logger.info("\u001B[36mReached the last page for year {}.\u001B[0m", year);
                 if (year == LocalDate.now().getYear()) {
                     return;
                 }
@@ -359,61 +352,106 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 }
 
                 if (isInvalid(dto)) {
-                    logger.warn("Invalid TV series: {}", dto.getId());
+                    logger.warn("\u001B[33mInvalid TV series: {}\u001B[0m", dto.getId());
                     continue;
                 }
 
                 if (this.tvSeriesRepository.findByApiId(dto.getId()).isPresent()) {
-                    logger.info("TV series already exists: {}", dto.getId());
+                    logger.info("\u001B[36mTV series already exists: {}\u001B[0m", dto.getId());
                     continue;
                 }
+
+//                if (dto.getId() == 96444) {
+//                    continue;
+//                }
 
                 TvSeriesApiByIdResponseDTO responseById = getTvSeriesResponseById(dto.getId());
 
-                if (responseById == null) {
+                if (responseById == null || responseById.getType() == null) {
                     continue;
                 }
 
+                if (!responseById.getType().equalsIgnoreCase("scripted")
+                        && !responseById.getType().equalsIgnoreCase("reality")
+                        && !responseById.getType().equalsIgnoreCase("documentary")
+                        && !responseById.getType().equalsIgnoreCase("miniseries")
+                        && !responseById.getType().equalsIgnoreCase("animation")) {
+                    logger.warn("\u001B[33mInvalid TV series type: id-{} type-{}\u001B[0m", dto.getId(), responseById.getType());
+                    continue;
+                }
 
-                TrailerResponseApiDTO responseTrailer = this.trailerMappingUtil.getTrailerResponseById(dto.getId(),
+                TrailerResponseApiDTO responseTrailer = this.trailerMappingUtil.getTrailerResponseById(
+                        dto.getId(),
                         this.apiConfig.getUrl(),
                         this.apiConfig.getKey(),
                         "tv");
 
-                TvSeries tvSeries = tvSeriesMapper.mapToTvSeries(dto, responseById, responseTrailer);
+                TvSeries tvSeries = this.tvSeriesMapper.mapToTvSeries(dto, responseById, responseTrailer);
 
-                Map<String, Set<ProductionCompany>> productionCompaniesMap = productionCompanyService.getProductionCompaniesFromResponse(responseById, tvSeries);
+                Map<String, Set<ProductionCompany>> productionCompaniesMap =
+                        this.productionCompanyService.getProductionCompaniesFromResponse(responseById, tvSeries);
+
                 tvSeries.setProductionCompanies(productionCompaniesMap.get("all"));
 
                 if (!productionCompaniesMap.get("toSave").isEmpty()) {
                     this.productionCompanyService.saveAllProduction(productionCompaniesMap.get("toSave"));
                 }
 
-                SeasonTvSeriesResponseApiDTO seasonsResponse = getSeasonsResponse(dto.getId());
-                tvSeries.setSeasons(mapSeasonsAndEpisodesFromResponse(seasonsResponse, tvSeries));
+                tvSeries.setSeasons(mapSeasonsAndEpisodesFromResponse(responseById.getSeasons(), tvSeries));
 
                 this.tvSeriesRepository.save(tvSeries);
                 count++;
 
-                logger.info("Saved tv series: {}", tvSeries.getName());
+                logger.info("\u001B[36mSaved tv series: {}\u001B[0m", tvSeries.getName());
 
                 List<CrewApiDTO> crewDto = responseById.getCrew().stream().limit(6).toList();
                 Set<Crew> crewSet = this.crewService.mapToSet(crewDto);
                 processTvSeriesCrew(crewDto, tvSeries, crewSet);
 
-                MediaResponseCreditsDTO creditsById = getCreditsById(tvSeries.getApiId());
-                if (creditsById == null) {
+                Set<CastApiDTO> cast = responseById.getCredits().getCast();
+
+                if (cast == null || cast.isEmpty()) {
                     continue;
                 }
 
-                List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
+                List<CastApiDTO> castDto = this.castService.filterCastApiDto(cast);
                 Set<Cast> castSet = this.castService.mapToSet(castDto);
                 processTvSeriesCast(castDto, tvSeries, castSet);
             }
+
             page++;
         }
-        logger.info("Finished fetching tvSeries.");
+
+        LocalDateTime end = LocalDateTime.now();
+        logger.info("\u001B[36mFinished fetching tv series for {}.\u001B[0m", formatDurationLong(Duration.between(start, end)));
     }
+
+    public static String formatDurationLong(Duration duration) {
+        long millis = duration.toMillis();
+
+        long days = millis / 86_400_000;
+        millis %= 86_400_000;
+
+        long hours = millis / 3_600_000;
+        millis %= 3_600_000;
+
+        long minutes = millis / 60_000;
+        millis %= 60_000;
+
+        long seconds = millis / 1_000;
+        millis %= 1_000;
+
+        StringBuilder sb = new StringBuilder();
+
+        if (days > 0) sb.append(days).append("d ");
+        if (hours > 0 || days > 0) sb.append(hours).append("h ");
+        if (minutes > 0 || hours > 0 || days > 0) sb.append(minutes).append("m ");
+        if (seconds > 0 || minutes > 0 || hours > 0 || days > 0) sb.append(seconds).append("s ");
+        sb.append(millis).append("ms");
+
+        return sb.toString().trim();
+    }
+
 
     private static boolean isInvalid(TvSeriesApiDTO dto) {
         return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
@@ -433,14 +471,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 });
     }
 
-    private Set<SeasonTvSeries> mapSeasonsAndEpisodesFromResponse(SeasonTvSeriesResponseApiDTO seasonsResponse, TvSeries tvSeries) {
-        if (seasonsResponse == null || tvSeries == null) {
+    private Set<SeasonTvSeries> mapSeasonsAndEpisodesFromResponse(List<SeasonDTO> seasonsDTO, TvSeries tvSeries) {
+        if ((seasonsDTO == null || seasonsDTO.isEmpty()) || tvSeries == null) {
             return new HashSet<>();
         }
 
         Set<SeasonTvSeries> seasons = new HashSet<>();
 
-        for (SeasonDTO seasonDTO : seasonsResponse.getSeasons()) {
+        for (SeasonDTO seasonDTO : seasonsDTO) {
             if (seasonDTO.getAirDate() == null || seasonDTO.getSeasonNumber() < 1) {
                 continue;
             }
@@ -492,7 +530,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
     }
 
-    private void processTvSeriesCast(List<CastApiApiDTO> castDto, TvSeries tvSeries, Set<Cast> castSet) {
+    private void processTvSeriesCast(List<CastApiDTO> castDto, TvSeries tvSeries, Set<Cast> castSet) {
         this.castService.processCast(
                 castDto,
                 tvSeries,
@@ -543,20 +581,20 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
     }
 
-    private SeasonTvSeriesResponseApiDTO getSeasonsResponse(Long id) {
-        String url = String.format(this.apiConfig.getUrl() + "/tv/%d?api_key=%s", id, this.apiConfig.getKey());
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(SeasonTvSeriesResponseApiDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching season for tv-series with ID: " + id + " - " + e.getMessage());
-            return null;
-        }
-    }
+//    private SeasonTvSeriesResponseApiDTO getSeasonsResponse(Long id) {
+//        String url = String.format(this.apiConfig.getUrl() + "/tv/%d?api_key=%s", id, this.apiConfig.getKey());
+//
+//        try {
+//            return this.restClient
+//                    .get()
+//                    .uri(url)
+//                    .retrieve()
+//                    .body(SeasonTvSeriesResponseApiDTO.class);
+//        } catch (Exception e) {
+//            System.err.println("Error fetching season for tv-series with ID: " + id + " - " + e.getMessage());
+//            return null;
+//        }
+//    }
 
     private EpisodesTvSeriesResponseDTO getEpisodesResponse(Long tvId, Integer season) {
         String url = String.format(this.apiConfig.getUrl() + "/tv/%d/season/%d?api_key=%s", tvId, season, this.apiConfig.getKey());
@@ -574,7 +612,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     private TvSeriesApiByIdResponseDTO getTvSeriesResponseById(Long apiId) {
-        String url = String.format(this.apiConfig.getUrl() + "/tv/%d?api_key=" + this.apiConfig.getKey(), apiId);
+        String url = String.format(this.apiConfig.getUrl() + "/tv/%d?api_key=" + this.apiConfig.getKey() + "&append_to_response=credits,external_ids", apiId);
         try {
             return this.restClient
                     .get()
@@ -587,20 +625,20 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
     }
 
-    private MediaResponseCreditsDTO getCreditsById(Long apiId) {
-        String url = String.format(this.apiConfig.getUrl() + "/tv/%d/credits?api_key=%s", apiId, this.apiConfig.getKey());
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(MediaResponseCreditsDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
-            return null;
-        }
-    }
+//    private MediaResponseCreditsDTO getCreditsById(Long apiId) {
+//        String url = String.format(this.apiConfig.getUrl() + "/tv/%d/credits?api_key=%s", apiId, this.apiConfig.getKey());
+//
+//        try {
+//            return this.restClient
+//                    .get()
+//                    .uri(url)
+//                    .retrieve()
+//                    .body(MediaResponseCreditsDTO.class);
+//        } catch (Exception e) {
+//            System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
+//            return null;
+//        }
+//    }
 
     private TvSeriesResponseApiDTO searchQueryApi(String query) {
         String url = String.format(this.apiConfig.getUrl()
