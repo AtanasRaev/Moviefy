@@ -16,7 +16,7 @@ public interface MovieService {
 
     Page<MoviePageWithGenreProjection> getTrendingMovies(List<String> genres, Pageable pageable);
 
-    Page<MoviePageWithGenreDTO> getPopularMovies(Pageable pageable);
+    Page<MoviePageWithGenreProjection> getPopularMovies(List<String> genres, Pageable pageable);
 
     boolean isEmpty();
 
