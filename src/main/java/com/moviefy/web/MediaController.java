@@ -45,6 +45,7 @@ public class MediaController {
     public ResponseEntity<Map<String, Object>> getLatestMedia(
             @PathVariable String mediaType,
             @RequestParam(required = false) List<String> genres,
+            @RequestParam(required = false) List<String> types,
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
@@ -60,7 +61,7 @@ public class MediaController {
             default -> pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
         }
 
-        Page<?> mediaPage = getLatestMediaPage(mediaType, pageable, genres);
+        Page<?> mediaPage = getLatestMediaPage(mediaType, pageable, genres, types);
 
         return getMapResponseEntity(mediaType, mediaPage);
     }
@@ -92,6 +93,7 @@ public class MediaController {
     public ResponseEntity<Map<String, Object>> getMostTrendingMedia(
             @PathVariable String mediaType,
             @RequestParam(required = false) List<String> genres,
+            @RequestParam(required = false) List<String> types,
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
@@ -100,7 +102,7 @@ public class MediaController {
         }
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
-        Page<?> mediaPage = getTrendingMediaPage(mediaType, pageable, genres);
+        Page<?> mediaPage = getTrendingMediaPage(mediaType, pageable, genres, types);
 
         return getMapResponseEntity(mediaType, mediaPage);
     }
@@ -183,11 +185,11 @@ public class MediaController {
         return !"all".equalsIgnoreCase(mediaType) && !"movies".equalsIgnoreCase(mediaType) && !"series".equalsIgnoreCase(mediaType);
     }
 
-    private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable, List<String> genres) {
+    private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable, List<String> genres, List<String> types) {
         return "movies".equalsIgnoreCase(mediaType)
                 ? this.movieService.getTrendingMovies(genres, pageable)
                 : "series".equalsIgnoreCase(mediaType)
-                ? this.tvSeriesService.getTrendingTvSeries(genres, pageable)
+                ? this.tvSeriesService.getTrendingTvSeries(genres, types, pageable)
                 : this.mediaService.getTrendingMedia(genres, pageable);
     }
 
@@ -197,11 +199,11 @@ public class MediaController {
                 : tvSeriesService.getPopularTvSeries(pageable);
     }
 
-    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, List<String> genres) {
+    private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, List<String> genres, List<String> types) {
         return "movies".equalsIgnoreCase(mediaType)
                 ? this.movieService.getMoviesFromCurrentMonth(pageable, genres)
                 : "series".equalsIgnoreCase(mediaType)
-                ? this.tvSeriesService.getTvSeriesFromCurrentMonth(pageable, genres)
+                ? this.tvSeriesService.getTvSeriesFromCurrentMonth(pageable, genres, types)
                 : this.mediaService.getLatestMedia(genres, pageable);
     }
 
