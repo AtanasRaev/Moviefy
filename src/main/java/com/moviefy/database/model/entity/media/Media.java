@@ -11,6 +11,9 @@ public abstract class Media {
     @Column(name = "api_id", unique = true)
     private Long apiId;
 
+    @Column(name = "imdb_id")
+    private String imdbId;
+
     @Column(columnDefinition = "TEXT")
     private String overview;
 
@@ -32,6 +35,9 @@ public abstract class Media {
     @Column
     private String trailer;
 
+    @Column
+    private boolean adult;
+
     public long getId() {
         return id;
     }
@@ -46,6 +52,14 @@ public abstract class Media {
 
     public void setApiId(Long apiId) {
         this.apiId = apiId;
+    }
+
+    public String getImdbId() {
+        return imdbId;
+    }
+
+    public void setImdbId(String imdbId) {
+        this.imdbId = imdbId;
     }
 
     public String getOverview() {
@@ -102,5 +116,13 @@ public abstract class Media {
 
     public void setTrailer(String trailer) {
         this.trailer = trailer;
+    }
+
+    public boolean isAdult() {
+        return adult;
+    }
+
+    public void setAdult(boolean adult) {
+        this.adult = adult;
     }
 }
