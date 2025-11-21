@@ -2,7 +2,6 @@ package com.moviefy.database.model.dto.apiDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDate;
 import java.util.Set;
 
 public abstract class MediaApiDTO {
@@ -27,8 +26,7 @@ public abstract class MediaApiDTO {
     @JsonProperty("vote_count")
     private Integer voteCount;
 
-    @JsonProperty("release_date")
-    private LocalDate releaseDate;
+    private boolean adult;
 
     public Long getId() {
         return id;
@@ -92,5 +90,13 @@ public abstract class MediaApiDTO {
 
     public void setVoteCount(Integer voteCount) {
         this.voteCount = voteCount;
+    }
+
+    public boolean isAdult() {
+        return adult;
+    }
+
+    public void setAdult(boolean adult) {
+        this.adult = adult;
     }
 }
