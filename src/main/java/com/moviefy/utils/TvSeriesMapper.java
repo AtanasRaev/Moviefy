@@ -3,9 +3,7 @@ package com.moviefy.utils;
 import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
-import com.moviefy.database.model.entity.media.tvSeries.StatusTvSeries;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
-import com.moviefy.database.repository.media.tvSeries.StatusTvSeriesRepository;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import org.springframework.stereotype.Component;
 
@@ -13,14 +11,11 @@ import org.springframework.stereotype.Component;
 public class TvSeriesMapper extends MediaMapper {
 
     private final SeriesGenreService seriesGenreService;
-    private final StatusTvSeriesRepository statusTvSeriesRepository;
 
     public TvSeriesMapper(TrailerMappingUtil trailerMappingUtil,
-                          SeriesGenreService seriesGenreService,
-                          StatusTvSeriesRepository statusTvSeriesRepository) {
+                          SeriesGenreService seriesGenreService) {
         super(trailerMappingUtil);
         this.seriesGenreService = seriesGenreService;
-        this.statusTvSeriesRepository = statusTvSeriesRepository;
     }
 
     public TvSeries mapToTvSeries(TvSeriesApiDTO dto, TvSeriesApiByIdResponseDTO responseById, TrailerResponseApiDTO responseTrailer) {
@@ -31,25 +26,17 @@ public class TvSeriesMapper extends MediaMapper {
         tvSeries.setOriginalName(!dto.getOriginalName().equals(dto.getName()) && !dto.getOriginalName().isBlank() ? dto.getOriginalName() : null);
         tvSeries.setFirstAirDate(dto.getFirstAirDate());
         tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));
+        tvSeries.setAdult(dto.isAdult());
+        tvSeries.setType(responseById.getType());
+        tvSeries.setNumberOfSeasons(responseById.getNumberOfSeasons());
+        tvSeries.setNumberOfEpisodes(responseById.getNumberOfEpisodes());
+        tvSeries.setImdbId(responseById.getExternalIds().getImdbId() == null || responseById.getExternalIds().getImdbId().isBlank() ? null : responseById.getExternalIds().getImdbId());
 
         if (responseById.getStatus() != null && !responseById.getStatus().isBlank()) {
-            StatusTvSeries status = findByName(responseById.getStatus());
-            if (status == null) {
-                status = new StatusTvSeries(responseById.getStatus());
-                this.statusTvSeriesRepository.save(status);
-            }
-            tvSeries.setStatusTvSeries(status);
+            tvSeries.setStatus(responseById.getStatus());
         }
 
         return tvSeries;
-    }
-
-    private static int getEpisodeRunTime(TvSeriesApiByIdResponseDTO responseById) {
-        return (responseById.getEpisodeRuntime() == null || responseById.getEpisodeRuntime().isEmpty()) ? 0 : responseById.getEpisodeRuntime().get(0);
-    }
-
-    private StatusTvSeries findByName(String name) {
-        return this.statusTvSeriesRepository.findByStatus(name).orElse(null);
     }
 }
 
