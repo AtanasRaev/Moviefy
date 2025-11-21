@@ -4,6 +4,7 @@ import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageProjection;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreProjection;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +16,7 @@ public interface TvSeriesService {
 
     TvSeriesDetailsDTO getTvSeriesDetailsByApiId(Long apiId);
 
-    Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(List<String> genres, Pageable pageable);
+    Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, Pageable pageable);
 
     Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable);
 
