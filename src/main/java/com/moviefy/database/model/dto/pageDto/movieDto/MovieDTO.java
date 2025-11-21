@@ -1,5 +1,6 @@
 package com.moviefy.database.model.dto.pageDto.movieDto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.moviefy.database.model.dto.pageDto.MediaPageDTO;
 
 public abstract class MovieDTO extends MediaPageDTO {
@@ -17,7 +18,8 @@ public abstract class MovieDTO extends MediaPageDTO {
     }
 
     @Override
-    public String getType() {
+    @JsonProperty("media_type")
+    public String getMediaType() {
         return "movie";
     }
 
