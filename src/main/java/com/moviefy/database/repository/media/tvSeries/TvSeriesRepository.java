@@ -41,7 +41,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         tv.vote_average AS voteAverage,
                         CAST(date_part('year', tv.first_air_date) AS integer) AS year,
                         tv.first_air_date AS releaseDate,
-                        'series' AS type,
+                        'series' AS mediaType,
                         s.seasons_count AS seasonsCount,
                         s.episodes_count AS episodesCount
                     FROM tv_series tv
@@ -292,7 +292,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         tv.vote_average AS voteAverage,
                         CAST(date_part('year', tv.first_air_date) AS integer) AS year,
                         tv.first_air_date AS releaseDate,
-                        'series' AS type,
+                        'series' AS mediaType,
                         s.seasons_count AS seasonsCount,
                         s.episodes_count AS episodesCount
                     FROM tv_series tv
