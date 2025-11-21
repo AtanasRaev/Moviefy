@@ -29,6 +29,7 @@ import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.GenreNormalizationUtil;
 import com.moviefy.utils.TrailerMappingUtil;
 import com.moviefy.utils.TvSeriesMapper;
+import com.moviefy.utils.TvSeriesTypesNormalizationUtil;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final ModelMapper modelMapper;
     private final TvSeriesMapper tvSeriesMapper;
     private final GenreNormalizationUtil genreNormalizationUtil;
+    private final TvSeriesTypesNormalizationUtil tvSeriesTypesNormalizationUtil;
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesServiceImpl.class);
     private static final int START_YEAR = 1970;
     private static final int MAX_TV_SERIES_PER_YEAR = 600;
@@ -80,7 +82,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                                TrailerMappingUtil trailerMappingUtil,
                                ModelMapper modelMapper,
                                TvSeriesMapper tvSeriesMapper,
-                               GenreNormalizationUtil genreNormalizationUtil) {
+                               GenreNormalizationUtil genreNormalizationUtil,
+                               TvSeriesTypesNormalizationUtil tvSeriesTypesNormalizationUtil) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;
@@ -96,6 +99,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.modelMapper = modelMapper;
         this.tvSeriesMapper = tvSeriesMapper;
         this.genreNormalizationUtil = genreNormalizationUtil;
+        this.tvSeriesTypesNormalizationUtil = tvSeriesTypesNormalizationUtil;
     }
 
     @Override
@@ -103,17 +107,21 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             cacheNames = "latestTvSeries",
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
+                    + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
                     + ';p=' + #pageable.pageNumber
                     + ';s=' + #pageable.pageSize
                     + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesPageProjection> getTvSeriesFromCurrentMonth(Pageable pageable, List<String> genres) {
+    public Page<TvSeriesPageProjection> getTvSeriesFromCurrentMonth(Pageable pageable, List<String> genres, List<String> types) {
         genres = this.genreNormalizationUtil.processSeriesGenres(genres);
+        types = this.tvSeriesTypesNormalizationUtil.processTypes(types);
+
         return this.tvSeriesRepository.findByFirstAirDateAndGenres(
                 getStartOfCurrentMonth(),
                 genres,
+                types,
                 pageable
         );
     }
@@ -135,15 +143,18 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             cacheNames = "trendingTvSeries",
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
+                    + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
                     + ';p=' + #pageable.pageNumber
                     + ';s=' + #pageable.pageSize
                     + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, Pageable pageable) {
+    public Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, List<String> types, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
-        return this.tvSeriesRepository.findAllByPopularityDesc(processedGenres, pageable);
+        List<String> processedTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
+
+        return this.tvSeriesRepository.findAllByPopularityDesc(processedGenres, processedTypes, pageable);
     }
 
     @Override
