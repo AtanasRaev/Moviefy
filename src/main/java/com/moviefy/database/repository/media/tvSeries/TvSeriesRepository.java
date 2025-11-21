@@ -57,6 +57,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         GROUP BY stv.tv_series_id
                     ) s ON s.tv_series_id = tv.id
                     WHERE LOWER(g.name) IN (:genres)
+                      AND LOWER(tv.type) IN (:types)
                       AND tv.first_air_date <= :startDate
                     """,
             countQuery = """
@@ -65,6 +66,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                     JOIN series_genre tsg ON tsg.series_id = tv.id
                     JOIN series_genres g ON g.id = tsg.genre_id
                     WHERE LOWER(g.name) IN (:genres)
+                      AND LOWER(tv.type) IN (:types)
                       AND tv.first_air_date <= :startDate
                     """,
             nativeQuery = true
@@ -72,6 +74,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     Page<TvSeriesPageProjection> findByFirstAirDateAndGenres(
             @Param("startDate") LocalDate startDate,
             @Param("genres") List<String> genres,
+            @Param("types") List<String> types,
             Pageable pageable
     );
 
@@ -111,6 +114,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         GROUP BY stv.tv_series_id
                     ) s ON s.tv_series_id = tv.id
                     WHERE LOWER(g.name) IN (:genres)
+                      AND LOWER(tv.type) IN (:types)
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT tv.id)
@@ -118,10 +122,11 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                     JOIN series_genre tsg ON tsg.series_id = tv.id
                     JOIN series_genres g ON g.id = tsg.genre_id
                     WHERE LOWER(g.name) IN (:genres)
+                      AND LOWER(tv.type) IN (:types)
                     """,
             nativeQuery = true
     )
-    Page<TvSeriesPageWithGenreProjection> findAllByPopularityDesc(@Param("genres") List<String> genres, Pageable pageable);
+    Page<TvSeriesPageWithGenreProjection> findAllByPopularityDesc(@Param("genres") List<String> genres, @Param("types") List<String> types, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv ORDER BY tv.voteCount DESC")
     Page<TvSeries> findAllSortedByVoteCount(Pageable pageable);
