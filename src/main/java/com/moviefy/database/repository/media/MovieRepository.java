@@ -40,7 +40,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         m.vote_average AS voteAverage,
                         CAST(date_part('year', m.release_date) AS integer) AS year,
                         m.release_date AS releaseDate,
-                        'movie' AS type,
+                        'movie' AS mediaType,
                         m.runtime AS runtime
                     FROM movies m
                     JOIN movie_genre mg ON mg.movie_id = m.id
@@ -75,7 +75,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         m.vote_average AS voteAverage,
                         CAST(date_part('year', m.release_date) AS integer) AS year,
                         m.release_date AS releaseDate,
-                        'movie' AS type,
+                        'movie' AS mediaType,
                         m.runtime AS runtime,
                         m.trailer AS trailer,
                     
@@ -317,7 +317,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         m.vote_average AS voteAverage,
                         CAST(date_part('year', m.release_date) AS integer) AS year,
                         m.release_date AS releaseDate,
-                        'movie' AS type,
+                        'movie' AS mediaType,
                         m.runtime AS runtime
                     FROM movies m
                     JOIN movie_genre mg ON mg.movie_id = m.id
