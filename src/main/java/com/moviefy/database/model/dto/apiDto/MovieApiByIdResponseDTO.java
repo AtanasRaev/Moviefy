@@ -17,6 +17,11 @@ public class MovieApiByIdResponseDTO {
     @Positive
     private Integer runtime;
 
+    @JsonProperty("imdb_id")
+    private String imdbId;
+
+    private MediaResponseCreditsDTO credits;
+
     public List<ProductionApiDTO> getProductionCompanies() {
         return productionCompanies;
     }
@@ -39,5 +44,21 @@ public class MovieApiByIdResponseDTO {
 
     public void setRuntime(Integer runtime) {
         this.runtime = runtime;
+    }
+
+    public String getImdbId() {
+        return imdbId;
+    }
+
+    public void setImdbId(String imdbId) {
+        this.imdbId = imdbId;
+    }
+
+    public MediaResponseCreditsDTO getCredits() {
+        return credits;
+    }
+
+    public void setCredits(MediaResponseCreditsDTO credits) {
+        this.credits = credits;
     }
 }
