@@ -23,7 +23,8 @@ public interface MoviePageProjection {
 
     Integer getYear();
 
-    String getType();
+    @JsonProperty("media_type")
+    String getMediaType();
 
     Integer getRuntime();
 
