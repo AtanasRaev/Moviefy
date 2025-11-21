@@ -34,4 +34,7 @@ public interface TvSeriesPageProjection {
 
     @JsonIgnore
     LocalDate getReleaseDate();
+
+    @JsonIgnore
+    Integer getVoteCount();
 }
