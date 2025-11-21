@@ -7,21 +7,33 @@ import java.time.LocalDate;
 
 public interface MediaProjection {
     Long getId();
+
     @JsonProperty("api_id")
     Long getApiId();
+
     String getTitle();
+
     Double getPopularity();
+
     @JsonProperty("poster_path")
     String getPosterPath();
+
     @JsonProperty("vote_average")
     Double getVoteAverage();
+
     Integer getYear();
-    String getType();
-    @JsonProperty( "seasons")
+
+    @JsonProperty("media_type")
+    String getMediaType();
+
+    @JsonProperty("seasons")
     Integer getSeasonsCount();
+
     @JsonProperty("episodes")
     Integer getEpisodesCount();
+
     Integer getRuntime();
+
     @JsonIgnore
     LocalDate getReleaseDate();
 }
