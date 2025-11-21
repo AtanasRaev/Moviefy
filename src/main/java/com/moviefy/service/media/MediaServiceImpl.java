@@ -67,7 +67,15 @@ public class MediaServiceImpl implements MediaService {
         List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
 
-        return this.mediaRepository.findTrendingMedia(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
+        return this.mediaRepository.findAllByGenresMapped(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
+    }
+
+    @Override
+    public Page<MediaWithGenreProjection> getPopularMedia(List<String> genres, Pageable pageable) {
+        List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
+        List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
+
+        return this.mediaRepository.findAllByGenresMapped(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
     }
 
     private LocalDate getStartOfCurrentMonth() {
