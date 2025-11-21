@@ -75,6 +75,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         m.vote_average AS voteAverage,
                         CAST(date_part('year', m.release_date) AS integer) AS year,
                         m.release_date AS releaseDate,
+                        m.vote_count AS voteCount,
                         'movie' AS mediaType,
                         m.runtime AS runtime,
                         m.trailer AS trailer,
@@ -102,10 +103,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                     """,
             nativeQuery = true
     )
-    Page<MoviePageWithGenreProjection> findAllByPopularityDesc(@Param("genres") List<String> genres, Pageable pageable);
-
-    @Query("SELECT m FROM Movie m")
-    Page<Movie> findAllSortedByVoteCount(Pageable pageable);
+    Page<MoviePageWithGenreProjection> findAllByGenresMapped(@Param("genres") List<String> genres, Pageable pageable);
 
     @Query("SELECT m FROM Movie m WHERE m.apiId IN :apiIds")
     List<Movie> findAllByApiIdIn(Set<Long> apiIds);
