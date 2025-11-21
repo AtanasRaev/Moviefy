@@ -14,7 +14,7 @@ import java.util.function.Function;
 public interface CrewService {
     Set<Crew> mapToSet(List<CrewApiDTO> crewDto);
 
-    List<CrewApiDTO> filterCrewApiDto(MediaResponseCreditsDTO creditsById);
+    List<CrewApiDTO> filterCrewApiDto(Set<CrewApiDTO> crewDTO);
 
     <T, E> void processCrew(
             List<CrewApiDTO> crewDto,
