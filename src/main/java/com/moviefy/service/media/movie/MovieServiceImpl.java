@@ -4,10 +4,9 @@ import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageTrendingProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreProjection;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastMovie;
@@ -24,6 +23,7 @@ import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.utils.GenreNormalizationUtil;
 import com.moviefy.utils.MovieMapper;
 import com.moviefy.utils.TrailerMappingUtil;
 import org.modelmapper.ModelMapper;
@@ -31,12 +31,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,9 +57,10 @@ public class MovieServiceImpl implements MovieService {
     private final ModelMapper modelMapper;
     private final TrailerMappingUtil trailerMappingUtil;
     private final MovieMapper movieMapper;
+    private final GenreNormalizationUtil genreNormalizationUtil;
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
     private static final int START_YEAR = 1970;
-    private static final int MAX_MOVIES_PER_YEAR = 1200;
+    private static final int MAX_MOVIES_PER_YEAR = 600;
     private static final int MIN_MOVIE_RUNTIME = 45;
     private static final double API_MOVIES_PER_PAGE = 20.0;
 
@@ -73,7 +76,8 @@ public class MovieServiceImpl implements MovieService {
                             RestClient restClient,
                             ModelMapper modelMapper,
                             TrailerMappingUtil trailerMappingUtil,
-                            MovieMapper movieMapper) {
+                            MovieMapper movieMapper,
+                            GenreNormalizationUtil genreNormalizationUtil) {
         this.movieRepository = movieRepository;
         this.castMovieRepository = castMovieRepository;
         this.crewMovieRepository = crewMovieRepository;
@@ -87,22 +91,22 @@ public class MovieServiceImpl implements MovieService {
         this.modelMapper = modelMapper;
         this.trailerMappingUtil = trailerMappingUtil;
         this.movieMapper = movieMapper;
+        this.genreNormalizationUtil = genreNormalizationUtil;
     }
 
     @Override
     @Cacheable(
             cacheNames = "latestMovies",
-            key = "T(java.util.Objects).hash(#pageable.pageNumber, #pageable.pageSize, #pageable.sort.toString(), #genres)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<MoviePageProjection> getMoviesFromCurrentMonth(Pageable pageable, List<String> genres) {
-        if (genres == null || genres.isEmpty()) {
-           genres = this.movieGenreService.getAllGenresNames();
-        }
-
-        genres = genres.stream()
-                .map(String::toLowerCase)
-                .toList();
+        genres = this.genreNormalizationUtil.processMovieGenres(genres);
 
         return movieRepository.findByReleaseDateAndGenres(
                 getStartOfCurrentMonth(),
@@ -126,12 +130,17 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Cacheable(
             cacheNames = "trendingMovies",
-            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<MoviePageWithGenreDTO> getTrendingMovies(List<String> genres, Pageable pageable) {
-        return this.movieRepository.findAllByPopularityDesc(pageable)
-                .map(this::mapMoviePageWithGenreDTO);
+    public Page<MoviePageWithGenreProjection> getTrendingMovies(List<String> genres, Pageable pageable) {
+        List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
+        return this.movieRepository.findAllByPopularityDesc(processedGenres, pageable);
     }
 
     @Override
@@ -174,7 +183,12 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Cacheable(
             cacheNames = "moviesByGenres",
-            key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.getLoweredGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<MoviePageProjection> getMoviesByGenres(List<String> genres, Pageable pageable) {
@@ -252,9 +266,10 @@ public class MovieServiceImpl implements MovieService {
 
     }
 
-    //    @Scheduled(fixedDelay = 100000000)
+//    @Scheduled(fixedDelay = 100)
     public void fetchMovies() {
-        logger.info("Starting to fetch movies...");
+        logger.info("\u001B[32mStarting to fetch movies...\u001B[0m");
+        LocalDateTime start = LocalDateTime.now();
 
         int year = START_YEAR;
 
@@ -278,17 +293,17 @@ public class MovieServiceImpl implements MovieService {
         }
 
         while (count < MAX_MOVIES_PER_YEAR) {
-            logger.info("Movie - Fetching page {} of year {}", page, year);
+            logger.info("\u001B[32mMovie - Fetching page {} of year {}\u001B[0m", page, year);
 
             MovieResponseApiDTO response = getMoviesResponseByDateAndVoteCount(page, year);
 
             if (response == null || response.getResults() == null) {
-                logger.warn("No results returned for page {} of year {}", page, year);
+                logger.warn("\u001B[33mNo results returned for page {} of year {}\u001B[0m", page, year);
                 break;
             }
 
             if (page > response.getTotalPages()) {
-                logger.info("Reached the last page for year {}.", year);
+                logger.info("\u001B[32mReached the last page for year {}.\u001B[0m", year);
                 if (year == LocalDate.now().getYear()) {
                     return;
                 }
@@ -304,12 +319,12 @@ public class MovieServiceImpl implements MovieService {
                 }
 
                 if (isInvalid(dto)) {
-                    logger.warn("Invalid movie: {}", dto.getId());
+                    logger.warn("\u001B[33mInvalid movie: {}\u001B[0m", dto.getId());
                     continue;
                 }
 
                 if (this.movieRepository.findByApiId(dto.getId()).isPresent()) {
-                    logger.info("Movie already exists: {}", dto.getId());
+                    logger.info("\u001B[32mMovie already exists: {}\u001B[0m", dto.getId());
                     continue;
                 }
 
@@ -342,27 +357,56 @@ public class MovieServiceImpl implements MovieService {
                 this.movieRepository.save(movie);
                 count++;
 
-                logger.info("Saved movie: {}", movie.getTitle());
+                logger.info("\u001B[32mSaved movie: {}\u001B[0m", movie.getTitle());
 
-                MediaResponseCreditsDTO creditsById = getCreditsById(dto.getId());
+                MediaResponseCreditsDTO creditsById = responseById.getCredits();
 
                 if (creditsById == null) {
                     continue;
                 }
 
-                List<CastApiApiDTO> castDto = this.castService.filterCastApiDto(creditsById);
+                List<CastApiDTO> castDto = this.castService.filterCastApiDto(creditsById.getCast());
                 Set<Cast> castSet = this.castService.mapToSet(castDto);
                 processMovieCast(castDto, movie, castSet);
 
-                List<CrewApiDTO> crewDto = this.crewService.filterCrewApiDto(creditsById);
+                List<CrewApiDTO> crewDto = this.crewService.filterCrewApiDto(creditsById.getCrew());
                 Set<Crew> crewSet = this.crewService.mapToSet(crewDto.stream().toList());
                 processMovieCrew(crewDto, movie, crewSet);
             }
             page++;
         }
 
-        logger.info("Finished fetching movies.");
+        LocalDateTime end = LocalDateTime.now();
+        logger.info("\u001B[32mFinished fetching movies for {}.\u001B[0m", formatDurationLong(Duration.between(start, end)));
     }
+
+
+    public static String formatDurationLong(Duration duration) {
+        long millis = duration.toMillis();
+
+        long days = millis / 86_400_000;
+        millis %= 86_400_000;
+
+        long hours = millis / 3_600_000;
+        millis %= 3_600_000;
+
+        long minutes = millis / 60_000;
+        millis %= 60_000;
+
+        long seconds = millis / 1_000;
+        millis %= 1_000;
+
+        StringBuilder sb = new StringBuilder();
+
+        if (days > 0) sb.append(days).append("d ");
+        if (hours > 0 || days > 0) sb.append(hours).append("h ");
+        if (minutes > 0 || hours > 0 || days > 0) sb.append(minutes).append("m ");
+        if (seconds > 0 || minutes > 0 || hours > 0 || days > 0) sb.append(seconds).append("s ");
+        sb.append(millis).append("ms");
+
+        return sb.toString().trim();
+    }
+
 
     private static boolean isInvalid(MovieApiDTO dto) {
         return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
@@ -371,7 +415,7 @@ public class MovieServiceImpl implements MovieService {
                 || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
     }
 
-    private void processMovieCast(List<CastApiApiDTO> castDto, Movie movie, Set<Cast> castSet) {
+    private void processMovieCast(List<CastApiDTO> castDto, Movie movie, Set<Cast> castSet) {
         this.castService.processCast(
                 castDto,
                 movie,
@@ -424,7 +468,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private MovieApiByIdResponseDTO getMediaResponseById(Long apiId) {
-        String url = String.format(this.apiConfig.getUrl() + "/movie/%d?api_key=" + this.apiConfig.getKey(), apiId);
+        String url = String.format(this.apiConfig.getUrl() + "/movie/%d?api_key=" + this.apiConfig.getKey() + "&append_to_response=credits", apiId);
         try {
             return this.restClient
                     .get()
@@ -433,21 +477,6 @@ public class MovieServiceImpl implements MovieService {
                     .body(MovieApiByIdResponseDTO.class);
         } catch (Exception e) {
             System.err.println("Error fetching movie with ID: " + apiId + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private MediaResponseCreditsDTO getCreditsById(Long apiId) {
-        String url = String.format(this.apiConfig.getUrl() + "/movie/%d/credits?api_key=%s", apiId, this.apiConfig.getKey());
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(MediaResponseCreditsDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
             return null;
         }
     }
