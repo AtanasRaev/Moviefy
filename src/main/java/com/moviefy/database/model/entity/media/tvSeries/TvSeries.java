@@ -34,9 +34,16 @@ public class TvSeries extends Media {
             orphanRemoval = true)
     private Set<SeasonTvSeries> seasons;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "status_id", referencedColumnName = "id")
-    private StatusTvSeries statusTvSeries;
+    @Column(name = "number_of_seasons")
+    private Integer numberOfSeasons;
+
+    @Column(name = "number_of_episodes")
+    private Integer numberOfEpisodes;
+
+    @Column(name = "status")
+    private String status;
+
+    private String type;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -78,12 +85,20 @@ public class TvSeries extends Media {
         this.firstAirDate = firstAirDate;
     }
 
-    public StatusTvSeries getStatusTvSeries() {
-        return statusTvSeries;
+    public String getStatus() {
+        return status;
     }
 
-    public void setStatusTvSeries(StatusTvSeries statusTvSeries) {
-        this.statusTvSeries = statusTvSeries;
+    public void setStatus(String statusTvSeries) {
+        this.status = statusTvSeries;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public Set<SeasonTvSeries> getSeasons() {
@@ -92,6 +107,22 @@ public class TvSeries extends Media {
 
     public void setSeasons(Set<SeasonTvSeries> seasons) {
         this.seasons = seasons;
+    }
+
+    public Integer getNumberOfSeasons() {
+        return numberOfSeasons;
+    }
+
+    public void setNumberOfSeasons(Integer numberOfSeasons) {
+        this.numberOfSeasons = numberOfSeasons;
+    }
+
+    public Integer getNumberOfEpisodes() {
+        return numberOfEpisodes;
+    }
+
+    public void setNumberOfEpisodes(Integer numberOfEpisodes) {
+        this.numberOfEpisodes = numberOfEpisodes;
     }
 
     public Set<ProductionCompany> getProductionCompanies() {
