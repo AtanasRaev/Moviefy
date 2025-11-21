@@ -53,14 +53,7 @@ public class MediaController {
             return getInvalidRequest(mediaType);
         }
 
-        Pageable pageable;
-
-        switch (mediaType) {
-            case "movies" -> pageable = PageRequest.of(page - 1, size, Sort.by("release_date").descending());
-            case "series" -> pageable = PageRequest.of(page - 1, size, Sort.by("first_air_date").descending());
-            default -> pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
-        }
-
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("releaseDate").descending());
         Page<?> mediaPage = getLatestMediaPage(mediaType, pageable, genres, types);
 
         return getMapResponseEntity(mediaType, mediaPage);
@@ -110,6 +103,8 @@ public class MediaController {
     @GetMapping("/{mediaType}/popular")
     public ResponseEntity<Map<String, Object>> getPopularMedia(
             @PathVariable String mediaType,
+            @RequestParam(required = false) List<String> genres,
+            @RequestParam(required = false) List<String> types,
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
@@ -118,7 +113,7 @@ public class MediaController {
         }
 
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("voteCount").descending());
-        Page<?> mediaPage = getPopularMediaPage(mediaType, pageable);
+        Page<?> mediaPage = getPopularMediaPage(mediaType, genres, types, pageable);
 
         return getMapResponseEntity(mediaType, mediaPage);
     }
@@ -195,10 +190,12 @@ public class MediaController {
                 : this.mediaService.getTrendingMedia(genres, pageable);
     }
 
-    private Page<?> getPopularMediaPage(String mediaType, Pageable pageable) {
+    private Page<?> getPopularMediaPage(String mediaType, List<String> genres, List<String> types, Pageable pageable) {
         return "movies".equalsIgnoreCase(mediaType)
-                ? movieService.getPopularMovies(pageable)
-                : tvSeriesService.getPopularTvSeries(pageable);
+                ? this.movieService.getPopularMovies(genres, pageable)
+                : "series".equalsIgnoreCase(mediaType)
+                ? this.tvSeriesService.getPopularTvSeries(genres, types, pageable)
+                : this.mediaService.getPopularMedia(genres, pageable);
     }
 
     private Page<?> getLatestMediaPage(String mediaType, Pageable pageable, List<String> genres, List<String> types) {
