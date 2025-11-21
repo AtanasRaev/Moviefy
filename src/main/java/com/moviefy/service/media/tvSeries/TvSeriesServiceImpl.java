@@ -141,23 +141,9 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesTrendingPageDTO> getTrendingTvSeries(List<String> genres, Pageable pageable) {
-        LocalDate today = LocalDate.now();
-        List<SeasonTvSeries> allByYearRange = this.seasonTvSeriesRepository.findAllByYearRange(today.minusYears(1).getYear(), today.getYear());
-
-        List<Long> ids = allByYearRange
-                .stream()
-                .mapToLong(s -> s.getTvSeries().getId())
-                .boxed()
-                .toList();
-
-        return this.tvSeriesRepository.findAllBySeasonsIds(ids, pageable)
-                .map(tvSeries -> {
-                    TvSeriesTrendingPageDTO map = this.modelMapper.map(tvSeries, TvSeriesTrendingPageDTO.class);
-                    mapAllGenresToPageDTO(map);
-                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
-                    return map;
-                });
+    public Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, Pageable pageable) {
+        List<String> processedGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
+        return this.tvSeriesRepository.findAllByPopularityDesc(processedGenres, pageable);
     }
 
     @Override
@@ -297,7 +283,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return LocalDate.now().minusDays(7);
     }
 
-//    @Scheduled(fixedDelay = 100)
+    //    @Scheduled(fixedDelay = 100)
     public void fetchSeries() {
         logger.info("\u001B[36mStarting to fetch tv series...\u001B[0m");
         LocalDateTime start = LocalDateTime.now();
