@@ -160,6 +160,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         GROUP BY stv.tv_series_id
                     ) s ON s.tv_series_id = tv.id
                     WHERE LOWER(g.name) IN (:genres)
+                      AND LOWER(tv.type) IN (:types)
                     """,
             countQuery = """
                     SELECT COUNT(DISTINCT tv.id)
@@ -167,10 +168,11 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                     JOIN series_genre tsg ON tsg.series_id = tv.id
                     JOIN series_genres g ON g.id = tsg.genre_id
                     WHERE LOWER(g.name) IN (:genres)
+                      AND LOWER(tv.type) IN (:types)
                     """,
             nativeQuery = true
     )
-    Page<TvSeriesPageProjection> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
+    Page<TvSeriesPageProjection> searchByGenres(@Param("genres") List<String> genres, @Param("types") List<String> types, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.apiId IN :apiIds")
     List<TvSeries> findAllByApiIdIn(@Param("apiIds") Set<Long> apiIds);

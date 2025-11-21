@@ -238,10 +238,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, Pageable pageable) {
+    public Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, List<String> types, Pageable pageable) {
         List<String> lowerCaseGenres = this.genreNormalizationUtil.getSeriesLowerCaseGenres(genres);
+        List<String> loweredTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
 
-        return tvSeriesRepository.searchByGenres(lowerCaseGenres, pageable);
+        return tvSeriesRepository.searchByGenres(lowerCaseGenres, loweredTypes, pageable);
     }
 
     private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
