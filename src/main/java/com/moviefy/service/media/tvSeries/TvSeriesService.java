@@ -12,11 +12,11 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface TvSeriesService {
-    Page<TvSeriesPageProjection> getTvSeriesFromCurrentMonth(Pageable pageable, List<String> genres);
+    Page<TvSeriesPageProjection> getTvSeriesFromCurrentMonth(Pageable pageable, List<String> genres, List<String> types);
 
     TvSeriesDetailsDTO getTvSeriesDetailsByApiId(Long apiId);
 
-    Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, Pageable pageable);
+    Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, List<String> types, Pageable pageable);
 
     Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable);
 
