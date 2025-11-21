@@ -24,7 +24,8 @@ public abstract class TvSeriesDTO extends MediaPageDTO {
     }
 
     @Override
-    public String getType() {
+    @JsonProperty("media_type")
+    public String getMediaType() {
         return "series";
     }
 
