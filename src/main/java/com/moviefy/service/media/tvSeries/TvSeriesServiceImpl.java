@@ -154,17 +154,25 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         List<String> processedGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
         List<String> processedTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
 
-        return this.tvSeriesRepository.findAllByPopularityDesc(processedGenres, processedTypes, pageable);
+        return this.tvSeriesRepository.findAllByGenresMapped(processedGenres, processedTypes, pageable);
     }
 
     @Override
     @Cacheable(cacheNames = "popularTvSeries",
-            key = "'p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
+                    + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<TvSeriesPageWithGenreDTO> getPopularTvSeries(Pageable pageable) {
-        return this.tvSeriesRepository.findAllSortedByVoteCount(pageable)
-                .map(this::mapTvSeriesPageWithGenreDTO);
+    public Page<TvSeriesPageWithGenreProjection> getPopularTvSeries(List<String> genres, List<String> types, Pageable pageable) {
+        List<String> processedGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
+        List<String> processedTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
+
+        return this.tvSeriesRepository.findAllByGenresMapped(processedGenres, processedTypes, pageable);
     }
 
     @Override
