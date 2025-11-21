@@ -208,6 +208,7 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                     u.episodes_count   AS episodesCount,
                     u.runtime          AS runtime,
                     u.release_date     AS releaseDate,
+                    u.vote_count       AS voteCount,
                     u.trailer          AS trailer,
                     u.genre            AS genre
                 FROM (
@@ -224,6 +225,7 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                         CAST(NULL AS integer) AS episodes_count,
                         m.runtime,
                         m.release_date AS release_date,
+                        m.vote_count AS vote_count,
                         m.trailer AS trailer,
                         MIN(g.name) AS genre
                     FROM movies m
@@ -239,6 +241,7 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                         m.vote_average,
                         m.runtime,
                         m.release_date,
+                        m.vote_count,
                         m.trailer
 
                     UNION ALL
@@ -256,6 +259,7 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                         s.episodes_count,
                         CAST(NULL AS integer) AS runtime,
                         tv.first_air_date AS release_date,
+                        tv.vote_count AS vote_count,
                         tv.trailer AS trailer,
                         MIN(g.name) AS genre
                     FROM tv_series tv
@@ -280,6 +284,7 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                         s.seasons_count,
                         s.episodes_count,
                         tv.first_air_date,
+                        tv.vote_count,
                         tv.trailer
                 ) u
                 """,
@@ -303,5 +308,5 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                 """,
             nativeQuery = true
     )
-    Page<MediaWithGenreProjection> findTrendingMedia(@Param("movieGenres") List<String> movieGenres, @Param("seriesGenres") List<String> seriesGenres, Pageable pageable);
+    Page<MediaWithGenreProjection> findAllByGenresMapped(@Param("movieGenres") List<String> movieGenres, @Param("seriesGenres") List<String> seriesGenres, Pageable pageable);
 }
