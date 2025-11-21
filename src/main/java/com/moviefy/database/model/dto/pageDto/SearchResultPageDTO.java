@@ -9,7 +9,8 @@ public class SearchResultPageDTO {
 
     @JsonProperty("api_id")
     private Long apiId;
-    
+
+    @JsonProperty("media_type")
     private String type;
     
     private String title;
