@@ -3,8 +3,6 @@ package com.moviefy.service.media;
 import com.moviefy.database.model.dto.pageDto.MediaProjection;
 import com.moviefy.database.model.dto.pageDto.MediaWithGenreProjection;
 import com.moviefy.database.repository.media.MediaRepository;
-import com.moviefy.service.genre.movieGenre.MovieGenreService;
-import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import com.moviefy.utils.GenreNormalizationUtil;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -16,19 +14,12 @@ import java.util.List;
 
 @Service
 public class MediaServiceImpl implements MediaService {
-
     private final MediaRepository mediaRepository;
-    private final SeriesGenreService seriesGenreService;
-    private final MovieGenreService movieGenreService;
     private final GenreNormalizationUtil genreNormalizationUtil;
 
     public MediaServiceImpl(MediaRepository mediaRepository,
-                            SeriesGenreService seriesGenreService,
-                            MovieGenreService movieGenreService,
                             GenreNormalizationUtil genreNormalizationUtil) {
         this.mediaRepository = mediaRepository;
-        this.seriesGenreService = seriesGenreService;
-        this.movieGenreService = movieGenreService;
         this.genreNormalizationUtil = genreNormalizationUtil;
     }
 
