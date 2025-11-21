@@ -14,6 +14,9 @@ public abstract class MediaDetailsDTO {
     @JsonProperty("api_id")
     private Long apiId;
 
+    @JsonProperty("imdb_id")
+    private String imdbId;
+
     private String overview;
 
     @JsonProperty("backdrop_path")
@@ -50,6 +53,14 @@ public abstract class MediaDetailsDTO {
 
     public void setApiId(Long apiId) {
         this.apiId = apiId;
+    }
+
+    public String getImdbId() {
+        return imdbId;
+    }
+
+    public void setImdbId(String imdbId) {
+        this.imdbId = imdbId;
     }
 
     public String getOverview() {
