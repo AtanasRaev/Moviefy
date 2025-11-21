@@ -90,6 +90,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         CAST(date_part('year', tv.first_air_date) AS integer) AS year,
                         'series' AS mediaType,
                         tv.trailer AS trailer,
+                        tv.vote_count AS voteCount,
                         s.seasons_count AS seasonsCount,
                         s.episodes_count AS episodesCount,
                     
@@ -126,10 +127,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                     """,
             nativeQuery = true
     )
-    Page<TvSeriesPageWithGenreProjection> findAllByPopularityDesc(@Param("genres") List<String> genres, @Param("types") List<String> types, Pageable pageable);
-
-    @Query("SELECT tv FROM TvSeries tv ORDER BY tv.voteCount DESC")
-    Page<TvSeries> findAllSortedByVoteCount(Pageable pageable);
+    Page<TvSeriesPageWithGenreProjection> findAllByGenresMapped(@Param("genres") List<String> genres, @Param("types") List<String> types, Pageable pageable);
 
     @Query("SELECT tv FROM TvSeries tv WHERE tv.name IN :names")
     List<TvSeries> findAllByNames(@Param("names") List<String> names);
