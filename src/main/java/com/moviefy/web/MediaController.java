@@ -91,6 +91,7 @@ public class MediaController {
     @GetMapping("/{mediaType}/trending")
     public ResponseEntity<Map<String, Object>> getMostTrendingMedia(
             @PathVariable String mediaType,
+            @RequestParam(required = false) List<String> genres,
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
@@ -98,8 +99,8 @@ public class MediaController {
             return getInvalidRequest(mediaType);
         }
 
-        Pageable pageable = PageRequest.of(page - 1, size);
-        Page<?> mediaPage = getTrendingMediaPage(mediaType, pageable);
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("popularity").descending());
+        Page<?> mediaPage = getTrendingMediaPage(mediaType, pageable, genres);
 
         return getMapResponseEntity(mediaType, mediaPage);
     }
@@ -182,10 +183,12 @@ public class MediaController {
         return !"all".equalsIgnoreCase(mediaType) && !"movies".equalsIgnoreCase(mediaType) && !"series".equalsIgnoreCase(mediaType);
     }
 
-    private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable) {
+    private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable, List<String> genres) {
         return "movies".equalsIgnoreCase(mediaType)
-                ? movieService.getTrendingMovies(pageable)
-                : tvSeriesService.getTrendingTvSeries(pageable);
+                ? this.movieService.getTrendingMovies(genres, pageable)
+                : "series".equalsIgnoreCase(mediaType)
+                ? this.tvSeriesService.getTrendingTvSeries(genres, pageable)
+                : this.mediaService.getTrendingMedia(genres, pageable);
     }
 
     private Page<?> getPopularMediaPage(String mediaType, Pageable pageable) {
