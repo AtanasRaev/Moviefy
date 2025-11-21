@@ -4,7 +4,7 @@ import com.moviefy.database.model.dto.pageDto.MediaProjection;
 import com.moviefy.database.repository.media.MediaRepository;
 import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
-import com.moviefy.service.media.tvSeries.TvSeriesService;
+import com.moviefy.utils.GenreNormalizationUtil;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,18 +17,18 @@ import java.util.List;
 public class MediaServiceImpl implements MediaService {
 
     private final MediaRepository mediaRepository;
-    private final TvSeriesService tvSeriesService;
     private final SeriesGenreService seriesGenreService;
     private final MovieGenreService movieGenreService;
+    private final GenreNormalizationUtil genreNormalizationUtil;
 
     public MediaServiceImpl(MediaRepository mediaRepository,
-                            TvSeriesService tvSeriesService,
                             SeriesGenreService seriesGenreService,
-                            MovieGenreService movieGenreService) {
+                            MovieGenreService movieGenreService,
+                            GenreNormalizationUtil genreNormalizationUtil) {
         this.mediaRepository = mediaRepository;
-        this.tvSeriesService = tvSeriesService;
         this.seriesGenreService = seriesGenreService;
         this.movieGenreService = movieGenreService;
+        this.genreNormalizationUtil = genreNormalizationUtil;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class MediaServiceImpl implements MediaService {
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<MediaProjection> getMediaByGenres(List<String> genres, Pageable pageable) {
-        List<String> lowerCaseSeriesGenres = this.tvSeriesService.getLowerCaseGenres(genres);
+        List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.getSeriesLowerCaseGenres(genres);
         List<String> lowerCaseMoviesGenres = genres.stream()
                 .map(String::toLowerCase)
                 .toList();
@@ -68,7 +68,7 @@ public class MediaServiceImpl implements MediaService {
             movieGenres  = genres;
         }
 
-        List<String> lowerCaseSeriesGenres = this.tvSeriesService.getLowerCaseGenres(seriesGenres);
+        List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.getSeriesLowerCaseGenres(seriesGenres);
         List<String> lowerCaseMoviesGenres = movieGenres.stream()
                 .map(String::toLowerCase)
                 .toList();
