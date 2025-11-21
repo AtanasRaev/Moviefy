@@ -64,6 +64,10 @@ public class CollectionServiceImpl implements CollectionService {
 
         collection.getMovies().add(movie);
 
+        if (collection.getMovies().size() > 1) {
+            collection.setHasMovies(true);
+        }
+
         double averageVoteCount = collection.getMovies()
                 .stream()
                 .mapToInt(Movie::getVoteCount)
