@@ -108,6 +108,97 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m FROM Movie m WHERE m.apiId IN :apiIds")
     List<Movie> findAllByApiIdIn(Set<Long> apiIds);
 
+    @Query(
+            value = """
+                    SELECT DISTINCT
+                        m.id AS id,
+                        m.api_id AS apiId,
+                        m.title AS title,
+                        m.popularity AS popularity,
+                        m.poster_path AS posterPath,
+                        m.vote_average AS voteAverage,
+                        CAST(date_part('year', m.release_date) AS integer) AS year,
+                        m.release_date AS releaseDate,
+                        'movie' AS mediaType,
+                        m.runtime AS runtime
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT m.id)
+                    FROM movies m
+                    JOIN movie_genre mg ON mg.movie_id = m.id
+                    JOIN movies_genres g ON g.id = mg.genre_id
+                    WHERE LOWER(g.name) IN (:genres)
+                    """,
+            nativeQuery = true
+    )
+    Page<MoviePageProjection> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
+
+    @Query(
+            value = """
+                    WITH filtered_ids AS (
+                        SELECT DISTINCT m.id
+                        FROM movies m
+                        JOIN movie_genre mg ON mg.movie_id = m.id
+                        JOIN movies_genres g ON g.id = mg.genre_id
+                        WHERE m.vote_count >= 50
+                          AND LOWER(g.name) IN (:genres)
+                    ),
+                    stats AS (
+                        SELECT
+                            AVG(m.vote_average) AS C,
+                            PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY m.vote_count) AS m
+                        FROM movies m
+                        JOIN filtered_ids f ON f.id = m.id
+                    )
+                    SELECT
+                        m.id                          AS id,
+                        m.api_id                      AS apiId,
+                        m.title                       AS title,
+                        m.popularity                  AS popularity,
+                        m.poster_path                 AS posterPath,
+                        m.vote_average                AS voteAverage,
+                        CAST(date_part('year', m.release_date) AS integer) AS year,
+                        m.release_date                AS releaseDate,
+                        m.vote_count                  AS voteCount,
+                        'movie'                       AS mediaType,
+                        m.runtime                     AS runtime,
+                        m.trailer                     AS trailer,
+                        (
+                            SELECT g2.name
+                            FROM movie_genre mg2
+                            JOIN movies_genres g2 ON g2.id = mg2.genre_id
+                            WHERE mg2.movie_id = m.id
+                            ORDER BY g2.name
+                            LIMIT 1
+                        )                             AS genre,
+                        (
+                            (m.vote_count / (m.vote_count + stats.m)) * m.vote_average
+                          + (stats.m      / (m.vote_count + stats.m)) * stats.C
+                        )                             AS score
+                    FROM movies m
+                    JOIN filtered_ids f ON f.id = m.id
+                    CROSS JOIN stats
+                    ORDER BY score DESC, m.vote_count DESC, m.id
+                    """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT DISTINCT m.id
+                        FROM movies m
+                        JOIN movie_genre mg ON mg.movie_id = m.id
+                        JOIN movies_genres g ON g.id = mg.genre_id
+                        WHERE m.vote_count >= 50
+                          AND LOWER(g.name) IN (:genres)
+                    ) x
+                    """,
+            nativeQuery = true
+    )
+    Page<MoviePageWithGenreProjection> findTopRatedByGenres(@Param("genres") List<String> genres, Pageable pageable);
+
 //    @Query(
 //            value = """
 //                    WITH q AS (
@@ -303,34 +394,4 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
 //            nativeQuery = true
 //    )
 //    Page<Movie> searchByTitle(@Param("query") String query, Pageable pageable);
-
-    @Query(
-            value = """
-                    SELECT DISTINCT
-                        m.id AS id,
-                        m.api_id AS apiId,
-                        m.title AS title,
-                        m.popularity AS popularity,
-                        m.poster_path AS posterPath,
-                        m.vote_average AS voteAverage,
-                        CAST(date_part('year', m.release_date) AS integer) AS year,
-                        m.release_date AS releaseDate,
-                        'movie' AS mediaType,
-                        m.runtime AS runtime
-                    FROM movies m
-                    JOIN movie_genre mg ON mg.movie_id = m.id
-                    JOIN movies_genres g ON g.id = mg.genre_id
-                    WHERE LOWER(g.name) IN (:genres)
-                    """,
-            countQuery = """
-                    SELECT COUNT(DISTINCT m.id)
-                    FROM movies m
-                    JOIN movie_genre mg ON mg.movie_id = m.id
-                    JOIN movies_genres g ON g.id = mg.genre_id
-                    WHERE LOWER(g.name) IN (:genres)
-                    """,
-            nativeQuery = true
-    )
-    Page<MoviePageProjection> searchByGenres(@Param("genres") List<String> genres, Pageable pageable);
-
 }
