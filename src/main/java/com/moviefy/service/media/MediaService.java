@@ -15,4 +15,6 @@ public interface MediaService {
     Page<MediaWithGenreProjection> getTrendingMedia(List<String> genres, Pageable pageable);
 
     Page<MediaWithGenreProjection> getPopularMedia(List<String> genres, Pageable pageable);
+
+    Page<MediaWithGenreProjection> getTopRatedMedia(List<String> genres, Pageable pageable);
 }
