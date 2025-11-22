@@ -4,4 +4,6 @@ public interface MoviePageWithGenreProjection extends MoviePageProjection {
     String getGenre();
 
     String getTrailer();
+
+    Double getScore();
 }
