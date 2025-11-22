@@ -239,7 +239,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Cacheable(
             cacheNames = "tvSeriesByGenres",
             key = """
-                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.getSeriesLowerCaseGenres(#genres))
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
+                    + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
                     + ';p=' + #pageable.pageNumber
                     + ';s=' + #pageable.pageSize
                     + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
@@ -247,20 +248,28 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, List<String> types, Pageable pageable) {
-        List<String> lowerCaseGenres = this.genreNormalizationUtil.getSeriesLowerCaseGenres(genres);
+        List<String> lowerCaseGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
         List<String> loweredTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
 
         return tvSeriesRepository.searchByGenres(lowerCaseGenres, loweredTypes, pageable);
     }
 
-    private TvSeriesPageDTO mapTvSeriesPageDTO(TvSeries tvSeries) {
-        TvSeriesPageDTO map = modelMapper.map(tvSeries, TvSeriesPageDTO.class);
-        map.setYear(tvSeries.getFirstAirDate().getYear());
-        List<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId());
-        if (!seasons.isEmpty()) {
-            mapSeasonsToPageDTO(new HashSet<>(seasons), map);
-        }
-        return map;
+    @Override
+    @Cacheable(
+            cacheNames = "topRatedTvSeries",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
+                    + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<TvSeriesPageWithGenreProjection> getTopRatedTvSeries(List<String> genres, List<String> types, Pageable pageable) {
+        List<String> lowerCaseGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
+        List<String> loweredTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
+        return tvSeriesRepository.findTopRatedSeriesByGenresAndTypes(lowerCaseGenres, loweredTypes, pageable);
     }
 
     private TvSeriesDetailsDTO mapToTvSeriesDetailsDTO(TvSeries tvSeries) {
@@ -458,7 +467,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return sb.toString().trim();
     }
 
-
     private static boolean isInvalid(TvSeriesApiDTO dto) {
         return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
                 || dto.getOverview() == null || dto.getOverview().isBlank()
@@ -587,21 +595,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
     }
 
-//    private SeasonTvSeriesResponseApiDTO getSeasonsResponse(Long id) {
-//        String url = String.format(this.apiConfig.getUrl() + "/tv/%d?api_key=%s", id, this.apiConfig.getKey());
-//
-//        try {
-//            return this.restClient
-//                    .get()
-//                    .uri(url)
-//                    .retrieve()
-//                    .body(SeasonTvSeriesResponseApiDTO.class);
-//        } catch (Exception e) {
-//            System.err.println("Error fetching season for tv-series with ID: " + id + " - " + e.getMessage());
-//            return null;
-//        }
-//    }
-
     private EpisodesTvSeriesResponseDTO getEpisodesResponse(Long tvId, Integer season) {
         String url = String.format(this.apiConfig.getUrl() + "/tv/%d/season/%d?api_key=%s", tvId, season, this.apiConfig.getKey());
 
@@ -630,21 +623,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             return null;
         }
     }
-
-//    private MediaResponseCreditsDTO getCreditsById(Long apiId) {
-//        String url = String.format(this.apiConfig.getUrl() + "/tv/%d/credits?api_key=%s", apiId, this.apiConfig.getKey());
-//
-//        try {
-//            return this.restClient
-//                    .get()
-//                    .uri(url)
-//                    .retrieve()
-//                    .body(MediaResponseCreditsDTO.class);
-//        } catch (Exception e) {
-//            System.err.println("Error fetching credits with ID: " + apiId + " - " + e.getMessage());
-//            return null;
-//        }
-//    }
 
     private TvSeriesResponseApiDTO searchQueryApi(String query) {
         String url = String.format(this.apiConfig.getUrl()
