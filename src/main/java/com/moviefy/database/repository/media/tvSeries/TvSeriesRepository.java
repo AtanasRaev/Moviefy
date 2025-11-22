@@ -175,6 +175,79 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     @Query("SELECT tv FROM TvSeries tv WHERE tv.apiId IN :apiIds")
     List<TvSeries> findAllByApiIdIn(@Param("apiIds") Set<Long> apiIds);
 
+    @Query(
+            value = """
+                    WITH filtered_ids AS (
+                        SELECT DISTINCT tv.id
+                        FROM tv_series tv
+                        JOIN series_genre tsg ON tsg.series_id = tv.id
+                        JOIN series_genres g   ON g.id = tsg.genre_id
+                        WHERE tv.vote_count >= 50
+                          AND LOWER(g.name) IN (:genres)
+                          AND LOWER(tv.type) IN (:types)
+                    ),
+                    stats AS (
+                        SELECT
+                            AVG(tv.vote_average) AS C,
+                            PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY tv.vote_count) AS m
+                        FROM tv_series tv
+                        JOIN filtered_ids f ON f.id = tv.id
+                    ),
+                    seasons_agg AS (
+                        SELECT
+                            stv.tv_series_id,
+                            COUNT(*)                         AS seasons_count,
+                            COALESCE(SUM(stv.episode_count), 0) AS episodes_count
+                        FROM seasons stv
+                        GROUP BY stv.tv_series_id
+                    )
+                    SELECT
+                        tv.id                                            AS id,
+                        tv.api_id                                        AS apiId,
+                        tv.name                                          AS name,
+                        tv.popularity                                    AS popularity,
+                        tv.poster_path                                   AS posterPath,
+                        tv.vote_average                                  AS voteAverage,
+                        CAST(date_part('year', tv.first_air_date) AS integer) AS year,
+                        'series'                                         AS mediaType,
+                        tv.trailer                                       AS trailer,
+                        tv.vote_count                                    AS voteCount,
+                        sa.seasons_count                                 AS seasonsCount,
+                        sa.episodes_count                                AS episodesCount,
+                        (
+                            SELECT g2.name
+                            FROM series_genre mg2
+                            JOIN series_genres g2 ON g2.id = mg2.genre_id
+                            WHERE mg2.series_id = tv.id
+                            ORDER BY g2.name
+                            LIMIT 1
+                        )                                                AS genre,
+                        (
+                            (tv.vote_count / (tv.vote_count + COALESCE(stats.m, 500))) * tv.vote_average
+                          + (COALESCE(stats.m, 500) / (tv.vote_count + COALESCE(stats.m, 500))) * stats.C
+                        )                                                AS score
+                    FROM tv_series tv
+                    JOIN filtered_ids f ON f.id = tv.id
+                    CROSS JOIN stats
+                    LEFT JOIN seasons_agg sa ON sa.tv_series_id = tv.id
+                    ORDER BY score DESC, tv.vote_count DESC, tv.id
+                    """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT DISTINCT tv.id
+                        FROM tv_series tv
+                        JOIN series_genre tsg ON tsg.series_id = tv.id
+                        JOIN series_genres g   ON g.id = tsg.genre_id
+                        WHERE tv.vote_count >= 50
+                          AND LOWER(g.name) IN (:genres)
+                          AND LOWER(tv.type) IN (:types)
+                    ) x
+                    """,
+            nativeQuery = true
+    )
+    Page<TvSeriesPageWithGenreProjection> findTopRatedSeriesByGenresAndTypes(@Param("genres") List<String> genres, @Param("types")  List<String> types, Pageable pageable);
+
 //    @Query(
 //            value = """
 //                    WITH q AS (
