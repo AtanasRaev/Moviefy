@@ -2,6 +2,7 @@ package com.moviefy.service.collection;
 
 import com.moviefy.database.model.dto.apiDto.CollectionApiDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
@@ -26,7 +27,9 @@ public interface CollectionService {
 
     Map<String, List<MoviePageDTO>> getMoviesByApiId(Long apiId);
 
-    Page<CollectionPageDTO> getPopular(Pageable pageable);
+    Page<CollectionPageProjection> getPopular(Pageable pageable);
 
     Map<String, Object> getMoviesHomeByCollection(String input);
+
+    Page<CollectionPageProjection> searchCollections(String query, Pageable pageable);
 }
