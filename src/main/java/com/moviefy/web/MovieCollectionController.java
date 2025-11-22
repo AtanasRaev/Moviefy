@@ -1,9 +1,11 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.service.collection.CollectionService;
 import com.moviefy.utils.ErrorResponseUtil;
+import com.moviefy.utils.ResponseUtil;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
@@ -26,7 +28,7 @@ public class MovieCollectionController {
     }
 
     @GetMapping("/collection")
-    public ResponseEntity<Map<String, Object>> getCollectionMoviesSearch1(@RequestParam("name") String input) {
+    public ResponseEntity<Map<String, Object>> getCollectionMoviesSearch(@RequestParam("name") String input) {
         if (input == null || input.isBlank()) {
             return ErrorResponseUtil.buildErrorResponse(
                     HttpStatus.BAD_REQUEST,
@@ -97,9 +99,9 @@ public class MovieCollectionController {
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<CollectionPageDTO> popular = this.collectionService.getPopular(pageable);
+        Page<CollectionPageProjection> collectionPage = this.collectionService.getPopular(pageable);
 
-        if (popular == null || popular.isEmpty()) {
+        if (collectionPage == null || collectionPage.isEmpty()) {
             return ErrorResponseUtil.buildErrorResponse(
                     HttpStatus.NOT_FOUND,
                     "Resource not found",
@@ -107,12 +109,19 @@ public class MovieCollectionController {
             );
         }
 
-        return ResponseEntity.ok(Map.of(
-                "items_on_page", popular.getNumberOfElements(),
-                "total_items", popular.getTotalElements(),
-                "total_pages", popular.getTotalPages(),
-                "current_page", popular.getNumber() + 1,
-                "popular", popular.getContent()
-        ));
+        return ResponseUtil.getMapResponseEntity("results",collectionPage);
+    }
+
+    @GetMapping("/collections/search")
+    public ResponseEntity<Map<String, Object>> searchCollections(
+            @RequestParam("query") String query,
+            @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
+
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<CollectionPageProjection> collectionPage = this.collectionService.searchCollections(query, pageable);
+
+        return ResponseUtil.getMapResponseEntity("results", collectionPage);
     }
 }
