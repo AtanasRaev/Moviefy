@@ -30,10 +30,8 @@ public class MediaServiceImpl implements MediaService {
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<MediaProjection> getMediaByGenres(List<String> genres, Pageable pageable) {
-        List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.getSeriesLowerCaseGenres(genres);
-        List<String> lowerCaseMoviesGenres = genres.stream()
-                .map(String::toLowerCase)
-                .toList();
+        List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
+        List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
 
         return this.mediaRepository.findMediaByGenres(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
     }
@@ -71,11 +69,35 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "popularMedia",
+            key = "T(java.util.Objects).toString(#genres) + " +
+                    "';p=' + #pageable.pageNumber + " +
+                    "';s=' + #pageable.pageSize + " +
+                    "';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public Page<MediaWithGenreProjection> getPopularMedia(List<String> genres, Pageable pageable) {
         List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
 
         return this.mediaRepository.findAllByGenresMapped(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
+    }
+
+    @Override
+    @Cacheable(
+            cacheNames = "topRatedMedia",
+            key = "T(java.util.Objects).toString(#genres) + " +
+                    "';p=' + #pageable.pageNumber + " +
+                    "';s=' + #pageable.pageSize + " +
+                    "';sort=' + T(java.util.Objects).toString(#pageable.sort)",
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<MediaWithGenreProjection> getTopRatedMedia(List<String> genres, Pageable pageable) {
+        List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
+        List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
+
+        return this.mediaRepository.findTopRatedCombinedByGenres(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
     }
 
     private LocalDate getStartOfCurrentMonth() {
