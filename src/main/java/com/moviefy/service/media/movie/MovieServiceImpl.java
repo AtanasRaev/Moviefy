@@ -188,7 +188,7 @@ public class MovieServiceImpl implements MovieService {
     @Cacheable(
             cacheNames = "moviesByGenres",
             key = """
-                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.getLoweredGenres(#genres))
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
                     + ';p=' + #pageable.pageNumber
                     + ';s=' + #pageable.pageSize
                     + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
@@ -196,10 +196,24 @@ public class MovieServiceImpl implements MovieService {
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<MoviePageProjection> getMoviesByGenres(List<String> genres, Pageable pageable) {
-        List<String> loweredGenreList = genres.stream()
-                .map(String::toLowerCase)
-                .toList();
-        return this.movieRepository.searchByGenres(loweredGenreList, pageable);
+        List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
+        return this.movieRepository.searchByGenres(processedGenres, pageable);
+    }
+
+    @Override
+    @Cacheable(
+            cacheNames = "topRatedMovies",
+            key = """
+                    'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<MoviePageWithGenreProjection> getTopRatedMovies(List<String> genres, Pageable pageable) {
+        List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
+        return this.movieRepository.findTopRatedByGenres(processedGenres, pageable);
     }
 
     private LocalDate getStartOfCurrentMonth() {
