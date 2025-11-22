@@ -4,4 +4,6 @@ public interface MediaWithGenreProjection extends MediaProjection {
     String getGenre();
 
     String getTrailer();
+
+    Double getScore();
 }
