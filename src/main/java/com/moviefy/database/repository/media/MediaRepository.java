@@ -309,4 +309,157 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
             nativeQuery = true
     )
     Page<MediaWithGenreProjection> findAllByGenresMapped(@Param("movieGenres") List<String> movieGenres, @Param("seriesGenres") List<String> seriesGenres, Pageable pageable);
+
+    @Query(
+            value = """
+                    WITH movie_ids AS (
+                        SELECT DISTINCT m.id
+                        FROM movies m
+                        JOIN movie_genre mg  ON mg.movie_id = m.id
+                        JOIN movies_genres g ON g.id = mg.genre_id
+                        WHERE m.vote_count >= 50
+                          AND LOWER(g.name) IN (:movieGenres)
+                    ),
+                    movie_stats AS (
+                        SELECT
+                            AVG(m.vote_average) AS C,
+                            PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY m.vote_count) AS m
+                        FROM movies m
+                        JOIN movie_ids mi ON mi.id = m.id
+                    ),
+                    series_ids AS (
+                        SELECT DISTINCT tv.id
+                        FROM tv_series tv
+                        JOIN series_genre tsg ON tsg.series_id = tv.id
+                        JOIN series_genres g   ON g.id = tsg.genre_id
+                        WHERE tv.vote_count >= 50
+                          AND LOWER(g.name) IN (:seriesGenres)
+                    ),
+                    series_stats AS (
+                        SELECT
+                            AVG(tv.vote_average) AS C,
+                            PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY tv.vote_count) AS m
+                        FROM tv_series tv
+                        JOIN series_ids si ON si.id = tv.id
+                    ),
+                    seasons_agg AS (
+                        SELECT
+                            stv.tv_series_id,
+                            COUNT(*)                         AS seasons_count,
+                            COALESCE(SUM(stv.episode_count), 0) AS episodes_count
+                        FROM seasons stv
+                        GROUP BY stv.tv_series_id
+                    )
+                    SELECT DISTINCT
+                        u.id               AS id,
+                        u.api_id           AS apiId,
+                        u.title            AS title,
+                        u.popularity       AS popularity,
+                        u.poster_path      AS posterPath,
+                        u.vote_average     AS voteAverage,
+                        u.year             AS year,
+                        u.media_type       AS mediaType,
+                        u.seasons_count    AS seasonsCount,
+                        u.episodes_count   AS episodesCount,
+                        u.runtime          AS runtime,
+                        u.release_date     AS releaseDate,
+                        u.vote_count       AS voteCount,
+                        u.trailer          AS trailer,
+                        u.genre            AS genre,
+                        u.score            AS score
+                    FROM (
+                        SELECT
+                            m.id,
+                            m.api_id,
+                            m.title,
+                            m.popularity,
+                            m.poster_path,
+                            m.vote_average,
+                            CAST(date_part('year', m.release_date) AS integer) AS year,
+                            'movie'                                            AS media_type,
+                            CAST(NULL AS integer)                              AS seasons_count,
+                            CAST(NULL AS integer)                              AS episodes_count,
+                            m.runtime                                          AS runtime,
+                            m.release_date                                     AS release_date,
+                            m.vote_count                                       AS vote_count,
+                            m.trailer                                          AS trailer,
+                            (
+                                SELECT g2.name
+                                FROM movie_genre mg2
+                                JOIN movies_genres g2 ON g2.id = mg2.genre_id
+                                WHERE mg2.movie_id = m.id
+                                ORDER BY g2.name
+                                LIMIT 1
+                            )                                                  AS genre,
+                            (
+                                (m.vote_count / (m.vote_count + COALESCE(ms.m, 500))) * m.vote_average
+                              + (COALESCE(ms.m, 500) / (m.vote_count + COALESCE(ms.m, 500))) * COALESCE(ms.C, m.vote_average)
+                            )                                                  AS score
+                        FROM movies m
+                        JOIN movie_ids mi ON mi.id = m.id
+                        CROSS JOIN movie_stats ms
+                    
+                        UNION ALL
+                    
+                        SELECT
+                            tv.id,
+                            tv.api_id,
+                            tv.name                                             AS title,
+                            tv.popularity,
+                            tv.poster_path,
+                            tv.vote_average,
+                            CAST(date_part('year', tv.first_air_date) AS integer) AS year,
+                            'series'                                             AS media_type,
+                            sa.seasons_count                                     AS seasons_count,
+                            sa.episodes_count                                    AS episodes_count,
+                            CAST(NULL AS integer)                                AS runtime,
+                            tv.first_air_date                                    AS release_date,
+                            tv.vote_count                                        AS vote_count,
+                            tv.trailer                                           AS trailer,
+                            (
+                                SELECT g2.name
+                                FROM series_genre mg2
+                                JOIN series_genres g2 ON g2.id = mg2.genre_id
+                                WHERE mg2.series_id = tv.id
+                                ORDER BY g2.name
+                                LIMIT 1
+                            )                                                    AS genre,
+                            (
+                                (tv.vote_count / (tv.vote_count + COALESCE(ss.m, 500))) * tv.vote_average
+                              + (COALESCE(ss.m, 500) / (tv.vote_count + COALESCE(ss.m, 500))) * COALESCE(ss.C, tv.vote_average)
+                            )                                                    AS score
+                        FROM tv_series tv
+                        JOIN series_ids si    ON si.id = tv.id
+                        CROSS JOIN series_stats ss
+                        LEFT JOIN seasons_agg sa ON sa.tv_series_id = tv.id
+                    ) u
+                    ORDER BY u.score DESC, u.vote_count DESC, u.id
+                    """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT DISTINCT m.id
+                        FROM movies m
+                        JOIN movie_genre mg  ON mg.movie_id = m.id
+                        JOIN movies_genres g ON g.id = mg.genre_id
+                        WHERE m.vote_count >= 50
+                          AND LOWER(g.name) IN (:movieGenres)
+                    
+                        UNION ALL
+                    
+                        SELECT DISTINCT tv.id
+                        FROM tv_series tv
+                        JOIN series_genre tsg ON tsg.series_id = tv.id
+                        JOIN series_genres g   ON g.id = tsg.genre_id
+                        WHERE tv.vote_count >= 50
+                          AND LOWER(g.name) IN (:seriesGenres)
+                    ) x
+                    """,
+            nativeQuery = true
+    )
+    Page<MediaWithGenreProjection> findTopRatedCombinedByGenres(
+            @Param("movieGenres")  List<String> movieGenres,
+            @Param("seriesGenres") List<String> seriesGenres,
+            Pageable pageable
+    );
 }
