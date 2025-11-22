@@ -118,6 +118,24 @@ public class MediaController {
         return getMapResponseEntity(mediaType, mediaPage);
     }
 
+    @GetMapping("/{mediaType}/top_rated")
+    public ResponseEntity<Map<String, Object>> getTopRatedMedia(
+            @PathVariable String mediaType,
+            @RequestParam(required = false) List<String> genres,
+            @RequestParam(required = false) List<String> types,
+            @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
+
+        if (isMediaTypeInvalid(mediaType)) {
+            return getInvalidRequest(mediaType);
+        }
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<?> mediaPage = getTopRatedMediaPage(mediaType, genres, types, pageable);
+
+        return getMapResponseEntity(mediaType, mediaPage);
+    }
+
     @GetMapping("/{mediaType}/search")
     public ResponseEntity<Map<String, Object>> searchMedia(
             @PathVariable String mediaType,
@@ -226,5 +244,13 @@ public class MediaController {
                 : "series".equalsIgnoreCase(mediaType)
                 ? this.tvSeriesService.getTvSeriesByGenres(genres, types, pageable)
                 : this.mediaService.getMediaByGenres(genres, pageable);
+    }
+
+    private Page<?> getTopRatedMediaPage(String mediaType, List<String> genres, List<String> types, Pageable pageable) {
+        return "movies".equalsIgnoreCase(mediaType)
+                ? this.movieService.getTopRatedMovies(genres, pageable)
+                : "series".equalsIgnoreCase(mediaType)
+                ? this.tvSeriesService.getTopRatedTvSeries(genres, types, pageable)
+                : this.mediaService.getTopRatedMedia(genres, pageable);
     }
 }
