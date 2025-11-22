@@ -6,6 +6,7 @@ import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageDTO;
+import com.moviefy.database.model.dto.pageDto.movieDto.CollectionPageProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MovieHomeDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
@@ -129,9 +130,8 @@ public class CollectionServiceImpl implements CollectionService {
             key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()",
             unless = "#result == null || #result.isEmpty()"
     )
-    public Page<CollectionPageDTO> getPopular(Pageable pageable) {
-        return this.collectionRepository.findAllByVoteCountAverageDesc(pageable)
-                .map(this::mapCollectionPageDTO);
+    public Page<CollectionPageProjection> getPopular(Pageable pageable) {
+        return this.collectionRepository.findAllByVoteCountAverageDesc(pageable);
     }
 
     @Override
@@ -169,6 +169,11 @@ public class CollectionServiceImpl implements CollectionService {
         result.put("collection_api_id", collection.getApiId());
 
         return result;
+    }
+
+    @Override
+    public Page<CollectionPageProjection> searchCollections(String query, Pageable pageable) {
+        return this.collectionRepository.searchCollectionByName(query, pageable);
     }
 
     private MovieDetailsHomeDTO mapFirstMovie(Movie movie) {
