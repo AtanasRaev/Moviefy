@@ -4,4 +4,6 @@ public interface TvSeriesPageWithGenreProjection extends TvSeriesPageProjection 
     String getGenre();
 
     String getTrailer();
+
+    Double getScore();
 }
