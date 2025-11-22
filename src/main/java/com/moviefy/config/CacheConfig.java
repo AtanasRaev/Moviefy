@@ -51,6 +51,13 @@ public class CacheConfig {
                         .build()
         );
 
+        CaffeineCache latestMedia = new CaffeineCache(
+                "latestMedia",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
         CaffeineCache trendingMovies = new CaffeineCache(
                 "trendingMovies",
                 Caffeine.newBuilder()
@@ -85,6 +92,36 @@ public class CacheConfig {
                         .maximumSize(100)
                         .build()
         );
+
+        CaffeineCache popularMedia = new CaffeineCache(
+                "popularMedia",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+
+        CaffeineCache topRatedMovies = new CaffeineCache(
+                "topRatedMovies",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache topRatedTvSeries = new CaffeineCache(
+                "topRatedTvSeries",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache topRatedMedia = new CaffeineCache(
+                "topRatedMedia",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
         CaffeineCache collectionsByName = new CaffeineCache(
                 "collectionsByName",
                 Caffeine.newBuilder()
@@ -141,24 +178,22 @@ public class CacheConfig {
                         .build()
         );
 
-        CaffeineCache latestMedia = new CaffeineCache(
-                "latestMedia",
-                Caffeine.newBuilder()
-                        .maximumSize(100)
-                        .build()
-        );
-
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
                 movieDetailsById,
                 tvSeriesDetailsById,
                 latestMovies,
                 latestTvSeries,
+                latestMedia,
                 trendingMovies,
                 trendingTvSeries,
                 trendingMedia,
                 popularMovies,
                 popularTvSeries,
+                popularMedia,
+                topRatedMovies,
+                topRatedTvSeries,
+                topRatedMedia,
                 collectionsByName,
                 moviesHomeByCollection,
                 moviesByApiId,
@@ -166,8 +201,7 @@ public class CacheConfig {
                 popularCollections,
                 moviesByGenres,
                 tvSeriesByGenres,
-                mediaByGenres,
-                latestMedia
+                mediaByGenres
         ));
         return manager;
     }
