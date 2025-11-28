@@ -25,4 +25,6 @@ public interface MovieService {
     Page<MoviePageProjection> getMoviesByGenres(List<String> genres, Pageable pageable);
 
     Page<MoviePageWithGenreProjection> getTopRatedMovies(List<String> genres, Pageable pageable);
+
+    Page<MoviePageProjection> getMoviesByCastId(long id, Pageable pageable);
 }
