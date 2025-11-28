@@ -153,7 +153,7 @@ public class CacheConfig {
         CaffeineCache popularCollections = new CaffeineCache(
                 "popularCollections",
                 Caffeine.newBuilder()
-                        .maximumSize(1)
+                        .maximumSize(100)
                         .build()
         );
 
@@ -173,6 +173,27 @@ public class CacheConfig {
 
         CaffeineCache mediaByGenres = new CaffeineCache(
                 "mediaByGenres",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache moviesByCast = new CaffeineCache(
+                "moviesByCast",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache seriesByCast = new CaffeineCache(
+                "seriesByCast",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache mediaByCast = new CaffeineCache(
+                "mediaByCast",
                 Caffeine.newBuilder()
                         .maximumSize(100)
                         .build()
@@ -201,7 +222,10 @@ public class CacheConfig {
                 popularCollections,
                 moviesByGenres,
                 tvSeriesByGenres,
-                mediaByGenres
+                mediaByGenres,
+                moviesByCast,
+                seriesByCast,
+                mediaByCast
         ));
         return manager;
     }
