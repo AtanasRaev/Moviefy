@@ -100,6 +100,21 @@ public class MediaServiceImpl implements MediaService {
         return this.mediaRepository.findTopRatedCombinedByGenres(lowerCaseMoviesGenres, lowerCaseSeriesGenres, pageable);
     }
 
+    @Override
+    @Cacheable(
+            cacheNames = "mediaByCast",
+            key = """
+                    'cast=' + #id
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<MediaProjection> getMediaByCastId(long id, Pageable pageable) {
+        return this.mediaRepository.findTopRatedMediaByCastId(id, pageable);
+    }
+
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
     }
