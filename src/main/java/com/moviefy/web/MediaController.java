@@ -63,7 +63,7 @@ public class MediaController {
     @GetMapping("/{mediaType}/{apiId}")
     public ResponseEntity<Map<String, Object>> getMediaByApiId(
             @PathVariable String mediaType,
-            @PathVariable Long apiId) {
+            @PathVariable long apiId) {
 
         if (isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);

@@ -76,7 +76,7 @@ public class MovieCollectionController {
     }
 
     @GetMapping("/collection/{apiId}")
-    public ResponseEntity<Map<String, Object>> getMovieDetails(@PathVariable Long apiId) {
+    public ResponseEntity<Map<String, Object>> getMovieDetails(@PathVariable long apiId) {
         Map<String, List<MoviePageDTO>> moviesByApiId = this.collectionService.getMoviesByApiId(apiId);
 
         if (moviesByApiId == null || moviesByApiId.isEmpty()) {

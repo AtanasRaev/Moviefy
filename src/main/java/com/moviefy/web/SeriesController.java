@@ -44,7 +44,7 @@ public class SeriesController {
     }
 
     @GetMapping("/season/{id}")
-    public ResponseEntity<Map<String, Object>> getEpisodesFromSeason(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> getEpisodesFromSeason(@PathVariable long id) {
         Integer seasonNumber = this.tvSeriesService.getSeasonNumberById(id);
 
         if (seasonNumber == null) {

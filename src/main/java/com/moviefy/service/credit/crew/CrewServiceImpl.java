@@ -120,7 +120,7 @@ public class CrewServiceImpl implements CrewService {
                     CrewPageDTO::setJob,
                     CrewPageDTO::setName,
                     CrewPageDTO::setProfilePath,
-                    CrewMovie::getId,
+                    CrewMovie::getCrewId,
                     cm -> cm.getJob().getJob(),
                     cm -> cm.getCrew().getName(),
                     cm -> cm.getCrew().getProfilePath())
@@ -133,7 +133,7 @@ public class CrewServiceImpl implements CrewService {
                     CrewPageDTO::setJob,
                     CrewPageDTO::setName,
                     CrewPageDTO::setProfilePath,
-                    CrewTvSeries::getId,
+                    CrewTvSeries::getCrewId,
                     cm -> cm.getJob().getJob(),
                     cm -> cm.getCrew().getName(),
                     cm -> cm.getCrew().getProfilePath())

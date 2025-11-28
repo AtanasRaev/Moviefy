@@ -125,7 +125,7 @@ public class CastServiceImpl implements CastService {
                     CastPageDTO::setCharacter,
                     CastPageDTO::setName,
                     CastPageDTO::setProfilePath,
-                    CastMovie::getId,
+                    CastMovie::getCastId,
                     CastMovie::getCharacter,
                     cm -> cm.getCast().getName(),
                     cm -> cm.getCast().getProfilePath())
@@ -138,7 +138,7 @@ public class CastServiceImpl implements CastService {
                     CastPageDTO::setCharacter,
                     CastPageDTO::setName,
                     CastPageDTO::setProfilePath,
-                    CastTvSeries::getId,
+                    CastTvSeries::getCastId,
                     CastTvSeries::getCharacter,
                     cm -> cm.getCast().getName(),
                     cm -> cm.getCast().getProfilePath())
