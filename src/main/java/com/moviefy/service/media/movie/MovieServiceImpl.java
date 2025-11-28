@@ -216,6 +216,21 @@ public class MovieServiceImpl implements MovieService {
         return this.movieRepository.findTopRatedByGenres(processedGenres, pageable);
     }
 
+    @Override
+    @Cacheable(
+            cacheNames = "moviesByCast",
+            key = """
+                    'cast=' + #id
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<MoviePageProjection> getMoviesByCastId(long id, Pageable pageable) {
+        return this.movieRepository.findTopRatedMoviesByCastId(id, pageable);
+    }
+
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
     }
@@ -284,7 +299,7 @@ public class MovieServiceImpl implements MovieService {
 
     }
 
-//    @Scheduled(fixedDelay = 100)
+    //    @Scheduled(fixedDelay = 100)
     public void fetchMovies() {
         logger.info("\u001B[32mStarting to fetch movies...\u001B[0m");
         LocalDateTime start = LocalDateTime.now();
