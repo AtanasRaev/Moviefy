@@ -33,4 +33,6 @@ public interface TvSeriesService {
     Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, List<String> types, Pageable pageable);
 
     Page<TvSeriesPageWithGenreProjection> getTopRatedTvSeries(List<String> genres, List<String> types, Pageable pageable);
+
+    Page<TvSeriesPageProjection> getTvSeriesByCastId(long id, Pageable pageable);
 }

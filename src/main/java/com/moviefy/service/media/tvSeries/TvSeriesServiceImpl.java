@@ -272,6 +272,21 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return tvSeriesRepository.findTopRatedSeriesByGenresAndTypes(lowerCaseGenres, loweredTypes, pageable);
     }
 
+    @Override
+    @Cacheable(
+            cacheNames = "seriesByCast",
+            key = """
+                    'cast=' + #id
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<TvSeriesPageProjection> getTvSeriesByCastId(long id, Pageable pageable) {
+        return this.tvSeriesRepository.findTopRatedSeriesByCastId(id, pageable);
+    }
+
     private TvSeriesDetailsDTO mapToTvSeriesDetailsDTO(TvSeries tvSeries) {
         if (tvSeries == null) {
             return null;
