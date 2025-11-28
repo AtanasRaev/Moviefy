@@ -28,4 +28,8 @@ public class CastMovie extends CreditMovie {
     public void setCast(Cast cast) {
         this.cast = cast;
     }
+
+    public Long getCastId() {
+        return this.cast.getId();
+    }
 }

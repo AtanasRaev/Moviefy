@@ -29,4 +29,8 @@ public class CrewMovie extends CreditMovie {
     public void setCrew(Crew crew) {
         this.crew = crew;
     }
+
+    public Long getCrewId() {
+        return this.crew.getId();
+    }
 }
