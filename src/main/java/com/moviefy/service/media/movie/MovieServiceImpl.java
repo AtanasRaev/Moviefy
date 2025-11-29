@@ -231,6 +231,21 @@ public class MovieServiceImpl implements MovieService {
         return this.movieRepository.findTopRatedMoviesByCastId(id, pageable);
     }
 
+    @Override
+    @Cacheable(
+            cacheNames = "moviesByCrew",
+            key = """
+                    'crew=' + #id
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<MoviePageProjection> getMoviesByCrewId(long id, Pageable pageable) {
+        return this.movieRepository.findTopRatedMoviesByCrewId(id, pageable);
+    }
+
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
     }
