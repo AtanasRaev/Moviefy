@@ -1,6 +1,7 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
+import com.moviefy.database.model.dto.pageDto.ReviewPageDTO;
 import com.moviefy.service.media.MediaService;
 import com.moviefy.service.media.movie.MovieService;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
@@ -174,6 +175,19 @@ public class MediaController {
         Page<?> mediaPage = getMediaByGenres(mediaType, genres, types, pageable);
 
         return ResponseUtil.getMapResponseEntity(mediaType, mediaPage);
+    }
+
+    @GetMapping("/{mediaType}/{apiId}/reviews")
+    public ResponseEntity<Map<String, Object>> getReviewsByMediaId(
+            @PathVariable String mediaType,
+            @PathVariable long apiId,
+            @RequestParam(defaultValue = "1") @Min(1) int page) {
+
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
+            return getInvalidRequest(mediaType);
+        }
+
+        return ResponseEntity.ok(this.mediaService.getReviewsByApiId(mediaType, apiId, page));
     }
 
     private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable, List<String> genres, List<String> types) {
