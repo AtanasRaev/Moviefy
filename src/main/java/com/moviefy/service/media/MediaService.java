@@ -19,4 +19,6 @@ public interface MediaService {
     Page<MediaWithGenreProjection> getTopRatedMedia(List<String> genres, Pageable pageable);
 
     Page<MediaProjection> getMediaByCastId(long id, Pageable pageable);
+
+    Page<MediaProjection> getMediaByCastCrewId(long id, Pageable pageable);
 }

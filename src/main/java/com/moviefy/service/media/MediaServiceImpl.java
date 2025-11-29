@@ -115,6 +115,21 @@ public class MediaServiceImpl implements MediaService {
         return this.mediaRepository.findTopRatedMediaByCastId(id, pageable);
     }
 
+    @Override
+    @Cacheable(
+            cacheNames = "mediaByCrew",
+            key = """
+                    'crew=' + #id
+                    + ';p=' + #pageable.pageNumber
+                    + ';s=' + #pageable.pageSize
+                    + ';sort=' + T(java.util.Objects).toString(#pageable.sort)
+                    """,
+            unless = "#result == null || #result.isEmpty()"
+    )
+    public Page<MediaProjection> getMediaByCastCrewId(long id, Pageable pageable) {
+        return this.mediaRepository.findTopRatedMediaByCrewId(id, pageable);
+    }
+
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
     }
