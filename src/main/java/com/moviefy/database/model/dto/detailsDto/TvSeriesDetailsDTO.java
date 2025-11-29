@@ -36,6 +36,8 @@ public class TvSeriesDetailsDTO extends MediaDetailsDTO {
     @JsonProperty("first_air_date")
     private LocalDate firstAirDate;
 
+    private String type;
+
     private Set<SeasonTvSeriesDTO> seasons;
 
     public String getName() {
@@ -68,6 +70,14 @@ public class TvSeriesDetailsDTO extends MediaDetailsDTO {
 
     public void setFirstAirDate(LocalDate firstAirDate) {
         this.firstAirDate = firstAirDate;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public Set<SeasonTvSeriesDTO> getSeasons() {

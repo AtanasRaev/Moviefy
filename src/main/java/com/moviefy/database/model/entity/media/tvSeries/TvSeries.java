@@ -43,6 +43,7 @@ public class TvSeries extends Media {
     @Column(name = "status")
     private String status;
 
+    @Column
     private String type;
 
     @ManyToMany(fetch = FetchType.LAZY)
