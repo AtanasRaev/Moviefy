@@ -6,6 +6,7 @@ import com.moviefy.service.media.movie.MovieService;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
 import com.moviefy.service.media.tvSeries.TvSeriesServiceImpl;
 import com.moviefy.utils.ErrorResponseUtil;
+import com.moviefy.utils.MediaRetrievalUtil;
 import com.moviefy.utils.ResponseUtil;
 import com.moviefy.utils.SearchMediaUtil;
 import jakarta.validation.constraints.Max;
@@ -49,7 +50,7 @@ public class MediaController {
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
-        if (isMediaTypeInvalid(mediaType)) {
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -65,7 +66,7 @@ public class MediaController {
             @PathVariable String mediaType,
             @PathVariable long apiId) {
 
-        if (isMediaTypeInvalid(mediaType)) {
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -90,7 +91,7 @@ public class MediaController {
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
-        if (isMediaTypeInvalid(mediaType)) {
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -108,7 +109,7 @@ public class MediaController {
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
-        if (isMediaTypeInvalid(mediaType)) {
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -126,7 +127,7 @@ public class MediaController {
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
 
-        if (isMediaTypeInvalid(mediaType)) {
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -140,7 +141,7 @@ public class MediaController {
     public ResponseEntity<Map<String, Object>> searchMedia(
             @PathVariable String mediaType,
             @RequestParam("query") String query) {
-        if (isMediaTypeInvalid(mediaType)) {
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -165,7 +166,7 @@ public class MediaController {
             @RequestParam(required = false) List<String> types,
             @RequestParam(defaultValue = "10") @Min(4) @Max(100) int size,
             @RequestParam(defaultValue = "1") @Min(1) int page) {
-        if (isMediaTypeInvalid(mediaType)) {
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
             return getInvalidRequest(mediaType);
         }
 
@@ -173,10 +174,6 @@ public class MediaController {
         Page<?> mediaPage = getMediaByGenres(mediaType, genres, types, pageable);
 
         return ResponseUtil.getMapResponseEntity(mediaType, mediaPage);
-    }
-
-    private boolean isMediaTypeInvalid(String mediaType) {
-        return !"all".equalsIgnoreCase(mediaType) && !"movies".equalsIgnoreCase(mediaType) && !"series".equalsIgnoreCase(mediaType);
     }
 
     private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable, List<String> genres, List<String> types) {
