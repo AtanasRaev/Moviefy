@@ -15,6 +15,9 @@ public abstract class MediaPageDTO {
     @JsonProperty("api_id")
     private Long apiId;
 
+    @JsonProperty("imdb_id")
+    private String imdbId;
+
     public MediaPageDTO(Long id, Double voteAverage, Double popularity, Long apiId) {
         this.id = id;
         this.voteAverage = voteAverage;
@@ -57,5 +60,13 @@ public abstract class MediaPageDTO {
 
     public void setApiId(Long apiId) {
         this.apiId = apiId;
+    }
+
+    public String getImdbId() {
+        return imdbId;
+    }
+
+    public void setImdbId(String imdbId) {
+        this.imdbId = imdbId;
     }
 }
