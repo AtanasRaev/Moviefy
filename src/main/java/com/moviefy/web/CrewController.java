@@ -5,6 +5,7 @@ import com.moviefy.service.media.movie.MovieService;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
 import com.moviefy.utils.ErrorResponseUtil;
 import com.moviefy.utils.MediaRetrievalUtil;
+import com.moviefy.utils.ResponseUtil;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
@@ -49,13 +50,7 @@ public class CrewController {
         Pageable pageable = PageRequest.of(page - 1, size);
         Page<?> crewPage = getMediaPageByCrewId(mediaType, id, pageable);
 
-        return ResponseEntity.ok(Map.of(
-                "items_on_page", crewPage.getNumberOfElements(),
-                "total_items", crewPage.getTotalElements(),
-                "total_pages", crewPage.getTotalPages(),
-                "current_page", crewPage.getNumber() + 1,
-                mediaType, crewPage.getContent()
-        ));
+        return ResponseUtil.getMapResponseEntity(mediaType, crewPage);
     }
 
     private Page<?> getMediaPageByCrewId(String mediaType, long id, Pageable pageable) {
