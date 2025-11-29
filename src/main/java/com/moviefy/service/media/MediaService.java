@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MediaService {
     Page<MediaProjection> getMediaByGenres(List<String> genres, Pageable pageable);
@@ -21,4 +22,6 @@ public interface MediaService {
     Page<MediaProjection> getMediaByCastId(long id, Pageable pageable);
 
     Page<MediaProjection> getMediaByCastCrewId(long id, Pageable pageable);
+
+    Map<String, Object> getReviewsByApiId(String mediaType, long apiId, int page);
 }
