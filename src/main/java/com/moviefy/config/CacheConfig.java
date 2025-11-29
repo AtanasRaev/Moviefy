@@ -2,13 +2,12 @@ package com.moviefy.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.cache.annotation.EnableCaching;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -199,6 +198,27 @@ public class CacheConfig {
                         .build()
         );
 
+        CaffeineCache moviesByCrew = new CaffeineCache(
+                "moviesByCrew",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache seriesByCrew = new CaffeineCache(
+                "seriesByCrew",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
+        CaffeineCache mediaByCrew = new CaffeineCache(
+                "mediaByCrew",
+                Caffeine.newBuilder()
+                        .maximumSize(100)
+                        .build()
+        );
+
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
                 movieDetailsById,
@@ -225,7 +245,10 @@ public class CacheConfig {
                 mediaByGenres,
                 moviesByCast,
                 seriesByCast,
-                mediaByCast
+                mediaByCast,
+                moviesByCrew,
+                seriesByCrew,
+                mediaByCrew
         ));
         return manager;
     }
