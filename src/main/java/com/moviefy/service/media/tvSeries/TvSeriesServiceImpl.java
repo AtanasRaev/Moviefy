@@ -302,6 +302,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return this.tvSeriesRepository.findTopRatedSeriesByCrewId(id, pageable);
     }
 
+    @Override
+    public Page<TvSeriesPageProjection> getTvSeriesByProductionCompanyId(long id, Pageable pageable) {
+        return this.tvSeriesRepository.findTopRatedSeriesByProductionCompanyId(id, pageable);
+    }
+
     private TvSeriesDetailsDTO mapToTvSeriesDetailsDTO(TvSeries tvSeries) {
         if (tvSeries == null) {
             return null;

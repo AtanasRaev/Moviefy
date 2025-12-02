@@ -37,4 +37,6 @@ public interface TvSeriesService {
     Page<TvSeriesPageProjection> getTvSeriesByCastId(long id, Pageable pageable);
 
     Page<TvSeriesPageProjection> getTvSeriesByCrewId(long id, Pageable pageable);
+
+    Page<TvSeriesPageProjection> getTvSeriesByProductionCompanyId(long id, Pageable pageable);
 }
