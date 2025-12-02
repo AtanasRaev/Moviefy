@@ -1,7 +1,6 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
-import com.moviefy.database.model.dto.pageDto.ReviewPageDTO;
 import com.moviefy.service.media.MediaService;
 import com.moviefy.service.media.movie.MovieService;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
