@@ -173,6 +173,11 @@ public class MediaServiceImpl implements MediaService {
         );
     }
 
+    @Override
+    public Page<MediaProjection> getMediaByProductionCompanyId(long id, Pageable pageable) {
+        return this.mediaRepository.findTopRatedMediaByProductionCompanyId(id, pageable);
+    }
+
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
     }

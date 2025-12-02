@@ -24,4 +24,6 @@ public interface MediaService {
     Page<MediaProjection> getMediaByCastCrewId(long id, Pageable pageable);
 
     Map<String, Object> getReviewsByApiId(String mediaType, long apiId, int page);
+
+    Page<MediaProjection> getMediaByProductionCompanyId(long id, Pageable pageable);
 }
