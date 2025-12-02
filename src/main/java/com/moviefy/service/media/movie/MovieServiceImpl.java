@@ -246,6 +246,11 @@ public class MovieServiceImpl implements MovieService {
         return this.movieRepository.findTopRatedMoviesByCrewId(id, pageable);
     }
 
+    @Override
+    public Page<MoviePageProjection> getMoviesByProductionCompanyId(long id, Pageable pageable) {
+        return this.movieRepository.findTopRatedMoviesByProductionCompanyId(id, pageable);
+    }
+
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
     }

@@ -31,4 +31,6 @@ public interface MovieService {
     Page<MoviePageProjection> getMoviesByCastId(long id, Pageable pageable);
 
     Page<MoviePageProjection> getMoviesByCrewId(long id, Pageable pageable);
+
+    Page<MoviePageProjection> getMoviesByProductionCompanyId(long id, Pageable pageable);
 }
