@@ -300,6 +300,55 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     )
     Page<MoviePageProjection> findTopRatedMoviesByCrewId(@Param("crewId") long crewId,
                                                          Pageable pageable);
+    @Query(
+            value = """
+                    WITH filtered_ids AS (
+                        SELECT DISTINCT m.id
+                        FROM movies m
+                        JOIN movie_production mp ON mp.movie_id = m.id
+                        WHERE mp.production_id = :productionId
+                    ),
+                    stats AS (
+                        SELECT
+                            AVG(m.vote_average) AS C,
+                            PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY m.vote_count) AS m
+                        FROM movies m
+                        JOIN filtered_ids f ON f.id = m.id
+                    )
+                    SELECT
+                        m.id                           AS id,
+                        m.api_id                       AS apiId,
+                        m.title                        AS title,
+                        m.popularity                   AS popularity,
+                        m.poster_path                  AS posterPath,
+                        m.vote_average                 AS voteAverage,
+                        CAST(date_part('year', m.release_date) AS integer) AS year,
+                        m.release_date                 AS releaseDate,
+                        m.vote_count                   AS voteCount,
+                        'movie'                        AS mediaType,
+                        m.runtime                      AS runtime,
+                        m.trailer                      AS trailer,
+                        (
+                          (m.vote_count / (m.vote_count + stats.m)) * m.vote_average
+                        + (stats.m      / (m.vote_count + stats.m)) * stats.C
+                        )                              AS score
+                    FROM movies m
+                    JOIN filtered_ids f ON f.id = m.id
+                    CROSS JOIN stats
+                    ORDER BY score DESC NULLS LAST, m.vote_count DESC, m.id
+                    """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT DISTINCT m.id
+                        FROM movies m
+                        JOIN movie_production mp ON mp.movie_id = m.id
+                        WHERE mp.production_id = :productionId
+                    ) x
+                    """,
+            nativeQuery = true
+    )
+    Page<MoviePageProjection> findTopRatedMoviesByProductionCompanyId(@Param("productionId") long productionId, Pageable pageable);
 
 
 //    @Query(
