@@ -1,0 +1,229 @@
+package com.moviefy.service.ingest.movie;
+
+import com.moviefy.config.ApiConfig;
+import com.moviefy.database.model.dto.apiDto.*;
+import com.moviefy.database.model.entity.ProductionCompany;
+import com.moviefy.database.model.entity.credit.cast.Cast;
+import com.moviefy.database.model.entity.credit.cast.CastMovie;
+import com.moviefy.database.model.entity.credit.crew.Crew;
+import com.moviefy.database.model.entity.credit.crew.CrewMovie;
+import com.moviefy.database.model.entity.media.Collection;
+import com.moviefy.database.model.entity.media.Movie;
+import com.moviefy.database.repository.credit.cast.CastMovieRepository;
+import com.moviefy.database.repository.credit.crew.CrewMovieRepository;
+import com.moviefy.database.repository.media.MovieRepository;
+import com.moviefy.service.collection.CollectionService;
+import com.moviefy.service.credit.cast.CastService;
+import com.moviefy.service.credit.crew.CrewService;
+import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.utils.MovieMapper;
+import com.moviefy.utils.TrailerMappingUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
+
+import java.time.LocalDate;
+import java.util.*;
+
+import static com.moviefy.utils.Ansi.*;
+
+@Service
+public class MovieIngestService {
+    private final RestClient restClient;
+    private final ApiConfig apiConfig;
+    private final MovieRepository movieRepository;
+    private final CastMovieRepository castMovieRepository;
+    private final CrewMovieRepository crewMovieRepository;
+    private final CollectionService collectionService;
+    private final ProductionCompanyService productionCompanyService;
+    private final CastService castService;
+    private final CrewService crewService;
+    private final MovieMapper movieMapper;
+    private final TrailerMappingUtil trailerMappingUtil;
+
+
+    private static final Logger logger = LoggerFactory.getLogger(MovieIngestService.class);
+    private static final int MAX_MOVIES_PER_YEAR = 600;
+    private static final int MIN_MOVIE_RUNTIME = 45;
+
+    public MovieIngestService(RestClient restClient,
+                              ApiConfig apiConfig,
+                              MovieRepository movieRepository,
+                              CastMovieRepository castMovieRepository,
+                              CrewMovieRepository crewMovieRepository,
+                              CollectionService collectionService,
+                              ProductionCompanyService productionCompanyService,
+                              CastService castService,
+                              CrewService crewService,
+                              MovieMapper movieMapper,
+                              TrailerMappingUtil trailerMappingUtil) {
+        this.restClient = restClient;
+        this.apiConfig = apiConfig;
+        this.movieRepository = movieRepository;
+        this.castMovieRepository = castMovieRepository;
+        this.crewMovieRepository = crewMovieRepository;
+        this.collectionService = collectionService;
+        this.productionCompanyService = productionCompanyService;
+        this.castService = castService;
+        this.crewService = crewService;
+        this.movieMapper = movieMapper;
+        this.trailerMappingUtil = trailerMappingUtil;
+    }
+
+    @Transactional
+    public boolean persistMovieIfEligible(MovieApiDTO dto) {
+        LocalDate rd = dto.getReleaseDate();
+        if (rd == null) {
+            logger.debug(YELLOW + "Skip movie: {} — missing release date" + RESET, dto.getTitle());
+            return false;
+        }
+
+        if (this.movieRepository.findByApiId(dto.getId()).isPresent()) {
+            logger.debug(YELLOW + "Skip movie: {} — already exists" + RESET, dto.getTitle());
+            return false;
+        }
+
+        final int rankingYear = rd.getYear();
+
+        MovieApiByIdResponseDTO responseById = getMediaResponseById(dto.getId());
+        if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < MIN_MOVIE_RUNTIME) {
+            logger.debug(YELLOW + "Skip movie: {} — runtime invalid or details missing" + RESET, dto.getTitle());
+            return false;
+        }
+
+        long countByYear = this.movieRepository.findCountByRankingYear(rankingYear);
+        if (countByYear >= MAX_MOVIES_PER_YEAR) {
+            Optional<Movie> worstOpt = this.movieRepository.findLowestRatedMovieByRankingYear(rankingYear);
+            if (worstOpt.isEmpty()) {
+                logger.warn(YELLOW + "Skip movie: {} — year {} full and no 'worst' movie found" + RESET,
+                        dto.getTitle(), rankingYear);
+                return false;
+            }
+
+            Movie worst = worstOpt.get();
+            if (!isBetter(dto, worst)) {
+                logger.debug(YELLOW + "Skip movie: {} — not better than worst movie {}" + RESET,
+                        dto.getTitle(), worst.getTitle());
+                return false;
+            }
+
+            logger.info(CYAN + "Replacing worst movie '{}' with '{}'" + RESET,
+                    worst.getTitle(), dto.getTitle());
+
+            detachAndDelete(worst);
+        }
+
+        TrailerResponseApiDTO responseTrailer = trailerMappingUtil.getTrailerResponseById(
+                dto.getId(), this.apiConfig.getUrl(), this.apiConfig.getKey(), "movie");
+
+        Movie movie = movieMapper.mapToMovie(dto, responseById, responseTrailer);
+
+        if (responseById.getCollection() != null) {
+            Collection collection = this.collectionService.getCollectionFromResponse(responseById.getCollection(), movie);
+            movie.setCollection(collection);
+        }
+
+        Map<String, Set<ProductionCompany>> pcMap =
+                productionCompanyService.getProductionCompaniesFromResponse(responseById, movie);
+
+        movie.setProductionCompanies(pcMap.get("all"));
+        if (!pcMap.get("toSave").isEmpty()) {
+            this.productionCompanyService.saveAllProduction(pcMap.get("toSave"));
+        }
+
+        this.movieRepository.save(movie);
+
+        MediaResponseCreditsDTO credits = responseById.getCredits();
+        if (credits != null) {
+            List<CastApiDTO> castDto = castService.filterCastApiDto(credits.getCast());
+            Set<Cast> castSet = castService.mapToSet(castDto);
+            processMovieCast(castDto, movie, castSet);
+
+            List<CrewApiDTO> crewDto = crewService.filterCrewApiDto(credits.getCrew());
+            Set<Crew> crewSet = crewService.mapToSet(new ArrayList<>(crewDto));
+            processMovieCrew(crewDto, movie, crewSet);
+        }
+
+        return true;
+    }
+
+    @Transactional
+    protected void detachAndDelete(Movie m) {
+        this.castMovieRepository.deleteByMovieId(m.getId());
+        this.crewMovieRepository.deleteByMovieId(m.getId());
+        if (m.getGenres() != null) {
+            m.getGenres().clear();
+        }
+        if (m.getProductionCompanies() != null) {
+            m.getProductionCompanies().clear();
+        }
+        m.setCollection(null);
+        this.movieRepository.delete(m);
+    }
+
+    private static boolean isBetter(MovieApiDTO cand, Movie worst) {
+        int voteCmp = Integer.compare(safeInt(cand.getVoteCount()), safeInt(worst.getVoteCount()));
+        if (voteCmp != 0) {
+            return voteCmp > 0;
+        }
+        int popCmp = Double.compare(safeDouble(cand.getPopularity()), safeDouble(worst.getPopularity()));
+        if (popCmp != 0) {
+            return popCmp > 0;
+        }
+        return cand.getId() < worst.getApiId();
+    }
+
+    private static int safeInt(Integer x) {
+        return x == null ? 0 : x;
+    }
+
+    private static double safeDouble(Double x) {
+        return x == null ? 0.0 : x;
+    }
+
+    private MovieApiByIdResponseDTO getMediaResponseById(Long apiId) {
+        String url = String.format("%s/movie/%d?api_key=%s&append_to_response=credits", this.apiConfig.getUrl(), apiId, this.apiConfig.getKey());
+        try {
+            return this.restClient.get().uri(url).retrieve().body(MovieApiByIdResponseDTO.class);
+        } catch (Exception e) {
+            System.err.println("Error fetching movie with ID: " + apiId + " - " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void processMovieCast(List<CastApiDTO> castDto, Movie movie, Set<Cast> castSet) {
+        this.castService.processCast(
+                castDto,
+                movie,
+                c -> castMovieRepository.findByMovieIdAndCastApiIdAndCharacter(movie.getId(), c.getId(), c.getCharacter()),
+                (c, m) -> castService.createCastEntity(
+                        c,
+                        m,
+                        castSet,
+                        CastMovie::new,
+                        CastMovie::setMovie,
+                        CastMovie::setCast,
+                        CastMovie::setCharacter
+                ),
+                castMovieRepository::save
+        );
+    }
+
+    private void processMovieCrew(List<CrewApiDTO> crewDto, Movie movie, Set<Crew> crewSet) {
+        this.crewService.processCrew(
+                crewDto,
+                movie,
+                c -> crewMovieRepository.findByMovieIdAndCrewApiIdAndJobJob(movie.getId(), c.getId(), c.getJob()),
+                (c, m) -> {
+                    CrewMovie crewMovie = new CrewMovie();
+                    crewMovie.setMovie(m);
+                    return crewMovie;
+                },
+                crewMovieRepository::save,
+                CrewApiDTO::getJob,
+                crewSet
+        );
+    }
+}
