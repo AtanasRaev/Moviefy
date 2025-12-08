@@ -8,9 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneOffset;
 
 @Service
 public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
@@ -26,96 +28,121 @@ public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
 
     @Override
     public TvSeriesResponseApiDTO getTvSeriesResponseByDateAndVoteCount(int page, int year) {
-        String url = String.format(
-                "%s/discover/tv?first_air_date.gte=%d-01-01&first_air_date.lte=%d-12-31&sort_by=vote_count.desc&api_key=%s&page=%d",
-                apiConfig.getUrl(), year, year, apiConfig.getKey(), page
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/discover/tv")
+                .queryParam("first_air_date.gte", year + "-01-01")
+                .queryParam("first_air_date.lte", year + "-12-31")
+                .queryParam("sort_by", "vote_count.desc")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", page)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching TV series by date & vote count. year={}, page={}. URL={}", year, page, url, e);
+            logger.error("Error fetching TV series by date & vote count. year={}, page={}. URL={}",
+                    year, page, uri, e);
             return null;
         }
     }
 
     @Override
     public TvSeriesApiByIdResponseDTO getTvSeriesResponseById(Long apiId) {
-        String url = String.format(
-                "%s/tv/%d?api_key=%s&append_to_response=credits,external_ids",
-                apiConfig.getUrl(), apiId, apiConfig.getKey()
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/tv/" + apiId)
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("append_to_response", "credits,external_ids")
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(TvSeriesApiByIdResponseDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(TvSeriesApiByIdResponseDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching TV series by ID. apiId={}. URL={}", apiId, url, e);
+            logger.error("Error fetching TV series by ID. apiId={}. URL={}", apiId, uri, e);
             return null;
         }
     }
 
     @Override
     public TvSeriesResponseApiDTO searchTvSeriesQueryApi(String query) {
-        String url = String.format(
-                "%s/search/tv?api_key=%s&page=1&query=%s",
-                apiConfig.getUrl(), apiConfig.getKey(), query
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/search/tv")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", 1)
+                .queryParam("query", query)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error searching TV series. query='{}'. URL={}", query, url, e);
+            logger.error("Error searching TV series. query='{}'. URL={}", query, uri, e);
             return null;
         }
     }
 
     @Override
-    public TvSeriesResponseApiDTO getSeriesFromToday(int page) {
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
+    public TvSeriesResponseApiDTO getNewTvSeriesUTCTime(int page) {
+        LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
+        LocalDate fromDate = todayUtc.minusDays(2);
+        LocalDate toDate   = todayUtc.plusDays(2);
 
-        String fromDate = yesterday.format(DateTimeFormatter.ISO_DATE);
-        String toDate = today.format(DateTimeFormatter.ISO_DATE);
-
-        String url = String.format(
-                "%s/discover/tv?first_air_date.gte=%s&first_air_date.lte=%s&sort_by=popularity.desc&api_key=%s&page=%d",
-                apiConfig.getUrl(), fromDate, toDate, apiConfig.getKey(), page
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/discover/tv")
+                .queryParam("first_air_date.gte", fromDate)
+                .queryParam("first_air_date.lte", toDate)
+                .queryParam("sort_by", "popularity.desc")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", page)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching discover TV series from {} to {}. page={}, URL={}", fromDate, toDate, page, url, e);
+            logger.error("Error fetching discover TV series from {} to {}. page={}, URL={}",
+                    fromDate, toDate, page, uri, e);
             return null;
         }
     }
 
     @Override
     public TvSeriesResponseApiDTO getTrendingSeries(int page) {
-        String url = String.format(
-                "%s/trending/tv/day?api_key=%s&page=%d",
-                apiConfig.getUrl(), apiConfig.getKey(), page
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/trending/tv/day")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", page)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching trending TV series. page={}, URL={}", page, url, e);
+            logger.error("Error fetching trending TV series. page={}, URL={}", page, uri, e);
             return null;
         }
     }
 
     @Override
     public EpisodesTvSeriesResponseDTO getEpisodesResponse(Long tvId, Integer season) {
-        String url = String.format(
-                "%s/tv/%d/season/%d?api_key=%s",
-                apiConfig.getUrl(), tvId, season, apiConfig.getKey()
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/tv/" + tvId + "/season/" + season)
+                .queryParam("api_key", this.apiConfig.getKey())
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(EpisodesTvSeriesResponseDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(EpisodesTvSeriesResponseDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching season for TV series. tvId={}, season={}, URL={}", tvId, season, url, e);
+            logger.error("Error fetching season for TV series. tvId={}, season={}, URL={}",
+                    tvId, season, uri, e);
             return null;
         }
     }

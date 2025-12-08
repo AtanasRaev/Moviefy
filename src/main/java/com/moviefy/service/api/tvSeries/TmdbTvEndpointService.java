@@ -9,7 +9,7 @@ public interface TmdbTvEndpointService {
 
     TvSeriesResponseApiDTO searchTvSeriesQueryApi(String query);
 
-    TvSeriesResponseApiDTO getSeriesFromToday(int page);
+    TvSeriesResponseApiDTO getNewTvSeriesUTCTime(int page);
 
     TvSeriesResponseApiDTO getTrendingSeries(int page);
 
