@@ -10,7 +10,7 @@ import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
 import com.moviefy.database.repository.credit.cast.CastRepository;
 import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
-import com.moviefy.utils.CastMapper;
+import com.moviefy.utils.mappers.CastMapper;
 import com.moviefy.utils.CreditRetrievalUtil;
 import org.springframework.stereotype.Service;
 

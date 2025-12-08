@@ -2,7 +2,6 @@ package com.moviefy.service.credit.crew;
 
 import com.moviefy.database.model.dto.apiDto.CreditApiDTO;
 import com.moviefy.database.model.dto.apiDto.CrewApiDTO;
-import com.moviefy.database.model.dto.apiDto.MediaResponseCreditsDTO;
 import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
 import com.moviefy.database.model.entity.credit.Credit;
 import com.moviefy.database.model.entity.credit.crew.Crew;
@@ -14,7 +13,7 @@ import com.moviefy.database.repository.credit.crew.CrewRepository;
 import com.moviefy.database.repository.credit.crew.CrewTvSeriesRepository;
 import com.moviefy.database.repository.credit.crew.JobCrewRepository;
 import com.moviefy.utils.CreditRetrievalUtil;
-import com.moviefy.utils.CrewMapper;
+import com.moviefy.utils.mappers.CrewMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
