@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
 
 @Service
 public class TmdbCommonEndpointServiceImpl implements TmdbCommonEndpointService {
@@ -23,15 +26,17 @@ public class TmdbCommonEndpointServiceImpl implements TmdbCommonEndpointService 
 
     @Override
     public TrailerResponseApiDTO getTrailerResponseById(Long apiId, String type) {
-        String url = String.format(
-                "%s/%s/%d/videos?api_key=%s",
-                apiConfig.getUrl(), type, apiId, apiConfig.getKey()
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/" + type + "/" + apiId + "/videos")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(TrailerResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(TrailerResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching trailer. type={}, apiId={}, URL={}", type, apiId, url, e);
+            logger.error("Error fetching trailer. type={}, apiId={}, URL={}", type, apiId, uri, e);
             return null;
         }
     }
@@ -40,16 +45,19 @@ public class TmdbCommonEndpointServiceImpl implements TmdbCommonEndpointService 
     public ReviewResponseApiDTO getReviewsResponseApi(String mediaType, long apiId, int page) {
         String type = mediaType.equalsIgnoreCase("series") ? "tv" : "movie";
 
-        String url = String.format(
-                "%s/%s/%d/reviews?api_key=%s&page=%d",
-                apiConfig.getUrl(), type, apiId, apiConfig.getKey(), page
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/" + type + "/" + apiId + "/reviews")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", page)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(ReviewResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(ReviewResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching reviews. mediaType={}, apiId={}, page={}, URL={}",
-                    mediaType, apiId, page, url, e);
+                    mediaType, apiId, page, uri, e);
             return null;
         }
     }
