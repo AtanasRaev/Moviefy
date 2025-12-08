@@ -1,6 +1,7 @@
 package com.moviefy.service.media.tvSeries;
 
 import com.moviefy.config.ApiConfig;
+import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
@@ -45,6 +46,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.moviefy.utils.Ansi.*;
+
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
     private final TvSeriesRepository tvSeriesRepository;
@@ -65,7 +68,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final TvSeriesTypesNormalizationUtil tvSeriesTypesNormalizationUtil;
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesServiceImpl.class);
     private static final int START_YEAR = 1970;
-    private static final int MAX_TV_SERIES_PER_YEAR = 600;
+    private static final int MAX_SERIES_PER_YEAR = 600;
     private static final double API_TV_SERIES_PER_PAGE = 20.0;
 
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
@@ -104,7 +107,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "latestTvSeries",
+            cacheNames = CacheKeys.LATEST_TV_SERIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
                     + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
@@ -128,7 +131,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "tvSeriesDetailsById",
+            cacheNames = CacheKeys.TV_SERIES_DETAILS_BY_ID,
             key = "#apiId",
             unless = "#result == null"
     )
@@ -140,7 +143,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "trendingTvSeries",
+            cacheNames = CacheKeys.TRENDING_TV_SERIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
                     + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
@@ -158,7 +161,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
-    @Cacheable(cacheNames = "popularTvSeries",
+    @Cacheable(cacheNames = CacheKeys.POPULAR_TV_SERIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
                     + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
@@ -182,7 +185,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "homeSeriesByCollection",
+            cacheNames = CacheKeys.HOME_SERIES_BY_COLLECTION,
             key = "#input",
             unless = "#result == null"
     )
@@ -237,7 +240,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "tvSeriesByGenres",
+            cacheNames = CacheKeys.TV_SERIES_BY_GENRES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
                     + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
@@ -256,7 +259,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "topRatedTvSeries",
+            cacheNames = CacheKeys.TOP_RATED_TV_SERIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processSeriesGenres(#genres))
                     + ';t=' + T(java.lang.String).join(',', @tvSeriesTypesNormalizationUtil.processTypes(#types))
@@ -274,7 +277,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "seriesByCast",
+            cacheNames = CacheKeys.SERIES_BY_CAST,
             key = """
                     'cast=' + #id
                     + ';p=' + #pageable.pageNumber
@@ -289,7 +292,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     @Cacheable(
-            cacheNames = "seriesByCrew",
+            cacheNames = CacheKeys.SERIES_BY_CREW,
             key = """
                     'crew=' + #id
                     + ';p=' + #pageable.pageNumber
@@ -338,18 +341,12 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .collect(Collectors.toCollection(LinkedHashSet::new)));
     }
 
-    //    @Scheduled(fixedDelay = 100000000)
-    //TODO
-    private void updateTvSeries() {
-    }
-
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
     }
 
-    //    @Scheduled(fixedDelay = 100)
     public void fetchSeries() {
-        logger.info("\u001B[36mStarting to fetch tv series...\u001B[0m");
+        logger.info(BLUE + "Starting to fetch tv series..." + RESET);
         LocalDateTime start = LocalDateTime.now();
 
         int year = START_YEAR;
@@ -361,7 +358,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         if (count > 0) {
             year = this.tvSeriesRepository.findNewestTvSeriesYear();
 
-            if (count >= MAX_TV_SERIES_PER_YEAR) {
+            if (count >= MAX_SERIES_PER_YEAR) {
                 year += 1;
                 count = 0;
             } else {
@@ -373,19 +370,19 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             return;
         }
 
-        while (count < MAX_TV_SERIES_PER_YEAR) {
+        while (count < MAX_SERIES_PER_YEAR) {
 
-            logger.info("\u001B[36mTV series - Fetching page {} of year {}\u001B[0m", page, year);
+            logger.info(BLUE + "TV series - Fetching page {} of year {}" + RESET, page, year);
 
             TvSeriesResponseApiDTO response = getTvSeriesResponseByDateAndVoteCount(page, year);
 
             if (response == null || response.getResults() == null) {
-                logger.warn("\u001B[33mNo results returned for page {} of year {}\u001B[0m", page, year);
+                logger.warn(YELLOW + "No results returned for page {} of year {}" + RESET, page, year);
                 break;
             }
 
             if (page > response.getTotalPages()) {
-                logger.info("\u001B[36mReached the last page for year {}.\u001B[0m", year);
+                logger.info(BLUE + "Reached the last page for year {}." + RESET, year);
                 if (year == LocalDate.now().getYear()) {
                     return;
                 }
@@ -397,17 +394,17 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             for (TvSeriesApiDTO dto : response.getResults()) {
 
-                if (count >= MAX_TV_SERIES_PER_YEAR) {
+                if (count >= MAX_SERIES_PER_YEAR) {
                     break;
                 }
 
                 if (isInvalid(dto)) {
-                    logger.warn("\u001B[33mInvalid TV series: {}\u001B[0m", dto.getId());
+                    logger.warn(YELLOW + "Invalid TV series: {}" + RESET, dto.getId());
                     continue;
                 }
 
                 if (this.tvSeriesRepository.findByApiId(dto.getId()).isPresent()) {
-                    logger.info("\u001B[36mTV series already exists: {}\u001B[0m", dto.getId());
+                    logger.info(YELLOW + "TV series already exists: {}" + RESET, dto.getId());
                     continue;
                 }
 
@@ -426,7 +423,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                         && !responseById.getType().equalsIgnoreCase("documentary")
                         && !responseById.getType().equalsIgnoreCase("miniseries")
                         && !responseById.getType().equalsIgnoreCase("animation")) {
-                    logger.warn("\u001B[33mInvalid TV series type: id-{} type-{}\u001B[0m", dto.getId(), responseById.getType());
+                    logger.warn(YELLOW + "Invalid TV series type: id-{} type-{}" + RESET, dto.getId(), responseById.getType());
                     continue;
                 }
 
@@ -452,7 +449,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 this.tvSeriesRepository.save(tvSeries);
                 count++;
 
-                logger.info("\u001B[36mSaved tv series: {}\u001B[0m", tvSeries.getName());
+                logger.info(PURPLE + "Saved tv series: {}" + RESET, tvSeries.getName());
 
                 List<CrewApiDTO> crewDto = responseById.getCrew().stream().limit(6).toList();
                 Set<Crew> crewSet = this.crewService.mapToSet(crewDto);
@@ -473,7 +470,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
 
         LocalDateTime end = LocalDateTime.now();
-        logger.info("\u001B[36mFinished fetching tv series for {}.\u001B[0m", formatDurationLong(Duration.between(start, end)));
+        logger.info(BLUE + "Finished fetching tv series for {}." + RESET, formatDurationLong(Duration.between(start, end)));
     }
 
     public static String formatDurationLong(Duration duration) {
