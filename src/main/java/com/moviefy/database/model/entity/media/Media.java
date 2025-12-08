@@ -1,6 +1,10 @@
 package com.moviefy.database.model.entity.media;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @MappedSuperclass
 public abstract class Media {
@@ -37,6 +41,20 @@ public abstract class Media {
 
     @Column
     private boolean adult;
+
+    @Column(name = "ranking_year")
+    private int rankingYear;
+
+    @Column(name = "inserted_at", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime insertedAt;
+
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
+    @Column(name = "favourite_count", nullable = false)
+    private int favouriteCount;
 
     public long getId() {
         return id;
@@ -124,5 +142,37 @@ public abstract class Media {
 
     public void setAdult(boolean adult) {
         this.adult = adult;
+    }
+
+    public int getRankingYear() {
+        return rankingYear;
+    }
+
+    public void setRankingYear(int rankingYear) {
+        this.rankingYear = rankingYear;
+    }
+
+    public LocalDateTime getInsertedAt() {
+        return insertedAt;
+    }
+
+    public void setInsertedAt(LocalDateTime insertedAt) {
+        this.insertedAt = insertedAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public int getFavouriteCount() {
+        return favouriteCount;
+    }
+
+    public void setFavouriteCount(int favouriteCount) {
+        this.favouriteCount = favouriteCount;
     }
 }
