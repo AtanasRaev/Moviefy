@@ -1,5 +1,6 @@
 package com.moviefy.service.collection;
 
+import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.CollectionApiDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsHomeDTO;
 import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
@@ -96,7 +97,7 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Cacheable(
-            cacheNames = "collectionsByName",
+            cacheNames = CacheKeys.COLLECTIONS_BY_NAME,
             key = "#input",
             unless = "#result == null || #result.isEmpty()"
     )
@@ -108,7 +109,7 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Cacheable(
-            cacheNames = "moviesByApiId",
+            cacheNames = CacheKeys.MOVIES_BY_API_ID,
             key = "#apiId",
             unless = "#result == null || #result.isEmpty()"
     )
@@ -126,7 +127,7 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Cacheable(
-            cacheNames = "popularCollections",
+            cacheNames = CacheKeys.POPULAR_COLLECTIONS,
             key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()",
             unless = "#result == null || #result.isEmpty()"
     )
@@ -136,7 +137,7 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Cacheable(
-            cacheNames = "moviesHomeByCollection",
+            cacheNames = CacheKeys.MOVIES_HOME_BY_COLLECTION,
             key = "#input",
             unless = "#result == null"
     )
