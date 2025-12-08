@@ -28,6 +28,7 @@ public abstract class MediaMapper {
         media.setVoteCount(dto.getVoteCount());
         media.setPopularity(popularity.doubleValue());
         media.setVoteAverage(voteAverage.doubleValue());
+        media.setFavouriteCount(0);
 
         List<TrailerApiDTO> trailers = responseTrailer.getResults();
         if (!trailers.isEmpty()) {

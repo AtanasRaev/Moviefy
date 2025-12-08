@@ -25,12 +25,15 @@ public class TvSeriesMapper extends MediaMapper {
         tvSeries.setName(dto.getName());
         tvSeries.setOriginalName(!dto.getOriginalName().equals(dto.getName()) && !dto.getOriginalName().isBlank() ? dto.getOriginalName() : null);
         tvSeries.setFirstAirDate(dto.getFirstAirDate());
+        tvSeries.setRankingYear(dto.getFirstAirDate().getYear());
         tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));
         tvSeries.setAdult(dto.isAdult());
         tvSeries.setType(responseById.getType());
         tvSeries.setNumberOfSeasons(responseById.getNumberOfSeasons());
         tvSeries.setNumberOfEpisodes(responseById.getNumberOfEpisodes());
-        tvSeries.setImdbId(responseById.getExternalIds().getImdbId() == null || responseById.getExternalIds().getImdbId().isBlank() ? null : responseById.getExternalIds().getImdbId());
+        if (responseById.getExternalIds() != null) {
+            tvSeries.setImdbId(responseById.getExternalIds().getImdbId() == null || responseById.getExternalIds().getImdbId().isBlank() ? null : responseById.getExternalIds().getImdbId());
+        }
 
         if (responseById.getStatus() != null && !responseById.getStatus().isBlank()) {
             tvSeries.setStatus(responseById.getStatus());
