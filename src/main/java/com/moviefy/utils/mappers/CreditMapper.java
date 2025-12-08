@@ -1,4 +1,4 @@
-package com.moviefy.utils;
+package com.moviefy.utils.mappers;
 
 import com.moviefy.database.model.dto.apiDto.CreditApiDTO;
 import com.moviefy.database.model.entity.credit.Credit;

@@ -1,4 +1,4 @@
-package com.moviefy.utils;
+package com.moviefy.utils.mappers;
 
 import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.MovieApiDTO;
@@ -9,12 +9,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MovieMapper extends MediaMapper {
-
     private final MovieGenreService genreService;
 
-    public MovieMapper(TrailerMappingUtil trailerMappingUtil,
-                       MovieGenreService genreService) {
-        super(trailerMappingUtil);
+    public MovieMapper(MovieGenreService genreService) {
         this.genreService = genreService;
     }
 

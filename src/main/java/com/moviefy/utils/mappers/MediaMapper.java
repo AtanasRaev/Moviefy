@@ -1,4 +1,4 @@
-package com.moviefy.utils;
+package com.moviefy.utils.mappers;
 
 import com.moviefy.database.model.dto.apiDto.MediaApiDTO;
 import com.moviefy.database.model.dto.apiDto.TrailerApiDTO;
@@ -7,16 +7,10 @@ import com.moviefy.database.model.entity.media.Media;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.List;
 
 public abstract class MediaMapper {
-
-    private final TrailerMappingUtil trailerMappingUtil;
-
-    public MediaMapper(TrailerMappingUtil trailerMappingUtil) {
-        this.trailerMappingUtil = trailerMappingUtil;
-    }
-
     protected void mapCommonFields(Media media, MediaApiDTO dto, TrailerResponseApiDTO responseTrailer) {
         BigDecimal popularity = BigDecimal.valueOf(dto.getPopularity()).setScale(1, RoundingMode.HALF_UP);
         BigDecimal voteAverage = BigDecimal.valueOf(dto.getVoteAverage()).setScale(1, RoundingMode.HALF_UP);
@@ -32,10 +26,44 @@ public abstract class MediaMapper {
 
         List<TrailerApiDTO> trailers = responseTrailer.getResults();
         if (!trailers.isEmpty()) {
-            TrailerApiDTO selectedTrailer = this.trailerMappingUtil.getTrailer(trailers);
+            TrailerApiDTO selectedTrailer = this.getTrailer(trailers);
             if (selectedTrailer != null) {
                 media.setTrailer(selectedTrailer.getKey());
             }
         }
+    }
+
+    private TrailerApiDTO getTrailer(List<TrailerApiDTO> trailers) {
+        List<TrailerApiDTO> filter = trailers.stream().filter(t -> "Trailer".equals(t.getType())).toList();
+
+        if (!filter.isEmpty()) {
+            trailers = filter;
+        }
+
+        TrailerApiDTO selectedTrailer;
+
+        if (trailers.size() == 1) {
+            selectedTrailer = trailers.get(0);
+        } else {
+            selectedTrailer = trailers.stream()
+                    .filter(trailer -> (trailer.getName().contains("Final")))
+                    .findFirst()
+                    .orElse(null);
+
+            if (selectedTrailer == null) {
+                selectedTrailer = trailers.stream()
+                        .filter(trailer -> (trailer.getName().contains("Official")))
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (selectedTrailer == null) {
+                selectedTrailer = trailers.stream()
+                        .min(Comparator.comparing(TrailerApiDTO::getPublishedAt))
+                        .orElse(null);
+            }
+        }
+
+        return selectedTrailer;
     }
 }
