@@ -48,7 +48,7 @@ public class MovieIngestJob {
         while (insertedToday < DAILY_INSERT_LIMIT) {
             logger.debug(CYAN + "Fetching movies (page={})…" + RESET, page);
 
-            MovieResponseApiDTO discover = this.tmdbMoviesEndpointService.getMoviesFromToday(page);
+            MovieResponseApiDTO discover = this.tmdbMoviesEndpointService.getNewMoviesUTCTime(page);
             MovieResponseApiDTO trending = this.tmdbMoviesEndpointService.getTrendingMovies(page);
 
             Map<Long, MovieApiDTO> byId = new LinkedHashMap<>();

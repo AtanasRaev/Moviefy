@@ -49,7 +49,7 @@ public class TvSeriesIngestJob {
         while (insertedToday < DAILY_INSERT_LIMIT) {
             logger.debug(BLUE + "Fetching series (page={})…" + RESET, page);
 
-            TvSeriesResponseApiDTO discover = this.tmdbTvEndpointService.getSeriesFromToday(page);
+            TvSeriesResponseApiDTO discover = this.tmdbTvEndpointService.getNewTvSeriesUTCTime(page);
             TvSeriesResponseApiDTO trending = this.tmdbTvEndpointService.getTrendingSeries(page);
 
             Map<Long, TvSeriesApiDTO> byId = new LinkedHashMap<>();

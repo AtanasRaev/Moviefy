@@ -27,7 +27,6 @@ public class MovieMapper extends MediaMapper {
         movie.setImdbId(responseById.getImdbId() == null || responseById.getImdbId().isBlank() ? null : responseById.getImdbId());
         movie.setRuntime(responseById.getRuntime());
         movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
-        movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
 
         return movie;
     }
