@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -300,6 +301,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     )
     Page<MoviePageProjection> findTopRatedMoviesByCrewId(@Param("crewId") long crewId,
                                                          Pageable pageable);
+
     @Query(
             value = """
                     WITH filtered_ids AS (
@@ -350,6 +352,33 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     )
     Page<MoviePageProjection> findTopRatedMoviesByProductionCompanyId(@Param("productionId") long productionId, Pageable pageable);
 
+    @Query(value = """
+              SELECT m.api_id
+              FROM movies m
+              WHERE m.api_id IN (:ids)
+            """, nativeQuery = true)
+    Set<Long> findIdsAllByApiIdIn(@Param("ids") Collection<Long> ids);
+
+    @Query(value = """
+              SELECT COUNT(*)
+              FROM movies
+              WHERE ranking_year = :year
+                AND favourite_count = 0
+            """, nativeQuery = true)
+    long findCountByRankingYear(@Param("year") int year);
+
+    @Query(value = """
+              SELECT *
+              FROM movies
+              WHERE ranking_year = :year
+                AND favourite_count = 0
+              ORDER BY
+                vote_count ASC,
+                popularity ASC,
+                id DESC
+              LIMIT 1
+            """, nativeQuery = true)
+    Optional<Movie> findLowestRatedMovieByRankingYear(@Param("year") int year);
 
 //    @Query(
 //            value = """

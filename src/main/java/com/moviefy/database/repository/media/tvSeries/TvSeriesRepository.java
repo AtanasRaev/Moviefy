@@ -425,6 +425,34 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     )
     Page<TvSeriesPageProjection> findTopRatedSeriesByProductionCompanyId(@Param("productionId") long id, Pageable pageable);
 
+    @Query(value = """
+              SELECT COUNT(*)
+              FROM tv_series
+              WHERE ranking_year = :year
+                AND favourite_count = 0
+            """, nativeQuery = true)
+    long findCountByRankingYear(@Param("year") int rankingYear);
+
+    @Query(value = """
+              SELECT *
+              FROM tv_series
+              WHERE ranking_year = :year
+                AND favourite_count = 0
+              ORDER BY
+                vote_count ASC,
+                popularity ASC,
+                id DESC
+              LIMIT 1
+            """, nativeQuery = true)
+    Optional<TvSeries> findLowestRatedSeriesByRankingYear(@Param("year") int rankingYear);
+
+    @Query(value = """
+              SELECT tv.api_id
+              FROM tv_series tv
+              WHERE tv.api_id IN (:ids)
+            """, nativeQuery = true)
+    Set<Long> findIdsAllByApiIdIn(@Param("ids") Set<Long> incomingIds);
+
 //    @Query(
 //            value = """
 //                    WITH q AS (
