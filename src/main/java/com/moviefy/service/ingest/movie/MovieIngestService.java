@@ -1,6 +1,5 @@
 package com.moviefy.service.ingest.movie;
 
-import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.credit.cast.Cast;
@@ -12,17 +11,17 @@ import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
 import com.moviefy.database.repository.credit.crew.CrewMovieRepository;
 import com.moviefy.database.repository.media.MovieRepository;
+import com.moviefy.service.api.TmdbCommonEndpointService;
+import com.moviefy.service.api.movie.TmdbMoviesEndpointService;
 import com.moviefy.service.collection.CollectionService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
-import com.moviefy.utils.MovieMapper;
-import com.moviefy.utils.TrailerMappingUtil;
+import com.moviefy.utils.mappers.MovieMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -31,45 +30,41 @@ import static com.moviefy.utils.Ansi.*;
 
 @Service
 public class MovieIngestService {
-    private final RestClient restClient;
-    private final ApiConfig apiConfig;
     private final MovieRepository movieRepository;
     private final CastMovieRepository castMovieRepository;
     private final CrewMovieRepository crewMovieRepository;
+    private final TmdbMoviesEndpointService tmdbMoviesEndpointService;
+    private final TmdbCommonEndpointService tmdbCommonEndpointService;
     private final CollectionService collectionService;
     private final ProductionCompanyService productionCompanyService;
     private final CastService castService;
     private final CrewService crewService;
     private final MovieMapper movieMapper;
-    private final TrailerMappingUtil trailerMappingUtil;
-
 
     private static final Logger logger = LoggerFactory.getLogger(MovieIngestService.class);
     private static final int MAX_MOVIES_PER_YEAR = 600;
     private static final int MIN_MOVIE_RUNTIME = 45;
 
-    public MovieIngestService(RestClient restClient,
-                              ApiConfig apiConfig,
-                              MovieRepository movieRepository,
+    public MovieIngestService(MovieRepository movieRepository,
                               CastMovieRepository castMovieRepository,
                               CrewMovieRepository crewMovieRepository,
+                              TmdbMoviesEndpointService tmdbMoviesEndpointService,
+                              TmdbCommonEndpointService tmdbCommonEndpointService,
                               CollectionService collectionService,
                               ProductionCompanyService productionCompanyService,
                               CastService castService,
                               CrewService crewService,
-                              MovieMapper movieMapper,
-                              TrailerMappingUtil trailerMappingUtil) {
-        this.restClient = restClient;
-        this.apiConfig = apiConfig;
+                              MovieMapper movieMapper) {
         this.movieRepository = movieRepository;
         this.castMovieRepository = castMovieRepository;
         this.crewMovieRepository = crewMovieRepository;
+        this.tmdbMoviesEndpointService = tmdbMoviesEndpointService;
+        this.tmdbCommonEndpointService = tmdbCommonEndpointService;
         this.collectionService = collectionService;
         this.productionCompanyService = productionCompanyService;
         this.castService = castService;
         this.crewService = crewService;
         this.movieMapper = movieMapper;
-        this.trailerMappingUtil = trailerMappingUtil;
     }
 
     @Transactional
@@ -87,7 +82,7 @@ public class MovieIngestService {
 
         final int rankingYear = rd.getYear();
 
-        MovieApiByIdResponseDTO responseById = getMediaResponseById(dto.getId());
+        MovieApiByIdResponseDTO responseById = this.tmdbMoviesEndpointService.getMovieResponseById(dto.getId());
         if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < MIN_MOVIE_RUNTIME) {
             logger.debug(YELLOW + "Skip movie: {} — runtime invalid or details missing" + RESET, dto.getTitle());
             return false;
@@ -115,8 +110,7 @@ public class MovieIngestService {
             detachAndDelete(worst);
         }
 
-        TrailerResponseApiDTO responseTrailer = trailerMappingUtil.getTrailerResponseById(
-                dto.getId(), this.apiConfig.getUrl(), this.apiConfig.getKey(), "movie");
+        TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(dto.getId(), "movie");
 
         Movie movie = movieMapper.mapToMovie(dto, responseById, responseTrailer);
 
@@ -181,16 +175,6 @@ public class MovieIngestService {
 
     private static double safeDouble(Double x) {
         return x == null ? 0.0 : x;
-    }
-
-    private MovieApiByIdResponseDTO getMediaResponseById(Long apiId) {
-        String url = String.format("%s/movie/%d?api_key=%s&append_to_response=credits", this.apiConfig.getUrl(), apiId, this.apiConfig.getKey());
-        try {
-            return this.restClient.get().uri(url).retrieve().body(MovieApiByIdResponseDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching movie with ID: " + apiId + " - " + e.getMessage());
-            return null;
-        }
     }
 
     private void processMovieCast(List<CastApiDTO> castDto, Movie movie, Set<Cast> castSet) {

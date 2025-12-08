@@ -1,19 +1,16 @@
 package com.moviefy.service.ingest.tvSeries;
 
-import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesResponseApiDTO;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
+import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -23,24 +20,19 @@ import static com.moviefy.utils.Ansi.*;
 
 @Service
 public class TvSeriesIngestJob {
-    private final RestClient restClient;
-    private final ApiConfig apiConfig;
     private final TvSeriesRepository tvSeriesRepository;
     private final TvSeriesIngestService tvSeriesIngestService;
+    private final TmdbTvEndpointService tmdbTvEndpointService;
 
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestJob.class);
-    private static final ZoneId SOFIA_TZ = ZoneId.of("Europe/Sofia");
     private static final int DAILY_INSERT_LIMIT = 10;
 
-
-    public TvSeriesIngestJob(RestClient restClient,
-                             ApiConfig apiConfig,
-                             TvSeriesRepository tvSeriesRepository,
-                             TvSeriesIngestService tvSeriesIngestService) {
-        this.restClient = restClient;
-        this.apiConfig = apiConfig;
+    public TvSeriesIngestJob(TvSeriesRepository tvSeriesRepository,
+                             TvSeriesIngestService tvSeriesIngestService,
+                             TmdbTvEndpointService tmdbTvEndpointService) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.tvSeriesIngestService = tvSeriesIngestService;
+        this.tmdbTvEndpointService = tmdbTvEndpointService;
     }
 
     @Transactional
@@ -57,8 +49,8 @@ public class TvSeriesIngestJob {
         while (insertedToday < DAILY_INSERT_LIMIT) {
             logger.debug(BLUE + "Fetching series (page={})…" + RESET, page);
 
-            TvSeriesResponseApiDTO discover = getSeriesFromToday(page);
-            TvSeriesResponseApiDTO trending = getTrendingSeries(page);
+            TvSeriesResponseApiDTO discover = this.tmdbTvEndpointService.getSeriesFromToday(page);
+            TvSeriesResponseApiDTO trending = this.tmdbTvEndpointService.getTrendingSeries(page);
 
             Map<Long, TvSeriesApiDTO> byId = new LinkedHashMap<>();
             if (trending != null && trending.getResults() != null) {
@@ -75,7 +67,7 @@ public class TvSeriesIngestJob {
 
             Collection<TvSeriesApiDTO> candidates = byId.values();
             Set<Long> trendingIds = buildTrendingIdSet(trending);
-            final LocalDate now = LocalDate.now(SOFIA_TZ);
+            final LocalDate now = LocalDate.now();
 
             Set<TvSeriesApiDTO> filtered = candidates.stream()
                     .filter(dto -> {
@@ -140,42 +132,6 @@ public class TvSeriesIngestJob {
         logger.info(BLUE + "📺 TV SERIES ingest finished: inserted={} • took={} ms" + RESET, insertedToday, tookMs);
 
         return CompletableFuture.completedFuture(insertedToday);
-    }
-
-    private TvSeriesResponseApiDTO getSeriesFromToday(int page) {
-        LocalDate today = LocalDate.now(SOFIA_TZ);
-        LocalDate yesterday = today.minusDays(1);
-
-        String fromDate = yesterday.format(DateTimeFormatter.ISO_DATE);
-        String toDate = today.format(DateTimeFormatter.ISO_DATE);
-
-        String url = String.format(
-                "%s/discover/tv?primary_release_date.gte=%s&primary_release_date.lte=%s&sort_by=popularity.desc&api_key=%s&page=%d",
-                apiConfig.getUrl(),
-                fromDate,
-                toDate,
-                apiConfig.getKey(),
-                page
-        );
-
-        try {
-            return restClient.get().uri(url).retrieve().body(TvSeriesResponseApiDTO.class);
-        } catch (Exception e) {
-            logger.warn("Error fetching discover movies: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private TvSeriesResponseApiDTO getTrendingSeries(int page) {
-        String url = String.format("%s/trending/tv/day?api_key=%s&page=%d",
-                apiConfig.getUrl(), apiConfig.getKey(), page);
-
-        try {
-            return restClient.get().uri(url).retrieve().body(TvSeriesResponseApiDTO.class);
-        } catch (Exception e) {
-            logger.warn("Error fetching trending movies: {}", e.getMessage());
-            return null;
-        }
     }
 
     private static Set<Long> buildTrendingIdSet(TvSeriesResponseApiDTO trending) {

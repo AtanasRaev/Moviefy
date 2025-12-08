@@ -1,6 +1,5 @@
 package com.moviefy.service.media.tvSeries;
 
-import com.moviefy.config.ApiConfig;
 import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
@@ -23,13 +22,14 @@ import com.moviefy.database.repository.credit.crew.CrewTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.EpisodeTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.SeasonTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
+import com.moviefy.service.api.TmdbCommonEndpointService;
+import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.GenreNormalizationUtil;
-import com.moviefy.utils.TrailerMappingUtil;
-import com.moviefy.utils.TvSeriesMapper;
+import com.moviefy.utils.mappers.TvSeriesMapper;
 import com.moviefy.utils.TvSeriesTypesNormalizationUtil;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -38,7 +38,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -53,15 +52,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final TvSeriesRepository tvSeriesRepository;
     private final CrewTvSeriesRepository crewTvSeriesRepository;
     private final CastTvSeriesRepository castTvSeriesRepository;
+    private final TmdbTvEndpointService tmdbTvEndpointService;
+    private final TmdbCommonEndpointService tmdbCommonEndpointService;
     private final SeriesGenreService seriesGenreService;
     private final CastService castService;
     private final CrewService crewService;
     private final SeasonTvSeriesRepository seasonTvSeriesRepository;
     private final EpisodeTvSeriesRepository episodeTvSeriesRepository;
     private final ProductionCompanyService productionCompanyService;
-    private final ApiConfig apiConfig;
-    private final RestClient restClient;
-    private final TrailerMappingUtil trailerMappingUtil;
     private final ModelMapper modelMapper;
     private final TvSeriesMapper tvSeriesMapper;
     private final GenreNormalizationUtil genreNormalizationUtil;
@@ -74,15 +72,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
                                CrewTvSeriesRepository crewTvSeriesRepository,
                                CastTvSeriesRepository castTvSeriesRepository,
+                               TmdbTvEndpointService tmdbTvEndpointService,
+                               TmdbCommonEndpointService tmdbCommonEndpointService,
                                SeriesGenreService seriesGenreService,
                                CastService castService,
                                CrewService crewService,
                                SeasonTvSeriesRepository seasonTvSeriesRepository,
                                EpisodeTvSeriesRepository episodeTvSeriesRepository,
                                ProductionCompanyService productionCompanyService,
-                               ApiConfig apiConfig,
-                               RestClient restClient,
-                               TrailerMappingUtil trailerMappingUtil,
                                ModelMapper modelMapper,
                                TvSeriesMapper tvSeriesMapper,
                                GenreNormalizationUtil genreNormalizationUtil,
@@ -90,15 +87,14 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;
+        this.tmdbTvEndpointService = tmdbTvEndpointService;
+        this.tmdbCommonEndpointService = tmdbCommonEndpointService;
         this.seriesGenreService = seriesGenreService;
         this.castService = castService;
         this.crewService = crewService;
         this.seasonTvSeriesRepository = seasonTvSeriesRepository;
         this.episodeTvSeriesRepository = episodeTvSeriesRepository;
         this.productionCompanyService = productionCompanyService;
-        this.apiConfig = apiConfig;
-        this.restClient = restClient;
-        this.trailerMappingUtil = trailerMappingUtil;
         this.modelMapper = modelMapper;
         this.tvSeriesMapper = tvSeriesMapper;
         this.genreNormalizationUtil = genreNormalizationUtil;
@@ -219,7 +215,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     @Override
     public List<TvSeriesPageWithGenreDTO> searchTvSeries(String query) {
-        TvSeriesResponseApiDTO tvSeriesResponseApiDTO = this.searchQueryApi(query);
+        TvSeriesResponseApiDTO tvSeriesResponseApiDTO = this.tmdbTvEndpointService.searchTvSeriesQueryApi(query);
 
         if (tvSeriesResponseApiDTO == null || tvSeriesResponseApiDTO.getResults() == null) {
             return List.of();
@@ -374,7 +370,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             logger.info(BLUE + "TV series - Fetching page {} of year {}" + RESET, page, year);
 
-            TvSeriesResponseApiDTO response = getTvSeriesResponseByDateAndVoteCount(page, year);
+            TvSeriesResponseApiDTO response = this.tmdbTvEndpointService.getTvSeriesResponseByDateAndVoteCount(page, year);
 
             if (response == null || response.getResults() == null) {
                 logger.warn(YELLOW + "No results returned for page {} of year {}" + RESET, page, year);
@@ -412,7 +408,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 //                    continue;
 //                }
 
-                TvSeriesApiByIdResponseDTO responseById = getTvSeriesResponseById(dto.getId());
+                TvSeriesApiByIdResponseDTO responseById = this.tmdbTvEndpointService.getTvSeriesResponseById(dto.getId());
 
                 if (responseById == null || responseById.getType() == null) {
                     continue;
@@ -427,11 +423,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     continue;
                 }
 
-                TrailerResponseApiDTO responseTrailer = this.trailerMappingUtil.getTrailerResponseById(
-                        dto.getId(),
-                        this.apiConfig.getUrl(),
-                        this.apiConfig.getKey(),
-                        "tv");
+                TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(dto.getId(), "tv");
 
                 TvSeries tvSeries = this.tvSeriesMapper.mapToTvSeries(dto, responseById, responseTrailer);
 
@@ -439,13 +431,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                         this.productionCompanyService.getProductionCompaniesFromResponse(responseById, tvSeries);
 
                 tvSeries.setProductionCompanies(productionCompaniesMap.get("all"));
-
                 if (!productionCompaniesMap.get("toSave").isEmpty()) {
                     this.productionCompanyService.saveAllProduction(productionCompaniesMap.get("toSave"));
                 }
 
                 tvSeries.setSeasons(mapSeasonsAndEpisodesFromResponse(responseById.getSeasons(), tvSeries));
-
                 this.tvSeriesRepository.save(tvSeries);
                 count++;
 
@@ -545,7 +535,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     private Set<EpisodeTvSeries> mapEpisodesFromResponse(long id, SeasonTvSeries season) {
-        EpisodesTvSeriesResponseDTO episodesResponse = getEpisodesResponse(id, season.getSeasonNumber());
+        EpisodesTvSeriesResponseDTO episodesResponse = this.tmdbTvEndpointService.getEpisodesResponse(id, season.getSeasonNumber());
 
         if (episodesResponse == null) {
             return new HashSet<>();
@@ -559,7 +549,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     return map;
                 })
                 .collect(Collectors.toSet());
-
     }
 
     private void mapOneGenreToPageDTO(TvSeriesPageWithGenreDTO map) {
@@ -608,70 +597,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 c -> "Creator",
                 crewSet
         );
-    }
-
-    private TvSeriesResponseApiDTO getTvSeriesResponseByDateAndVoteCount(int page, int year) {
-        String url = String.format(this.apiConfig.getUrl()
-                        + "/discover/tv?first_air_date.gte=%d-01-01&first_air_date.lte=%d-12-31&sort_by=vote_count.desc&api_key=%s&page=%d",
-                year, year, this.apiConfig.getKey(), page);
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(TvSeriesResponseApiDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching tv-series" + "- " + e.getMessage());
-            return null;
-        }
-    }
-
-    private EpisodesTvSeriesResponseDTO getEpisodesResponse(Long tvId, Integer season) {
-        String url = String.format(this.apiConfig.getUrl() + "/tv/%d/season/%d?api_key=%s", tvId, season, this.apiConfig.getKey());
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(EpisodesTvSeriesResponseDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching season for tv-series with ID: " + tvId + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private TvSeriesApiByIdResponseDTO getTvSeriesResponseById(Long apiId) {
-        String url = String.format(this.apiConfig.getUrl() + "/tv/%d?api_key=" + this.apiConfig.getKey() + "&append_to_response=credits,external_ids", apiId);
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(TvSeriesApiByIdResponseDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching tv-series with ID: " + apiId + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private TvSeriesResponseApiDTO searchQueryApi(String query) {
-        String url = String.format(this.apiConfig.getUrl()
-                        + "/search/tv?api_key=%s&page=1&query=%s",
-                this.apiConfig.getKey(), query);
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(TvSeriesResponseApiDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error searching movies" + "- " + e.getMessage());
-            return null;
-        }
-
     }
 
     private TvSeriesPageWithGenreDTO mapTvSeriesPageWithGenreDTO(TvSeries tvSeries) {

@@ -1,19 +1,18 @@
 package com.moviefy.service.media;
 
-import com.moviefy.config.ApiConfig;
 import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.ReviewResponseApiDTO;
 import com.moviefy.database.model.dto.pageDto.MediaProjection;
 import com.moviefy.database.model.dto.pageDto.MediaWithGenreProjection;
 import com.moviefy.database.model.dto.pageDto.ReviewPageDTO;
 import com.moviefy.database.repository.media.MediaRepository;
+import com.moviefy.service.api.TmdbCommonEndpointService;
 import com.moviefy.utils.GenreNormalizationUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,20 +21,17 @@ import java.util.Map;
 @Service
 public class MediaServiceImpl implements MediaService {
     private final MediaRepository mediaRepository;
+    private final TmdbCommonEndpointService tmdbCommonEndpointService;
     private final GenreNormalizationUtil genreNormalizationUtil;
-    private final ApiConfig apiConfig;
-    private final RestClient restClient;
     private final ModelMapper modelMapper;
 
     public MediaServiceImpl(MediaRepository mediaRepository,
+                            TmdbCommonEndpointService tmdbCommonEndpointService,
                             GenreNormalizationUtil genreNormalizationUtil,
-                            ApiConfig apiConfig,
-                            RestClient restClient,
                             ModelMapper modelMapper) {
         this.mediaRepository = mediaRepository;
+        this.tmdbCommonEndpointService = tmdbCommonEndpointService;
         this.genreNormalizationUtil = genreNormalizationUtil;
-        this.apiConfig = apiConfig;
-        this.restClient = restClient;
         this.modelMapper = modelMapper;
     }
 
@@ -148,7 +144,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     public Map<String, Object> getReviewsByApiId(String mediaType, long apiId, int page) {
-        ReviewResponseApiDTO reviewsResponseApi = this.getReviewsResponseApi(mediaType,apiId, page);
+        ReviewResponseApiDTO reviewsResponseApi = this.tmdbCommonEndpointService.getReviewsResponseApi(mediaType,apiId, page);
 
         if (reviewsResponseApi == null || reviewsResponseApi.getResults() == null) {
             return Map.of();
@@ -181,31 +177,5 @@ public class MediaServiceImpl implements MediaService {
 
     private LocalDate getStartOfCurrentMonth() {
         return LocalDate.now().minusDays(7);
-    }
-
-    private ReviewResponseApiDTO getReviewsResponseApi(String mediaType, long apiId, int page) {
-        String type = mediaType.toLowerCase();
-
-        if (mediaType.equals("series")) {
-            type = "tv";
-        } else {
-            type = "movie";
-        }
-
-        String url = String.format(this.apiConfig.getUrl()
-                        + "/%s/%d/reviews?api_key=%s&page=%d",
-                type, apiId, this.apiConfig.getKey(), page);
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(ReviewResponseApiDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error searching movies" + "- " + e.getMessage());
-            return null;
-        }
-
     }
 }

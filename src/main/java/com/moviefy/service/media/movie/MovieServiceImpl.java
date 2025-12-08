@@ -1,6 +1,5 @@
 package com.moviefy.service.media.movie;
 
-import com.moviefy.config.ApiConfig;
 import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
@@ -19,14 +18,15 @@ import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
 import com.moviefy.database.repository.credit.crew.CrewMovieRepository;
 import com.moviefy.database.repository.media.MovieRepository;
+import com.moviefy.service.api.TmdbCommonEndpointService;
+import com.moviefy.service.api.movie.TmdbMoviesEndpointService;
 import com.moviefy.service.collection.CollectionService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.GenreNormalizationUtil;
-import com.moviefy.utils.MovieMapper;
-import com.moviefy.utils.TrailerMappingUtil;
+import com.moviefy.utils.mappers.MovieMapper;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -49,15 +48,14 @@ public class MovieServiceImpl implements MovieService {
     private final MovieRepository movieRepository;
     private final CastMovieRepository castMovieRepository;
     private final CrewMovieRepository crewMovieRepository;
+    private final TmdbMoviesEndpointService tmdbMoviesEndpointService;
+    private final TmdbCommonEndpointService tmdbCommonEndpointService;
     private final MovieGenreService movieGenreService;
     private final CastService castService;
     private final CrewService crewService;
     private final CollectionService collectionService;
     private final ProductionCompanyService productionCompanyService;
-    private final ApiConfig apiConfig;
-    private final RestClient restClient;
     private final ModelMapper modelMapper;
-    private final TrailerMappingUtil trailerMappingUtil;
     private final MovieMapper movieMapper;
     private final GenreNormalizationUtil genreNormalizationUtil;
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
@@ -69,29 +67,27 @@ public class MovieServiceImpl implements MovieService {
     public MovieServiceImpl(MovieRepository movieRepository,
                             CastMovieRepository castMovieRepository,
                             CrewMovieRepository crewMovieRepository,
+                            TmdbMoviesEndpointService tmdbMoviesEndpointService,
+                            TmdbCommonEndpointService tmdbCommonEndpointService,
                             MovieGenreService movieGenreService,
                             CastService castService,
                             CrewService crewService,
                             CollectionService collectionService,
                             ProductionCompanyService productionCompanyService,
-                            ApiConfig apiConfig,
-                            RestClient restClient,
                             ModelMapper modelMapper,
-                            TrailerMappingUtil trailerMappingUtil,
                             MovieMapper movieMapper,
                             GenreNormalizationUtil genreNormalizationUtil) {
         this.movieRepository = movieRepository;
         this.castMovieRepository = castMovieRepository;
         this.crewMovieRepository = crewMovieRepository;
+        this.tmdbMoviesEndpointService = tmdbMoviesEndpointService;
+        this.tmdbCommonEndpointService = tmdbCommonEndpointService;
         this.movieGenreService = movieGenreService;
         this.castService = castService;
         this.crewService = crewService;
         this.collectionService = collectionService;
         this.productionCompanyService = productionCompanyService;
-        this.apiConfig = apiConfig;
-        this.restClient = restClient;
         this.modelMapper = modelMapper;
-        this.trailerMappingUtil = trailerMappingUtil;
         this.movieMapper = movieMapper;
         this.genreNormalizationUtil = genreNormalizationUtil;
     }
@@ -168,7 +164,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public List<MoviePageWithGenreDTO> searchMovies(String query) {
-        MovieResponseApiDTO movieResponseApiDTO = this.searchQueryApi(query);
+        MovieResponseApiDTO movieResponseApiDTO = this.tmdbMoviesEndpointService.searchMoviesQueryApi(query);
 
         if (movieResponseApiDTO == null || movieResponseApiDTO.getResults() == null) {
             return List.of();
@@ -342,7 +338,7 @@ public class MovieServiceImpl implements MovieService {
         while (count < MAX_MOVIES_PER_YEAR) {
             logger.info(CYAN + "Movie - Fetching page {} of year {}" + RESET, page, year);
 
-            MovieResponseApiDTO response = getMoviesResponseByDateAndVoteCount(page, year);
+            MovieResponseApiDTO response = this.tmdbMoviesEndpointService.getMoviesResponseByDateAndVoteCount(page, year);
 
             if (response == null || response.getResults() == null) {
                 logger.warn(YELLOW + "No results returned for page {} of year {}" + RESET, page, year);
@@ -375,16 +371,14 @@ public class MovieServiceImpl implements MovieService {
                     continue;
                 }
 
-                MovieApiByIdResponseDTO responseById = getMediaResponseById(dto.getId());
+                MovieApiByIdResponseDTO responseById = this.tmdbMoviesEndpointService.getMovieResponseById(dto.getId());
 
                 if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < MIN_MOVIE_RUNTIME) {
                     continue;
                 }
 
-                TrailerResponseApiDTO responseTrailer = trailerMappingUtil.getTrailerResponseById(
+                TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(
                         dto.getId(),
-                        this.apiConfig.getUrl(),
-                        this.apiConfig.getKey(),
                         "movie");
 
                 Movie movie = movieMapper.mapToMovie(dto, responseById, responseTrailer);
@@ -453,7 +447,6 @@ public class MovieServiceImpl implements MovieService {
         return sb.toString().trim();
     }
 
-
     private static boolean isInvalid(MovieApiDTO dto) {
         return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
                 || dto.getOverview() == null || dto.getOverview().isBlank()
@@ -493,56 +486,6 @@ public class MovieServiceImpl implements MovieService {
                 CrewApiDTO::getJob,
                 crewSet
         );
-    }
-
-    private MovieResponseApiDTO getMoviesResponseByDateAndVoteCount(int page, int year) {
-        String url = String.format(this.apiConfig.getUrl()
-                        + "/discover/movie?primary_release_year=%d&sort_by=vote_count.desc&api_key=%s&page=%d",
-                year, this.apiConfig.getKey(), page);
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(MovieResponseApiDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching movies" + "- " + e.getMessage());
-            return null;
-        }
-
-    }
-
-    private MovieApiByIdResponseDTO getMediaResponseById(Long apiId) {
-        String url = String.format(this.apiConfig.getUrl() + "/movie/%d?api_key=" + this.apiConfig.getKey() + "&append_to_response=credits", apiId);
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(MovieApiByIdResponseDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error fetching movie with ID: " + apiId + " - " + e.getMessage());
-            return null;
-        }
-    }
-
-    private MovieResponseApiDTO searchQueryApi(String query) {
-        String url = String.format(this.apiConfig.getUrl()
-                        + "/search/movie?api_key=%s&page=1&query=%s",
-                this.apiConfig.getKey(), query);
-
-        try {
-            return this.restClient
-                    .get()
-                    .uri(url)
-                    .retrieve()
-                    .body(MovieResponseApiDTO.class);
-        } catch (Exception e) {
-            System.err.println("Error searching movies" + "- " + e.getMessage());
-            return null;
-        }
-
     }
 
     private MoviePageWithGenreDTO mapMoviePageWithGenreDTO(Movie movie) {

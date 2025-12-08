@@ -1,19 +1,16 @@
 package com.moviefy.service.ingest.movie;
 
-import com.moviefy.config.ApiConfig;
 import com.moviefy.database.model.dto.apiDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.MovieResponseApiDTO;
 import com.moviefy.database.repository.media.MovieRepository;
+import com.moviefy.service.api.movie.TmdbMoviesEndpointService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -23,22 +20,18 @@ import static com.moviefy.utils.Ansi.*;
 
 @Service
 public class MovieIngestJob {
-    private final RestClient restClient;
-    private final ApiConfig apiConfig;
     private final MovieRepository movieRepository;
+    private final TmdbMoviesEndpointService tmdbMoviesEndpointService;
     private final MovieIngestService movieIngestService;
 
     private static final Logger logger = LoggerFactory.getLogger(MovieIngestJob.class);
-    private static final ZoneId SOFIA_TZ = ZoneId.of("Europe/Sofia");
     private static final int DAILY_INSERT_LIMIT = 10;
 
-    public MovieIngestJob(RestClient restClient,
-                          ApiConfig apiConfig,
-                          MovieRepository movieRepository,
+    public MovieIngestJob(MovieRepository movieRepository,
+                          TmdbMoviesEndpointService tmdbMoviesEndpointService,
                           MovieIngestService movieIngestService) {
-        this.restClient = restClient;
-        this.apiConfig = apiConfig;
         this.movieRepository = movieRepository;
+        this.tmdbMoviesEndpointService = tmdbMoviesEndpointService;
         this.movieIngestService = movieIngestService;
     }
 
@@ -55,8 +48,8 @@ public class MovieIngestJob {
         while (insertedToday < DAILY_INSERT_LIMIT) {
             logger.debug(CYAN + "Fetching movies (page={})…" + RESET, page);
 
-            MovieResponseApiDTO discover = getMoviesFromToday(page);
-            MovieResponseApiDTO trending = getTrendingMovies(page);
+            MovieResponseApiDTO discover = this.tmdbMoviesEndpointService.getMoviesFromToday(page);
+            MovieResponseApiDTO trending = this.tmdbMoviesEndpointService.getTrendingMovies(page);
 
             Map<Long, MovieApiDTO> byId = new LinkedHashMap<>();
             if (trending != null && trending.getResults() != null) {
@@ -73,7 +66,7 @@ public class MovieIngestJob {
 
             Collection<MovieApiDTO> candidates = byId.values();
             Set<Long> trendingIds = buildTrendingIdSet(trending);
-            final LocalDate now = LocalDate.now(SOFIA_TZ);
+            final LocalDate now = LocalDate.now();
 
             Set<MovieApiDTO> filtered = candidates.stream()
                     .filter(dto -> {
@@ -137,42 +130,6 @@ public class MovieIngestJob {
         logger.info(CYAN + "🎬 Movie ingest finished: inserted={} • took={} ms" + RESET, insertedToday, tookMs);
 
         return CompletableFuture.completedFuture(insertedToday);
-    }
-
-    private MovieResponseApiDTO getMoviesFromToday(int page) {
-        LocalDate today = LocalDate.now(SOFIA_TZ);
-        LocalDate yesterday = today.minusDays(1);
-
-        String fromDate = yesterday.format(DateTimeFormatter.ISO_DATE);
-        String toDate   = today.format(DateTimeFormatter.ISO_DATE);
-
-        String url = String.format(
-                "%s/discover/movie?primary_release_date.gte=%s&primary_release_date.lte=%s&sort_by=popularity.desc&api_key=%s&page=%d",
-                apiConfig.getUrl(),
-                fromDate,
-                toDate,
-                apiConfig.getKey(),
-                page
-        );
-
-        try {
-            return restClient.get().uri(url).retrieve().body(MovieResponseApiDTO.class);
-        } catch (Exception e) {
-            logger.warn("Error fetching discover movies: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private MovieResponseApiDTO getTrendingMovies(int page) {
-        String url = String.format("%s/trending/movie/day?api_key=%s&page=%d",
-                apiConfig.getUrl(), apiConfig.getKey(), page);
-
-        try {
-            return restClient.get().uri(url).retrieve().body(MovieResponseApiDTO.class);
-        } catch (Exception e) {
-            logger.warn("Error fetching trending movies: {}", e.getMessage());
-            return null;
-        }
     }
 
     private static Set<Long> buildTrendingIdSet(MovieResponseApiDTO trending) {
