@@ -9,7 +9,7 @@ public interface TmdbMoviesEndpointService {
 
     MovieResponseApiDTO searchMoviesQueryApi(String query);
 
-    MovieResponseApiDTO getMoviesFromToday(int page);
+    MovieResponseApiDTO getNewMoviesUTCTime(int page);
 
     MovieResponseApiDTO getTrendingMovies(int page);
 }

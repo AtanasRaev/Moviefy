@@ -7,9 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneOffset;
 
 @Service
 public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService {
@@ -26,82 +28,101 @@ public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService 
 
     @Override
     public MovieResponseApiDTO getMoviesResponseByDateAndVoteCount(int page, int year) {
-        String url = String.format(
-                "%s/discover/movie?primary_release_year=%d&sort_by=vote_count.desc&api_key=%s&page=%d",
-                apiConfig.getUrl(), year, apiConfig.getKey(), page
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/discover/movie")
+                .queryParam("primary_release_year", year)
+                .queryParam("sort_by", "vote_count.desc")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", page)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching movies for year {} page {}. URL={}", year, page, url, e);
+            logger.error("Error fetching movies for year {} page {}. URL={}", year, page, uri, e);
             return null;
         }
     }
 
     @Override
     public MovieApiByIdResponseDTO getMovieResponseById(Long apiId) {
-        String url = String.format(
-                "%s/movie/%d?api_key=%s&append_to_response=credits",
-                apiConfig.getUrl(), apiId, apiConfig.getKey()
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/movie/" + apiId)
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("append_to_response", "credits")
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(MovieApiByIdResponseDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(MovieApiByIdResponseDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching movie by ID {}. URL={}", apiId, url, e);
+            logger.error("Error fetching movie by ID {}. URL={}", apiId, uri, e);
             return null;
         }
     }
 
     @Override
     public MovieResponseApiDTO searchMoviesQueryApi(String query) {
-        String url = String.format(
-                "%s/search/movie?api_key=%s&page=1&query=%s",
-                apiConfig.getUrl(), apiConfig.getKey(), query
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/search/movie")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", 1)
+                .queryParam("query", query)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error searching movies with query '{}'. URL={}", query, url, e);
+            logger.error("Error searching movies with query '{}'. URL={}", query, uri, e);
             return null;
         }
     }
 
     @Override
-    public MovieResponseApiDTO getMoviesFromToday(int page) {
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
+    public MovieResponseApiDTO getNewMoviesUTCTime(int page) {
+        LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
+        LocalDate fromDate = todayUtc.minusDays(2);
+        LocalDate toDate   = todayUtc.plusDays(2);
 
-        String fromDate = yesterday.format(DateTimeFormatter.ISO_DATE);
-        String toDate   = today.format(DateTimeFormatter.ISO_DATE);
-
-        String url = String.format(
-                "%s/discover/movie?primary_release_date.gte=%s&primary_release_date.lte=%s&sort_by=popularity.desc&api_key=%s&page=%d",
-                apiConfig.getUrl(), fromDate, toDate, apiConfig.getKey(), page
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/discover/movie")
+                .queryParam("primary_release_date.gte", fromDate)
+                .queryParam("primary_release_date.lte", toDate)
+                .queryParam("sort_by", "popularity.desc")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", page)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching today's discover movies ({} to {}). page={} URL={}",
-                    fromDate, toDate, page, url, e);
+                    fromDate, toDate, page, uri, e);
             return null;
         }
     }
 
     @Override
     public MovieResponseApiDTO getTrendingMovies(int page) {
-        String url = String.format(
-                "%s/trending/movie/day?api_key=%s&page=%d",
-                apiConfig.getUrl(), apiConfig.getKey(), page
-        );
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(this.apiConfig.getUrl())
+                .path("/trending/movie/day")
+                .queryParam("api_key", this.apiConfig.getKey())
+                .queryParam("page", page)
+                .build(true)
+                .toUri();
 
         try {
-            return restClient.get().uri(url).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
         } catch (Exception e) {
-            logger.error("Error fetching trending movies. page={} URL={}", page, url, e);
+            logger.error("Error fetching trending movies. page={} URL={}", page, uri, e);
             return null;
         }
     }
