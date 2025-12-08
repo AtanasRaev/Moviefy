@@ -1,6 +1,7 @@
 package com.moviefy.service.media.movie;
 
 import com.moviefy.config.ApiConfig;
+import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.*;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
@@ -40,6 +41,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.moviefy.utils.Ansi.*;
 
 @Service
 public class MovieServiceImpl implements MovieService {
@@ -95,7 +98,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "latestMovies",
+            cacheNames = CacheKeys.LATEST_MOVIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
                     + ';p=' + #pageable.pageNumber
@@ -116,7 +119,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "movieDetailsById",
+            cacheNames = CacheKeys.MOVIE_DETAILS_BY_ID,
             key = "#apiId",
             unless = "#result == null"
     )
@@ -128,7 +131,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "trendingMovies",
+            cacheNames = CacheKeys.TRENDING_MOVIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
                     + ';p=' + #pageable.pageNumber
@@ -144,7 +147,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "popularMovies",
+            cacheNames = CacheKeys.POPULAR_MOVIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
                     + ';p=' + #pageable.pageNumber
@@ -186,7 +189,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "moviesByGenres",
+            cacheNames = CacheKeys.MOVIES_BY_GENRES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
                     + ';p=' + #pageable.pageNumber
@@ -202,7 +205,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "topRatedMovies",
+            cacheNames = CacheKeys.TOP_RATED_MOVIES,
             key = """
                     'g=' + T(java.lang.String).join(',', @genreNormalizationUtil.processMovieGenres(#genres))
                     + ';p=' + #pageable.pageNumber
@@ -218,7 +221,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "moviesByCast",
+            cacheNames = CacheKeys.MOVIES_BY_CAST,
             key = """
                     'cast=' + #id
                     + ';p=' + #pageable.pageNumber
@@ -233,7 +236,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @Cacheable(
-            cacheNames = "moviesByCrew",
+            cacheNames = CacheKeys.MOVIES_BY_CREW,
             key = """
                     'crew=' + #id
                     + ';p=' + #pageable.pageNumber
@@ -311,17 +314,8 @@ public class MovieServiceImpl implements MovieService {
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
 
-    //    @Scheduled(fixedDelay = 100000000)
-    //TODO
-    private void updateMovies() {
-        logger.info("Starting to update movies...");
-
-
-    }
-
-    //    @Scheduled(fixedDelay = 100)
     public void fetchMovies() {
-        logger.info("\u001B[32mStarting to fetch movies...\u001B[0m");
+        logger.info(CYAN + "Starting to fetch movies..." + RESET);
         LocalDateTime start = LocalDateTime.now();
 
         int year = START_YEAR;
@@ -346,17 +340,17 @@ public class MovieServiceImpl implements MovieService {
         }
 
         while (count < MAX_MOVIES_PER_YEAR) {
-            logger.info("\u001B[32mMovie - Fetching page {} of year {}\u001B[0m", page, year);
+            logger.info(CYAN + "Movie - Fetching page {} of year {}" + RESET, page, year);
 
             MovieResponseApiDTO response = getMoviesResponseByDateAndVoteCount(page, year);
 
             if (response == null || response.getResults() == null) {
-                logger.warn("\u001B[33mNo results returned for page {} of year {}\u001B[0m", page, year);
+                logger.warn(YELLOW + "No results returned for page {} of year {}" + RESET, page, year);
                 break;
             }
 
             if (page > response.getTotalPages()) {
-                logger.info("\u001B[32mReached the last page for year {}.\u001B[0m", year);
+                logger.info(CYAN + "Reached the last page for year {}." + RESET, year);
                 if (year == LocalDate.now().getYear()) {
                     return;
                 }
@@ -372,12 +366,12 @@ public class MovieServiceImpl implements MovieService {
                 }
 
                 if (isInvalid(dto)) {
-                    logger.warn("\u001B[33mInvalid movie: {}\u001B[0m", dto.getId());
+                    logger.warn(YELLOW + "Invalid movie: {}" + RESET, dto.getId());
                     continue;
                 }
 
                 if (this.movieRepository.findByApiId(dto.getId()).isPresent()) {
-                    logger.info("\u001B[32mMovie already exists: {}\u001B[0m", dto.getId());
+                    logger.info(YELLOW + "Movie already exists: {}" + RESET, dto.getId());
                     continue;
                 }
 
@@ -410,7 +404,7 @@ public class MovieServiceImpl implements MovieService {
                 this.movieRepository.save(movie);
                 count++;
 
-                logger.info("\u001B[32mSaved movie: {}\u001B[0m", movie.getTitle());
+                logger.info(GREEN + "Saved movie: {}" + RESET, movie.getTitle());
 
                 MediaResponseCreditsDTO creditsById = responseById.getCredits();
 
@@ -430,9 +424,8 @@ public class MovieServiceImpl implements MovieService {
         }
 
         LocalDateTime end = LocalDateTime.now();
-        logger.info("\u001B[32mFinished fetching movies for {}.\u001B[0m", formatDurationLong(Duration.between(start, end)));
+        logger.info(CYAN + "Finished fetching movies for {}." + RESET, formatDurationLong(Duration.between(start, end)));
     }
-
 
     public static String formatDurationLong(Duration duration) {
         long millis = duration.toMillis();
