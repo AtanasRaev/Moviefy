@@ -15,4 +15,6 @@ public interface CastMovieRepository extends JpaRepository<CastMovie, Long> {
     Optional<CastMovie> findByMovieIdAndCastApiIdAndCharacter(@Param("movieId") Long movieId, @Param("crewApiId") Long crewApiId, @Param("character") String character);
 
     List<CastMovie> findCastByMovieId(Long movieId);
+
+    void deleteByMovieId(long id);
 }

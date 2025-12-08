@@ -16,4 +16,5 @@ public interface CrewTvSeriesRepository extends JpaRepository<CrewTvSeries, Long
 
     List<CrewTvSeries> findCrewByTvSeriesId(Long movieId);
 
+    void deleteByTvSeriesId(long id);
 }

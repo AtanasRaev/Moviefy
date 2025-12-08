@@ -15,4 +15,6 @@ public interface CastTvSeriesRepository extends JpaRepository<CastTvSeries, Long
     Optional<CastTvSeries> findByTvSeriesIdAndCastApiIdAndCharacter(@Param("tvSeriesId") Long tvSeriesId, @Param("crewApiId") Long crewApiId, @Param("character") String character);
 
     List<CastTvSeries> findCastByTvSeriesId(Long tvId);
+
+    void deleteByTvSeriesId(long id);
 }

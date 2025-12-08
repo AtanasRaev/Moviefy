@@ -16,4 +16,5 @@ public interface CrewMovieRepository extends JpaRepository<CrewMovie, Long> {
 
     List<CrewMovie> findCrewByMovieId(Long movieId);
 
+    void deleteByMovieId(long id);
 }
