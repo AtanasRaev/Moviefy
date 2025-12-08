@@ -1,6 +1,7 @@
 package com.moviefy.service.media;
 
 import com.moviefy.config.ApiConfig;
+import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.ReviewResponseApiDTO;
 import com.moviefy.database.model.dto.pageDto.MediaProjection;
 import com.moviefy.database.model.dto.pageDto.MediaWithGenreProjection;
@@ -40,7 +41,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Cacheable(
-            cacheNames = "mediaByGenres",
+            cacheNames = CacheKeys.MEDIA_BY_GENRES,
             key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
@@ -53,7 +54,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Cacheable(
-            cacheNames = "latestMedia",
+            cacheNames = CacheKeys.LATEST_MEDIA,
             key = "T(java.util.Objects).toString(#genres) + " +
                     "';p=' + #pageable.pageNumber + " +
                     "';s=' + #pageable.pageSize + " +
@@ -69,7 +70,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Cacheable(
-            cacheNames = "trendingMedia",
+            cacheNames = CacheKeys.TRENDING_MEDIA,
             key = "T(java.util.Objects).toString(#genres) + " +
                     "';p=' + #pageable.pageNumber + " +
                     "';s=' + #pageable.pageSize + " +
@@ -85,7 +86,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Cacheable(
-            cacheNames = "popularMedia",
+            cacheNames = CacheKeys.POPULAR_MEDIA,
             key = "T(java.util.Objects).toString(#genres) + " +
                     "';p=' + #pageable.pageNumber + " +
                     "';s=' + #pageable.pageSize + " +
@@ -101,7 +102,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Cacheable(
-            cacheNames = "topRatedMedia",
+            cacheNames = CacheKeys.TOP_RATED_MEDIA,
             key = "T(java.util.Objects).toString(#genres) + " +
                     "';p=' + #pageable.pageNumber + " +
                     "';s=' + #pageable.pageSize + " +
@@ -117,7 +118,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Cacheable(
-            cacheNames = "mediaByCast",
+            cacheNames = CacheKeys.MEDIA_BY_CAST,
             key = """
                     'cast=' + #id
                     + ';p=' + #pageable.pageNumber
@@ -132,7 +133,7 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Cacheable(
-            cacheNames = "mediaByCrew",
+            cacheNames = CacheKeys.MEDIA_BY_CREW,
             key = """
                     'crew=' + #id
                     + ';p=' + #pageable.pageNumber
