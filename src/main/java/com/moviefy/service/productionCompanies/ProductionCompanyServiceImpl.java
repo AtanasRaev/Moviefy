@@ -1,5 +1,6 @@
 package com.moviefy.service.productionCompanies;
 
+import com.moviefy.database.model.dto.apiDto.MediaApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.ProductionApiDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
@@ -27,22 +28,12 @@ public class ProductionCompanyServiceImpl implements ProductionCompanyService {
     }
 
     @Override
-    public Map<String, Set<ProductionCompany>> getProductionCompaniesFromResponse(Object responseById, Media type) {
+    public Map<String, Set<ProductionCompany>> getProductionCompaniesFromResponse(MediaApiByIdResponseDTO responseById, Media type) {
         Map<String, Set<ProductionCompany>> productionCompaniesMap = new HashMap<>();
         productionCompaniesMap.put("all", new HashSet<>());
         productionCompaniesMap.put("toSave", new HashSet<>());
 
-        List<ProductionApiDTO> productionCompanies;
-
-        if (type instanceof Movie) {
-            productionCompanies = ((MovieApiByIdResponseDTO) responseById).getProductionCompanies();
-        } else if (type instanceof TvSeries) {
-            productionCompanies = ((TvSeriesApiByIdResponseDTO) responseById).getProductionCompanies();
-        } else {
-            throw new IllegalArgumentException("Unknown content type");
-        }
-
-        for (ProductionApiDTO company : productionCompanies) {
+        for (ProductionApiDTO company : responseById.getProductionCompanies()) {
             List<Long> list = productionCompaniesMap.get("all").stream()
                     .map(ProductionCompany::getApiId)
                     .toList();
