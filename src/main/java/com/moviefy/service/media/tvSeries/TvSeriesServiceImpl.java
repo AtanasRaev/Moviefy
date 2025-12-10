@@ -2,35 +2,25 @@ package com.moviefy.service.media.tvSeries;
 
 import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.*;
-import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
-import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import com.moviefy.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.*;
 import com.moviefy.database.model.entity.ProductionCompany;
-import com.moviefy.database.model.entity.credit.cast.Cast;
-import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
-import com.moviefy.database.model.entity.credit.crew.Crew;
-import com.moviefy.database.model.entity.credit.crew.CrewTvSeries;
 import com.moviefy.database.model.entity.genre.SeriesGenre;
-import com.moviefy.database.model.entity.media.tvSeries.EpisodeTvSeries;
 import com.moviefy.database.model.entity.media.tvSeries.SeasonTvSeries;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
-import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
-import com.moviefy.database.repository.credit.crew.CrewTvSeriesRepository;
-import com.moviefy.database.repository.media.tvSeries.EpisodeTvSeriesRepository;
-import com.moviefy.database.repository.media.tvSeries.SeasonTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
 import com.moviefy.service.api.TmdbCommonEndpointService;
 import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
+import com.moviefy.service.media.tvSeries.seasons.SeasonsService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.GenreNormalizationUtil;
-import com.moviefy.utils.mappers.TvSeriesMapper;
 import com.moviefy.utils.TvSeriesTypesNormalizationUtil;
+import com.moviefy.utils.mappers.TvSeriesMapper;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +29,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,15 +38,12 @@ import static com.moviefy.utils.Ansi.*;
 @Service
 public class TvSeriesServiceImpl implements TvSeriesService {
     private final TvSeriesRepository tvSeriesRepository;
-    private final CrewTvSeriesRepository crewTvSeriesRepository;
-    private final CastTvSeriesRepository castTvSeriesRepository;
     private final TmdbTvEndpointService tmdbTvEndpointService;
     private final TmdbCommonEndpointService tmdbCommonEndpointService;
     private final SeriesGenreService seriesGenreService;
     private final CastService castService;
     private final CrewService crewService;
-    private final SeasonTvSeriesRepository seasonTvSeriesRepository;
-    private final EpisodeTvSeriesRepository episodeTvSeriesRepository;
+    private final SeasonsService seasonsService;
     private final ProductionCompanyService productionCompanyService;
     private final ModelMapper modelMapper;
     private final TvSeriesMapper tvSeriesMapper;
@@ -70,30 +55,24 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private static final double API_TV_SERIES_PER_PAGE = 20.0;
 
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
-                               CrewTvSeriesRepository crewTvSeriesRepository,
-                               CastTvSeriesRepository castTvSeriesRepository,
                                TmdbTvEndpointService tmdbTvEndpointService,
                                TmdbCommonEndpointService tmdbCommonEndpointService,
                                SeriesGenreService seriesGenreService,
                                CastService castService,
                                CrewService crewService,
-                               SeasonTvSeriesRepository seasonTvSeriesRepository,
-                               EpisodeTvSeriesRepository episodeTvSeriesRepository,
+                               SeasonsService seasonsService,
                                ProductionCompanyService productionCompanyService,
                                ModelMapper modelMapper,
                                TvSeriesMapper tvSeriesMapper,
                                GenreNormalizationUtil genreNormalizationUtil,
                                TvSeriesTypesNormalizationUtil tvSeriesTypesNormalizationUtil) {
         this.tvSeriesRepository = tvSeriesRepository;
-        this.crewTvSeriesRepository = crewTvSeriesRepository;
-        this.castTvSeriesRepository = castTvSeriesRepository;
         this.tmdbTvEndpointService = tmdbTvEndpointService;
         this.tmdbCommonEndpointService = tmdbCommonEndpointService;
         this.seriesGenreService = seriesGenreService;
         this.castService = castService;
         this.crewService = crewService;
-        this.seasonTvSeriesRepository = seasonTvSeriesRepository;
-        this.episodeTvSeriesRepository = episodeTvSeriesRepository;
+        this.seasonsService = seasonsService;
         this.productionCompanyService = productionCompanyService;
         this.modelMapper = modelMapper;
         this.tvSeriesMapper = tvSeriesMapper;
@@ -191,26 +170,10 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .map(tvSeries -> {
                     TvSeriesTrendingPageDTO map = this.modelMapper.map(tvSeries, TvSeriesTrendingPageDTO.class);
                     mapAllGenresToPageDTO(map);
-                    mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+                    mapSeasonsToPageDTO(this.seasonsService.findAllByTvSeriesId(map.getId()), map);
                     return map;
                 })
                 .toList();
-    }
-
-    @Override
-    public List<EpisodeDTO> getEpisodesFromSeason(Long seasonId) {
-        return this.episodeTvSeriesRepository.findAllBySeasonId(seasonId)
-                .stream()
-                .map(episode -> this.modelMapper.map(episode, EpisodeDTO.class))
-                .sorted(Comparator.comparing(EpisodeDTO::getEpisodeNumber))
-                .toList();
-    }
-
-    @Override
-    public Integer getSeasonNumberById(Long seasonId) {
-        return this.seasonTvSeriesRepository.findById(seasonId)
-                .map(SeasonTvSeries::getSeasonNumber)
-                .orElse(null);
     }
 
     @Override
@@ -343,8 +306,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
     public void fetchSeries() {
         logger.info(BLUE + "Starting to fetch tv series..." + RESET);
-        LocalDateTime start = LocalDateTime.now();
-
         int year = START_YEAR;
 
         int page = 1;
@@ -435,58 +396,24 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     this.productionCompanyService.saveAllProduction(productionCompaniesMap.get("toSave"));
                 }
 
-                tvSeries.setSeasons(mapSeasonsAndEpisodesFromResponse(responseById.getSeasons(), tvSeries));
+                tvSeries.setSeasons(this.seasonsService.mapSeasonsAndEpisodesFromResponse(responseById.getSeasons(), tvSeries));
                 this.tvSeriesRepository.save(tvSeries);
                 count++;
 
                 logger.info(PURPLE + "Saved tv series: {}" + RESET, tvSeries.getName());
 
-                List<CrewApiDTO> crewDto = responseById.getCrew().stream().limit(6).toList();
-                Set<Crew> crewSet = this.crewService.mapToSet(crewDto);
-                processTvSeriesCrew(crewDto, tvSeries, crewSet);
+                this.crewService.processTvSeriesCrew(responseById.getCrew(), tvSeries);
 
                 Set<CastApiDTO> cast = responseById.getCredits().getCast();
-
                 if (cast == null || cast.isEmpty()) {
                     continue;
                 }
 
-                List<CastApiDTO> castDto = this.castService.filterCastApiDto(cast);
-                Set<Cast> castSet = this.castService.mapToSet(castDto);
-                processTvSeriesCast(castDto, tvSeries, castSet);
+                this.castService.processTvSeriesCast(cast, tvSeries);
             }
 
             page++;
         }
-
-        LocalDateTime end = LocalDateTime.now();
-        logger.info(BLUE + "Finished fetching tv series for {}." + RESET, formatDurationLong(Duration.between(start, end)));
-    }
-
-    public static String formatDurationLong(Duration duration) {
-        long millis = duration.toMillis();
-
-        long days = millis / 86_400_000;
-        millis %= 86_400_000;
-
-        long hours = millis / 3_600_000;
-        millis %= 3_600_000;
-
-        long minutes = millis / 60_000;
-        millis %= 60_000;
-
-        long seconds = millis / 1_000;
-        millis %= 1_000;
-
-        StringBuilder sb = new StringBuilder();
-
-        if (days > 0) sb.append(days).append("d ");
-        if (hours > 0 || days > 0) sb.append(hours).append("h ");
-        if (minutes > 0 || hours > 0 || days > 0) sb.append(minutes).append("m ");
-        if (seconds > 0 || minutes > 0 || hours > 0 || days > 0) sb.append(seconds).append("s ");
-        sb.append(millis).append("ms");
-
-        return sb.toString().trim();
     }
 
     private static boolean isInvalid(TvSeriesApiDTO dto) {
@@ -507,50 +434,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 });
     }
 
-    private Set<SeasonTvSeries> mapSeasonsAndEpisodesFromResponse(List<SeasonDTO> seasonsDTO, TvSeries tvSeries) {
-        if ((seasonsDTO == null || seasonsDTO.isEmpty()) || tvSeries == null) {
-            return new HashSet<>();
-        }
-
-        Set<SeasonTvSeries> seasons = new HashSet<>();
-
-        for (SeasonDTO seasonDTO : seasonsDTO) {
-            if (seasonDTO.getAirDate() == null || seasonDTO.getSeasonNumber() < 1) {
-                continue;
-            }
-
-            if (this.seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).isEmpty()) {
-                SeasonTvSeries season = new SeasonTvSeries();
-                season.setApiId(seasonDTO.getId());
-                season.setSeasonNumber(seasonDTO.getSeasonNumber());
-                season.setAirDate(seasonDTO.getAirDate());
-                season.setEpisodeCount(seasonDTO.getEpisodeCount());
-                season.setPosterPath(seasonDTO.getPosterPath());
-                season.setTvSeries(tvSeries);
-                season.setEpisodes(mapEpisodesFromResponse(tvSeries.getApiId(), season));
-                seasons.add(season);
-            }
-        }
-        return seasons;
-    }
-
-    private Set<EpisodeTvSeries> mapEpisodesFromResponse(long id, SeasonTvSeries season) {
-        EpisodesTvSeriesResponseDTO episodesResponse = this.tmdbTvEndpointService.getEpisodesResponse(id, season.getSeasonNumber());
-
-        if (episodesResponse == null) {
-            return new HashSet<>();
-        }
-
-        return episodesResponse.getEpisodes()
-                .stream()
-                .map(dto -> {
-                    EpisodeTvSeries map = this.modelMapper.map(dto, EpisodeTvSeries.class);
-                    map.setSeason(season);
-                    return map;
-                })
-                .collect(Collectors.toSet());
-    }
-
     private void mapOneGenreToPageDTO(TvSeriesPageWithGenreDTO map) {
         Optional<SeriesGenre> optional = this.seriesGenreService.getAllGenresByMovieId(map.getId()).stream().findFirst();
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
@@ -565,45 +448,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         }
     }
 
-    private void processTvSeriesCast(List<CastApiDTO> castDto, TvSeries tvSeries, Set<Cast> castSet) {
-        this.castService.processCast(
-                castDto,
-                tvSeries,
-                c -> castTvSeriesRepository.findByTvSeriesIdAndCastApiIdAndCharacter(tvSeries.getId(), c.getId(), c.getCharacter()),
-                (c, t) -> castService.createCastEntity(
-                        c,
-                        t,
-                        castSet,
-                        CastTvSeries::new,
-                        CastTvSeries::setTvSeries,
-                        CastTvSeries::setCast,
-                        CastTvSeries::setCharacter
-                ),
-                castTvSeriesRepository::save
-        );
-    }
-
-    private void processTvSeriesCrew(List<CrewApiDTO> crewDto, TvSeries tvSeries, Set<Crew> crewSet) {
-        this.crewService.processCrew(
-                crewDto,
-                tvSeries,
-                c -> crewTvSeriesRepository.findByTvSeriesIdAndCrewApiIdAndJobJob(tvSeries.getId(), c.getId(), "Creator"),
-                (c, t) -> {
-                    CrewTvSeries crewTvSeries = new CrewTvSeries();
-                    crewTvSeries.setTvSeries(t);
-                    return crewTvSeries;
-                },
-                crewTvSeriesRepository::save,
-                c -> "Creator",
-                crewSet
-        );
-    }
-
     private TvSeriesPageWithGenreDTO mapTvSeriesPageWithGenreDTO(TvSeries tvSeries) {
         TvSeriesPageWithGenreDTO map = this.modelMapper.map(tvSeries, TvSeriesPageWithGenreDTO.class);
         map.setYear(tvSeries.getFirstAirDate().getYear());
         mapOneGenreToPageDTO(map);
-        mapSeasonsToPageDTO(new HashSet<>(this.seasonTvSeriesRepository.findAllByTvSeriesId(map.getId())), map);
+        mapSeasonsToPageDTO(this.seasonsService.findAllByTvSeriesId(map.getId()), map);
         return map;
     }
 }
