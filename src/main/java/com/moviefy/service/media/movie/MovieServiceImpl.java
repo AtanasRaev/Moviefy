@@ -20,6 +20,7 @@ import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
 import com.moviefy.utils.GenreNormalizationUtil;
+import com.moviefy.utils.MediaValidationUtil;
 import com.moviefy.utils.mappers.MovieMapper;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -345,7 +346,7 @@ public class MovieServiceImpl implements MovieService {
                     break;
                 }
 
-                if (isInvalid(dto)) {
+                if (MediaValidationUtil.isInvalid(dto)) {
                     logger.warn(YELLOW + "Invalid movie: {}" + RESET, dto.getId());
                     continue;
                 }
@@ -394,13 +395,6 @@ public class MovieServiceImpl implements MovieService {
             }
             page++;
         }
-    }
-
-    private static boolean isInvalid(MovieApiDTO dto) {
-        return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
-                || dto.getOverview() == null || dto.getOverview().isBlank()
-                || dto.getTitle() == null || dto.getTitle().isBlank()
-                || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
     }
 
     private MoviePageWithGenreDTO mapMoviePageWithGenreDTO(Movie movie) {
