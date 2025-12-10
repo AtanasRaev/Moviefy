@@ -6,10 +6,7 @@ import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import java.util.List;
 import java.util.Set;
 
-public class TvSeriesApiByIdResponseDTO {
-    @JsonProperty("production_companies")
-    private List<ProductionApiDTO> productionCompanies;
-
+public class TvSeriesApiByIdResponseDTO extends MediaApiByIdResponseDTO{
     @JsonProperty("created_by")
     private Set<CrewApiDTO> crew;
 
@@ -19,8 +16,6 @@ public class TvSeriesApiByIdResponseDTO {
 
     List<SeasonDTO> seasons;
 
-    private MediaResponseCreditsDTO credits;
-
     @JsonProperty("number_of_seasons")
     private Integer numberOfSeasons;
 
@@ -29,14 +24,6 @@ public class TvSeriesApiByIdResponseDTO {
 
     @JsonProperty("external_ids")
     private ExternalIdsDTO externalIds;
-
-    public List<ProductionApiDTO> getProductionCompanies() {
-        return productionCompanies;
-    }
-
-    public void setProductionCompanies(List<ProductionApiDTO> productionCompanies) {
-        this.productionCompanies = productionCompanies;
-    }
 
     public Set<CrewApiDTO> getCrew() {
         return crew;
@@ -68,14 +55,6 @@ public class TvSeriesApiByIdResponseDTO {
 
     public void setSeasons(List<SeasonDTO> seasons) {
         this.seasons = seasons;
-    }
-
-    public MediaResponseCreditsDTO getCredits() {
-        return credits;
-    }
-
-    public void setCredits(MediaResponseCreditsDTO credits) {
-        this.credits = credits;
     }
 
     public ExternalIdsDTO getExternalIds() {
