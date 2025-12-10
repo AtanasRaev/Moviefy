@@ -1,7 +1,7 @@
 package com.moviefy.service.ingest.movie;
 
-import com.moviefy.database.model.dto.apiDto.MovieApiDTO;
-import com.moviefy.database.model.dto.apiDto.MovieResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
 import com.moviefy.database.repository.media.MovieRepository;
 import com.moviefy.service.api.movie.TmdbMoviesEndpointService;
 import com.moviefy.utils.MediaValidationUtil;

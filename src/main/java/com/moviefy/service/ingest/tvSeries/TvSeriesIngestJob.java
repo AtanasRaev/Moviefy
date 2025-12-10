@@ -1,7 +1,7 @@
 package com.moviefy.service.ingest.tvSeries;
 
-import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
-import com.moviefy.database.model.dto.apiDto.TvSeriesResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesResponseApiDTO;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
 import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
 import com.moviefy.utils.MediaValidationUtil;
