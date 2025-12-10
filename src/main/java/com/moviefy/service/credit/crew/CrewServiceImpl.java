@@ -8,6 +8,8 @@ import com.moviefy.database.model.entity.credit.crew.Crew;
 import com.moviefy.database.model.entity.credit.crew.CrewMovie;
 import com.moviefy.database.model.entity.credit.crew.CrewTvSeries;
 import com.moviefy.database.model.entity.credit.crew.JobCrew;
+import com.moviefy.database.model.entity.media.Movie;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.credit.crew.CrewMovieRepository;
 import com.moviefy.database.repository.credit.crew.CrewRepository;
 import com.moviefy.database.repository.credit.crew.CrewTvSeriesRepository;
@@ -29,6 +31,8 @@ public class CrewServiceImpl implements CrewService {
     private final CreditRetrievalUtil creditRetrievalUtil;
     private final CrewMapper crewMapper;
 
+    private final static int CREW_LIMIT = 6;
+
     public CrewServiceImpl(CrewRepository crewRepository,
                            CrewMovieRepository crewMovieRepository,
                            CrewTvSeriesRepository crewTvSeriesRepository,
@@ -44,7 +48,7 @@ public class CrewServiceImpl implements CrewService {
     }
 
     @Override
-    public Set<Crew> mapToSet(List<CrewApiDTO> crewDto) {
+    public Set<Crew> filterAndSaveCrew(List<CrewApiDTO> crewDto) {
         return creditRetrievalUtil.creditRetrieval(
                 crewDto,
                 this.crewMapper::mapToCrew,
@@ -81,12 +85,51 @@ public class CrewServiceImpl implements CrewService {
                     uniqueIds.put(crew.getId(), crew.getJob());
                     return true;
                 })
-                .limit(6)
+                .limit(CREW_LIMIT)
                 .toList();
     }
 
     @Override
-    public <T, E> void processCrew(
+    public void processTvSeriesCrew(Set<CrewApiDTO> crewDTO, TvSeries tvSeries) {
+        List<CrewApiDTO> crewList = crewDTO.stream().limit(CREW_LIMIT).toList();
+        Set<Crew> crewSet = this.filterAndSaveCrew(crewList);
+
+        this.processCrew(
+                crewList,
+                tvSeries,
+                c -> crewTvSeriesRepository.findByTvSeriesIdAndCrewApiIdAndJobJob(tvSeries.getId(), c.getId(), "Creator"),
+                (c, t) -> {
+                    CrewTvSeries crewTvSeries = new CrewTvSeries();
+                    crewTvSeries.setTvSeries(t);
+                    return crewTvSeries;
+                },
+                crewTvSeriesRepository::save,
+                c -> "Creator",
+                crewSet
+        );
+    }
+
+    @Override
+    public void processMovieCrew(Set<CrewApiDTO> crewDTO, Movie movie) {
+        List<CrewApiDTO> crewList = this.filterCrewApiDto(crewDTO);
+        Set<Crew> crewSet = this.filterAndSaveCrew(crewList);
+
+        this.processCrew(
+                crewList,
+                movie,
+                c -> crewMovieRepository.findByMovieIdAndCrewApiIdAndJobJob(movie.getId(), c.getId(), c.getJob()),
+                (c, m) -> {
+                    CrewMovie crewMovie = new CrewMovie();
+                    crewMovie.setMovie(m);
+                    return crewMovie;
+                },
+                crewMovieRepository::save,
+                CrewApiDTO::getJob,
+                crewSet
+        );
+    }
+
+    private <T, E> void processCrew(
             List<CrewApiDTO> crewDto,
             T parentEntity,
             Function<CrewApiDTO, Optional<E>> findFunction,
