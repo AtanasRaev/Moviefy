@@ -1,11 +1,10 @@
 package com.moviefy.service.ingest.movie;
 
-import com.moviefy.database.model.dto.apiDto.*;
+import com.moviefy.database.model.dto.apiDto.MediaResponseCreditsDTO;
+import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.MovieApiDTO;
+import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
-import com.moviefy.database.model.entity.credit.cast.Cast;
-import com.moviefy.database.model.entity.credit.cast.CastMovie;
-import com.moviefy.database.model.entity.credit.crew.Crew;
-import com.moviefy.database.model.entity.credit.crew.CrewMovie;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
@@ -17,6 +16,7 @@ import com.moviefy.service.collection.CollectionService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.utils.EntityComparator;
 import com.moviefy.utils.mappers.MovieMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.moviefy.utils.Ansi.*;
 
@@ -98,7 +100,7 @@ public class MovieIngestService {
             }
 
             Movie worst = worstOpt.get();
-            if (!isBetter(dto, worst)) {
+            if (!EntityComparator.isBetter(dto, worst)) {
                 logger.debug(YELLOW + "Skip movie: {} — not better than worst movie {}" + RESET,
                         dto.getTitle(), worst.getTitle());
                 return false;
@@ -131,13 +133,8 @@ public class MovieIngestService {
 
         MediaResponseCreditsDTO credits = responseById.getCredits();
         if (credits != null) {
-            List<CastApiDTO> castDto = castService.filterCastApiDto(credits.getCast());
-            Set<Cast> castSet = castService.mapToSet(castDto);
-            processMovieCast(castDto, movie, castSet);
-
-            List<CrewApiDTO> crewDto = crewService.filterCrewApiDto(credits.getCrew());
-            Set<Crew> crewSet = crewService.mapToSet(new ArrayList<>(crewDto));
-            processMovieCrew(crewDto, movie, crewSet);
+            this.castService.processMovieCast(credits.getCast(), movie);
+            this.crewService.processMovieCrew(credits.getCrew(), movie);
         }
 
         return true;
@@ -155,59 +152,5 @@ public class MovieIngestService {
         }
         m.setCollection(null);
         this.movieRepository.delete(m);
-    }
-
-    private static boolean isBetter(MovieApiDTO cand, Movie worst) {
-        int voteCmp = Integer.compare(safeInt(cand.getVoteCount()), safeInt(worst.getVoteCount()));
-        if (voteCmp != 0) {
-            return voteCmp > 0;
-        }
-        int popCmp = Double.compare(safeDouble(cand.getPopularity()), safeDouble(worst.getPopularity()));
-        if (popCmp != 0) {
-            return popCmp > 0;
-        }
-        return cand.getId() < worst.getApiId();
-    }
-
-    private static int safeInt(Integer x) {
-        return x == null ? 0 : x;
-    }
-
-    private static double safeDouble(Double x) {
-        return x == null ? 0.0 : x;
-    }
-
-    private void processMovieCast(List<CastApiDTO> castDto, Movie movie, Set<Cast> castSet) {
-        this.castService.processCast(
-                castDto,
-                movie,
-                c -> castMovieRepository.findByMovieIdAndCastApiIdAndCharacter(movie.getId(), c.getId(), c.getCharacter()),
-                (c, m) -> castService.createCastEntity(
-                        c,
-                        m,
-                        castSet,
-                        CastMovie::new,
-                        CastMovie::setMovie,
-                        CastMovie::setCast,
-                        CastMovie::setCharacter
-                ),
-                castMovieRepository::save
-        );
-    }
-
-    private void processMovieCrew(List<CrewApiDTO> crewDto, Movie movie, Set<Crew> crewSet) {
-        this.crewService.processCrew(
-                crewDto,
-                movie,
-                c -> crewMovieRepository.findByMovieIdAndCrewApiIdAndJobJob(movie.getId(), c.getId(), c.getJob()),
-                (c, m) -> {
-                    CrewMovie crewMovie = new CrewMovie();
-                    crewMovie.setMovie(m);
-                    return crewMovie;
-                },
-                crewMovieRepository::save,
-                CrewApiDTO::getJob,
-                crewSet
-        );
     }
 }
