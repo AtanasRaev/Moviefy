@@ -8,15 +8,9 @@ import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreProjection;
 import com.moviefy.database.model.entity.ProductionCompany;
-import com.moviefy.database.model.entity.credit.cast.Cast;
-import com.moviefy.database.model.entity.credit.cast.CastMovie;
-import com.moviefy.database.model.entity.credit.crew.Crew;
-import com.moviefy.database.model.entity.credit.crew.CrewMovie;
 import com.moviefy.database.model.entity.genre.MovieGenre;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
-import com.moviefy.database.repository.credit.cast.CastMovieRepository;
-import com.moviefy.database.repository.credit.crew.CrewMovieRepository;
 import com.moviefy.database.repository.media.MovieRepository;
 import com.moviefy.service.api.TmdbCommonEndpointService;
 import com.moviefy.service.api.movie.TmdbMoviesEndpointService;
@@ -35,9 +29,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,8 +38,6 @@ import static com.moviefy.utils.Ansi.*;
 @Service
 public class MovieServiceImpl implements MovieService {
     private final MovieRepository movieRepository;
-    private final CastMovieRepository castMovieRepository;
-    private final CrewMovieRepository crewMovieRepository;
     private final TmdbMoviesEndpointService tmdbMoviesEndpointService;
     private final TmdbCommonEndpointService tmdbCommonEndpointService;
     private final MovieGenreService movieGenreService;
@@ -65,8 +55,6 @@ public class MovieServiceImpl implements MovieService {
     private static final double API_MOVIES_PER_PAGE = 20.0;
 
     public MovieServiceImpl(MovieRepository movieRepository,
-                            CastMovieRepository castMovieRepository,
-                            CrewMovieRepository crewMovieRepository,
                             TmdbMoviesEndpointService tmdbMoviesEndpointService,
                             TmdbCommonEndpointService tmdbCommonEndpointService,
                             MovieGenreService movieGenreService,
@@ -78,8 +66,6 @@ public class MovieServiceImpl implements MovieService {
                             MovieMapper movieMapper,
                             GenreNormalizationUtil genreNormalizationUtil) {
         this.movieRepository = movieRepository;
-        this.castMovieRepository = castMovieRepository;
-        this.crewMovieRepository = crewMovieRepository;
         this.tmdbMoviesEndpointService = tmdbMoviesEndpointService;
         this.tmdbCommonEndpointService = tmdbCommonEndpointService;
         this.movieGenreService = movieGenreService;
@@ -312,8 +298,6 @@ public class MovieServiceImpl implements MovieService {
 
     public void fetchMovies() {
         logger.info(CYAN + "Starting to fetch movies..." + RESET);
-        LocalDateTime start = LocalDateTime.now();
-
         int year = START_YEAR;
 
         int page = 1;
@@ -400,51 +384,16 @@ public class MovieServiceImpl implements MovieService {
 
                 logger.info(GREEN + "Saved movie: {}" + RESET, movie.getTitle());
 
-                MediaResponseCreditsDTO creditsById = responseById.getCredits();
-
-                if (creditsById == null) {
+                MediaResponseCreditsDTO credits = responseById.getCredits();
+                if (credits == null) {
                     continue;
                 }
 
-                List<CastApiDTO> castDto = this.castService.filterCastApiDto(creditsById.getCast());
-                Set<Cast> castSet = this.castService.mapToSet(castDto);
-                processMovieCast(castDto, movie, castSet);
-
-                List<CrewApiDTO> crewDto = this.crewService.filterCrewApiDto(creditsById.getCrew());
-                Set<Crew> crewSet = this.crewService.mapToSet(crewDto.stream().toList());
-                processMovieCrew(crewDto, movie, crewSet);
+                this.castService.processMovieCast(credits.getCast(), movie);
+                this.crewService.processMovieCrew(credits.getCrew(), movie);
             }
             page++;
         }
-
-        LocalDateTime end = LocalDateTime.now();
-        logger.info(CYAN + "Finished fetching movies for {}." + RESET, formatDurationLong(Duration.between(start, end)));
-    }
-
-    public static String formatDurationLong(Duration duration) {
-        long millis = duration.toMillis();
-
-        long days = millis / 86_400_000;
-        millis %= 86_400_000;
-
-        long hours = millis / 3_600_000;
-        millis %= 3_600_000;
-
-        long minutes = millis / 60_000;
-        millis %= 60_000;
-
-        long seconds = millis / 1_000;
-        millis %= 1_000;
-
-        StringBuilder sb = new StringBuilder();
-
-        if (days > 0) sb.append(days).append("d ");
-        if (hours > 0 || days > 0) sb.append(hours).append("h ");
-        if (minutes > 0 || hours > 0 || days > 0) sb.append(minutes).append("m ");
-        if (seconds > 0 || minutes > 0 || hours > 0 || days > 0) sb.append(seconds).append("s ");
-        sb.append(millis).append("ms");
-
-        return sb.toString().trim();
     }
 
     private static boolean isInvalid(MovieApiDTO dto) {
@@ -452,40 +401,6 @@ public class MovieServiceImpl implements MovieService {
                 || dto.getOverview() == null || dto.getOverview().isBlank()
                 || dto.getTitle() == null || dto.getTitle().isBlank()
                 || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
-    }
-
-    private void processMovieCast(List<CastApiDTO> castDto, Movie movie, Set<Cast> castSet) {
-        this.castService.processCast(
-                castDto,
-                movie,
-                c -> castMovieRepository.findByMovieIdAndCastApiIdAndCharacter(movie.getId(), c.getId(), c.getCharacter()),
-                (c, m) -> castService.createCastEntity(
-                        c,
-                        m,
-                        castSet,
-                        CastMovie::new,
-                        CastMovie::setMovie,
-                        CastMovie::setCast,
-                        CastMovie::setCharacter
-                ),
-                castMovieRepository::save
-        );
-    }
-
-    private void processMovieCrew(List<CrewApiDTO> crewDto, Movie movie, Set<Crew> crewSet) {
-        this.crewService.processCrew(
-                crewDto,
-                movie,
-                c -> crewMovieRepository.findByMovieIdAndCrewApiIdAndJobJob(movie.getId(), c.getId(), c.getJob()),
-                (c, m) -> {
-                    CrewMovie crewMovie = new CrewMovie();
-                    crewMovie.setMovie(m);
-                    return crewMovie;
-                },
-                crewMovieRepository::save,
-                CrewApiDTO::getJob,
-                crewSet
-        );
     }
 
     private MoviePageWithGenreDTO mapMoviePageWithGenreDTO(Movie movie) {
