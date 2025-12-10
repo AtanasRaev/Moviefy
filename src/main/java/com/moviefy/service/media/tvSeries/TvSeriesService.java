@@ -1,6 +1,5 @@
 package com.moviefy.service.media.tvSeries;
 
-import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageProjection;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
@@ -23,10 +22,6 @@ public interface TvSeriesService {
     boolean isEmpty();
 
     List<TvSeriesTrendingPageDTO> getHomeSeriesDTO(List<String> input);
-
-    List<EpisodeDTO> getEpisodesFromSeason(Long seasonId);
-
-    Integer getSeasonNumberById(Long seasonId);
 
     List<TvSeriesPageWithGenreDTO> searchTvSeries(String query);
 
