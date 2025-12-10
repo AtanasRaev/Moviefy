@@ -1,9 +1,9 @@
 package com.moviefy.service.api.tvSeries;
 
 import com.moviefy.config.ApiConfig;
-import com.moviefy.database.model.dto.apiDto.EpisodesTvSeriesResponseDTO;
-import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.TvSeriesResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.EpisodesTvSeriesResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesResponseApiDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

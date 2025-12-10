@@ -1,7 +1,7 @@
 package com.moviefy.utils;
 
 import com.moviefy.config.ApiConfig;
-import com.moviefy.database.model.dto.apiDto.MediaApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
 import com.moviefy.database.model.dto.apiDto.SearchResponseApiDTO;
 import com.moviefy.database.model.dto.pageDto.SearchResultPageDTO;
 import com.moviefy.database.model.entity.media.Movie;

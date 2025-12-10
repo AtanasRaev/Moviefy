@@ -1,6 +1,6 @@
 package com.moviefy.service.productionCompanies;
 
-import com.moviefy.database.model.dto.apiDto.MediaApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiByIdResponseDTO;
 import com.moviefy.database.model.dto.databaseDto.ProductionCompanyDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.Media;

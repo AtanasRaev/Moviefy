@@ -1,6 +1,8 @@
 package com.moviefy.service.api.tvSeries;
 
-import com.moviefy.database.model.dto.apiDto.*;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.EpisodesTvSeriesResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesResponseApiDTO;
 
 public interface TmdbTvEndpointService {
     TvSeriesResponseApiDTO getTvSeriesResponseByDateAndVoteCount(int page, int year);

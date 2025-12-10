@@ -28,7 +28,7 @@ public class MediaIngestService {
         this.mediaEventPublisher = mediaEventPublisher;
     }
 
-    @Scheduled(cron = "0 13 19 * * *", zone = "Europe/Sofia")
+//    @Scheduled(cron = "0 13 19 * * *", zone = "Europe/Sofia")
     public void addNewMedia() {
         CompletableFuture<Integer> moviesFuture = result(this.movieIngestJob.addNewMovies(), "Movies ingest job");
         CompletableFuture<Integer> seriesFuture = result(this.tvSeriesIngestJob.addNewSeries(), "Series ingest job");

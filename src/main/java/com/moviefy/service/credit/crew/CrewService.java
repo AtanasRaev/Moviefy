@@ -1,7 +1,7 @@
 package com.moviefy.service.credit.crew;
 
-import com.moviefy.database.model.dto.apiDto.CrewApiDTO;
-import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
+import com.moviefy.database.model.dto.apiDto.creditDto.CrewApiDTO;
+import com.moviefy.database.model.dto.pageDto.creditDto.CrewPageDTO;
 import com.moviefy.database.model.entity.credit.crew.Crew;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;

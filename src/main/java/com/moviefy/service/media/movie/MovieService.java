@@ -1,9 +1,9 @@
 package com.moviefy.service.media.movie;
 
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

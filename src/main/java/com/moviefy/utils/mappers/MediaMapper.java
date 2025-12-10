@@ -1,8 +1,8 @@
 package com.moviefy.utils.mappers;
 
-import com.moviefy.database.model.dto.apiDto.MediaApiDTO;
-import com.moviefy.database.model.dto.apiDto.TrailerApiDTO;
-import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.entity.media.Media;
 
 import java.math.BigDecimal;

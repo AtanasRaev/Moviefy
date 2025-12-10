@@ -1,7 +1,7 @@
 package com.moviefy.database.repository.media;
 
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreProjection;
 import com.moviefy.database.model.entity.media.Movie;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

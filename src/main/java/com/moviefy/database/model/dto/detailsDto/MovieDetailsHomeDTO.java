@@ -1,11 +1,10 @@
 package com.moviefy.database.model.dto.detailsDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.moviefy.database.model.dto.pageDto.CrewHomePageDTO;
+import com.moviefy.database.model.dto.pageDto.creditDto.CrewHomePageDTO;
 import com.moviefy.database.model.dto.pageDto.ProductionHomePageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MovieDTO;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MovieDTO;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public class MovieDetailsHomeDTO extends MovieDTO {

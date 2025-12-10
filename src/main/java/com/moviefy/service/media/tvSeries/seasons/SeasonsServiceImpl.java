@@ -1,6 +1,6 @@
 package com.moviefy.service.media.tvSeries.seasons;
 
-import com.moviefy.database.model.dto.apiDto.EpisodesTvSeriesResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.EpisodesTvSeriesResponseDTO;
 import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 import com.moviefy.database.model.entity.media.tvSeries.EpisodeTvSeries;

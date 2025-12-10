@@ -1,9 +1,9 @@
 package com.moviefy.service.media;
 
 import com.moviefy.config.cache.CacheKeys;
-import com.moviefy.database.model.dto.apiDto.ReviewResponseApiDTO;
-import com.moviefy.database.model.dto.pageDto.MediaProjection;
-import com.moviefy.database.model.dto.pageDto.MediaWithGenreProjection;
+import com.moviefy.database.model.dto.apiDto.reviewDto.ReviewResponseApiDTO;
+import com.moviefy.database.model.dto.pageDto.mediaDto.MediaProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.MediaWithGenreProjection;
 import com.moviefy.database.model.dto.pageDto.ReviewPageDTO;
 import com.moviefy.database.repository.media.MediaRepository;
 import com.moviefy.service.api.TmdbCommonEndpointService;

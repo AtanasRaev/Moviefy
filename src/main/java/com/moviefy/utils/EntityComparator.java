@@ -1,6 +1,6 @@
 package com.moviefy.utils;
 
-import com.moviefy.database.model.dto.apiDto.MediaApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
 import com.moviefy.database.model.entity.media.Media;
 
 public class EntityComparator {

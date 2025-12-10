@@ -1,9 +1,9 @@
 package com.moviefy.service.ingest.movie;
 
-import com.moviefy.database.model.dto.apiDto.MediaResponseCreditsDTO;
-import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.MovieApiDTO;
-import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaResponseCreditsDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;

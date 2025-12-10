@@ -1,6 +1,6 @@
 package com.moviefy.utils.mappers;
 
-import com.moviefy.database.model.dto.apiDto.CreditApiDTO;
+import com.moviefy.database.model.dto.apiDto.creditDto.CreditApiDTO;
 import com.moviefy.database.model.entity.credit.Credit;
 
 public abstract class CreditMapper {

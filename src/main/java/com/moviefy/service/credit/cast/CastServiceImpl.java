@@ -1,8 +1,8 @@
 package com.moviefy.service.credit.cast;
 
-import com.moviefy.database.model.dto.apiDto.CastApiDTO;
-import com.moviefy.database.model.dto.apiDto.CreditApiDTO;
-import com.moviefy.database.model.dto.pageDto.CastPageDTO;
+import com.moviefy.database.model.dto.apiDto.creditDto.CastApiDTO;
+import com.moviefy.database.model.dto.apiDto.creditDto.CreditApiDTO;
+import com.moviefy.database.model.dto.pageDto.creditDto.CastPageDTO;
 import com.moviefy.database.model.entity.credit.Credit;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastMovie;

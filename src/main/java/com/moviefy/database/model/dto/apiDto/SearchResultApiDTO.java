@@ -1,6 +1,7 @@
 package com.moviefy.database.model.dto.apiDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
 
 import java.time.LocalDate;
 

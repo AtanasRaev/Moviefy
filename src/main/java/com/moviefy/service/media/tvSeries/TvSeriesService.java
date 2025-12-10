@@ -1,10 +1,10 @@
 package com.moviefy.service.media.tvSeries;
 
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageProjection;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesPageWithGenreProjection;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
+import com.moviefy.database.model.dto.pageDto.mediaDto.tvSeriesDto.TvSeriesPageProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.tvSeriesDto.TvSeriesPageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.mediaDto.tvSeriesDto.TvSeriesPageWithGenreProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

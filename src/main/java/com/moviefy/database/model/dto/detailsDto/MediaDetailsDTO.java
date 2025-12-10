@@ -2,8 +2,8 @@ package com.moviefy.database.model.dto.detailsDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.moviefy.database.model.dto.databaseDto.ProductionCompanyDTO;
-import com.moviefy.database.model.dto.pageDto.CastPageDTO;
-import com.moviefy.database.model.dto.pageDto.CrewPageDTO;
+import com.moviefy.database.model.dto.pageDto.creditDto.CastPageDTO;
+import com.moviefy.database.model.dto.pageDto.creditDto.CrewPageDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 
 import java.util.Set;

@@ -1,11 +1,15 @@
 package com.moviefy.service.media.tvSeries;
 
 import com.moviefy.config.cache.CacheKeys;
-import com.moviefy.database.model.dto.apiDto.*;
+import com.moviefy.database.model.dto.apiDto.creditDto.CastApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesResponseApiDTO;
 import com.moviefy.database.model.dto.detailsDto.SeasonTvSeriesDTO;
 import com.moviefy.database.model.dto.detailsDto.TvSeriesDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
-import com.moviefy.database.model.dto.pageDto.tvSeriesDto.*;
+import com.moviefy.database.model.dto.pageDto.mediaDto.tvSeriesDto.*;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.genre.SeriesGenre;
 import com.moviefy.database.model.entity.media.tvSeries.SeasonTvSeries;
@@ -304,6 +308,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         return LocalDate.now().minusDays(7);
     }
 
+//    @Scheduled(fixedDelay = 100000000)
     public void fetchSeries() {
         logger.info(BLUE + "Starting to fetch tv series..." + RESET);
         int year = START_YEAR;

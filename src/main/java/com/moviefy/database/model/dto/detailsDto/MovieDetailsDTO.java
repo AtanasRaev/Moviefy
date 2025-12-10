@@ -2,7 +2,7 @@ package com.moviefy.database.model.dto.detailsDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreDTO;
 
 import java.time.LocalDate;
 import java.util.List;

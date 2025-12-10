@@ -1,12 +1,15 @@
 package com.moviefy.service.media.movie;
 
 import com.moviefy.config.cache.CacheKeys;
-import com.moviefy.database.model.dto.apiDto.*;
+import com.moviefy.database.model.dto.apiDto.mediaDto.*;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
 import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageProjection;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreDTO;
-import com.moviefy.database.model.dto.pageDto.movieDto.MoviePageWithGenreProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageProjection;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreDTO;
+import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreProjection;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.genre.MovieGenre;
 import com.moviefy.database.model.entity.media.Collection;
@@ -297,6 +300,7 @@ public class MovieServiceImpl implements MovieService {
         optional.ifPresent(genre -> map.setGenre(genre.getName()));
     }
 
+//    @Scheduled(fixedDelay = 100000000)
     public void fetchMovies() {
         logger.info(CYAN + "Starting to fetch movies..." + RESET);
         int year = START_YEAR;

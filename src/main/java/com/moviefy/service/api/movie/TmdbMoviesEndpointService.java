@@ -1,6 +1,7 @@
 package com.moviefy.service.api.movie;
 
-import com.moviefy.database.model.dto.apiDto.*;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
 
 public interface TmdbMoviesEndpointService {
     MovieResponseApiDTO getMoviesResponseByDateAndVoteCount(int page, int year);

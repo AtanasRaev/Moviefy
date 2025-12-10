@@ -1,8 +1,8 @@
 package com.moviefy.utils;
 
-import com.moviefy.database.model.dto.apiDto.MediaApiDTO;
-import com.moviefy.database.model.dto.apiDto.MovieApiDTO;
-import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;

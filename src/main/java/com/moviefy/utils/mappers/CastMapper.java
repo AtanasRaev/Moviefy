@@ -1,6 +1,6 @@
 package com.moviefy.utils.mappers;
 
-import com.moviefy.database.model.dto.apiDto.CastApiDTO;
+import com.moviefy.database.model.dto.apiDto.creditDto.CastApiDTO;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import org.springframework.stereotype.Component;
 

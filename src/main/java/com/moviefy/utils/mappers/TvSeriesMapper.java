@@ -1,8 +1,8 @@
 package com.moviefy.utils.mappers;
 
-import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
-import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import org.springframework.stereotype.Component;

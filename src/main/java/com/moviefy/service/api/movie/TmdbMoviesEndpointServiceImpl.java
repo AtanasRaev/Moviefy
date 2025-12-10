@@ -1,8 +1,8 @@
 package com.moviefy.service.api.movie;
 
 import com.moviefy.config.ApiConfig;
-import com.moviefy.database.model.dto.apiDto.MovieApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.MovieResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
