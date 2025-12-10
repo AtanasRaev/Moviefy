@@ -3,6 +3,7 @@ package com.moviefy.web;
 import com.moviefy.database.model.dto.databaseDto.EpisodeDTO;
 import com.moviefy.database.model.dto.pageDto.tvSeriesDto.TvSeriesTrendingPageDTO;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
+import com.moviefy.service.media.tvSeries.seasons.SeasonsService;
 import com.moviefy.utils.ErrorResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,12 @@ import java.util.Map;
 @RequestMapping("/series")
 public class SeriesController {
     private final TvSeriesService tvSeriesService;
+    private final SeasonsService seasonsService;
 
-    public SeriesController(TvSeriesService tvSeriesService) {
+    public SeriesController(TvSeriesService tvSeriesService,
+                            SeasonsService seasonsService) {
         this.tvSeriesService = tvSeriesService;
+        this.seasonsService = seasonsService;
     }
 
     @GetMapping("/collection")
@@ -45,7 +49,7 @@ public class SeriesController {
 
     @GetMapping("/season/{id}")
     public ResponseEntity<Map<String, Object>> getEpisodesFromSeason(@PathVariable long id) {
-        Integer seasonNumber = this.tvSeriesService.getSeasonNumberById(id);
+        Integer seasonNumber = this.seasonsService.getSeasonNumberById(id);
 
         if (seasonNumber == null) {
             return ErrorResponseUtil.buildErrorResponse(
@@ -55,7 +59,7 @@ public class SeriesController {
             );
         }
 
-        List<EpisodeDTO> episodes = this.tvSeriesService.getEpisodesFromSeason(id);
+        List<EpisodeDTO> episodes = this.seasonsService.getEpisodesFromSeason(id);
 
         if (episodes.isEmpty()) {
             return ErrorResponseUtil.buildErrorResponse(
