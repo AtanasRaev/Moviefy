@@ -1,34 +1,31 @@
 package com.moviefy.service.ingest.tvSeries;
 
-import com.moviefy.database.model.dto.apiDto.*;
-import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
+import com.moviefy.database.model.dto.apiDto.CastApiDTO;
+import com.moviefy.database.model.dto.apiDto.TrailerResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
-import com.moviefy.database.model.entity.credit.cast.Cast;
-import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
-import com.moviefy.database.model.entity.credit.crew.Crew;
-import com.moviefy.database.model.entity.credit.crew.CrewTvSeries;
-import com.moviefy.database.model.entity.media.tvSeries.EpisodeTvSeries;
-import com.moviefy.database.model.entity.media.tvSeries.SeasonTvSeries;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
 import com.moviefy.database.repository.credit.crew.CrewTvSeriesRepository;
-import com.moviefy.database.repository.media.tvSeries.SeasonTvSeriesRepository;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
 import com.moviefy.service.api.TmdbCommonEndpointService;
 import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
+import com.moviefy.service.media.tvSeries.seasons.SeasonsService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.utils.EntityComparator;
 import com.moviefy.utils.mappers.TvSeriesMapper;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.moviefy.utils.Ansi.*;
 
@@ -37,14 +34,13 @@ public class TvSeriesIngestService {
     private final TvSeriesRepository tvSeriesRepository;
     private final CrewTvSeriesRepository crewTvSeriesRepository;
     private final CastTvSeriesRepository castTvSeriesRepository;
-    private final SeasonTvSeriesRepository seasonTvSeriesRepository;
     private final TmdbTvEndpointService tmdbTvEndpointService;
     private final TmdbCommonEndpointService tmdbCommonEndpointService;
     private final ProductionCompanyService productionCompanyService;
     private final CastService castService;
     private final CrewService crewService;
+    private final SeasonsService seasonsService;
     private final TvSeriesMapper tvSeriesMapper;
-    private final ModelMapper modelMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestService.class);
     private static final int MAX_SERIES_PER_YEAR = 600;
@@ -52,25 +48,23 @@ public class TvSeriesIngestService {
     public TvSeriesIngestService(TvSeriesRepository tvSeriesRepository,
                                  CrewTvSeriesRepository crewTvSeriesRepository,
                                  CastTvSeriesRepository castTvSeriesRepository,
-                                 SeasonTvSeriesRepository seasonTvSeriesRepository,
                                  TmdbTvEndpointService tmdbTvEndpointService,
                                  TmdbCommonEndpointService tmdbCommonEndpointService,
                                  ProductionCompanyService productionCompanyService,
                                  CastService castService,
                                  CrewService crewService,
                                  TvSeriesMapper tvSeriesMapper,
-                                 ModelMapper modelMapper) {
+                                 SeasonsService seasonsService) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;
-        this.seasonTvSeriesRepository = seasonTvSeriesRepository;
+        this.seasonsService = seasonsService;
         this.tmdbTvEndpointService = tmdbTvEndpointService;
         this.tmdbCommonEndpointService = tmdbCommonEndpointService;
         this.productionCompanyService = productionCompanyService;
         this.castService = castService;
         this.crewService = crewService;
         this.tvSeriesMapper = tvSeriesMapper;
-        this.modelMapper = modelMapper;
     }
 
     @Transactional
@@ -108,7 +102,6 @@ public class TvSeriesIngestService {
 
         long countByYear = this.tvSeriesRepository.findCountByRankingYear(rankingYear);
         if (countByYear >= MAX_SERIES_PER_YEAR) {
-
             Optional<TvSeries> worstOpt = this.tvSeriesRepository.findLowestRatedSeriesByRankingYear(rankingYear);
             if (worstOpt.isEmpty()) {
                 logger.warn(YELLOW + "Skip series {} — year {} full, and no worst series found" + RESET,
@@ -117,7 +110,7 @@ public class TvSeriesIngestService {
             }
 
             TvSeries worst = worstOpt.get();
-            if (!isBetter(dto, worst)) {
+            if (!EntityComparator.isBetter(dto, worst)) {
                 logger.debug(YELLOW + "Skip series {} — not better than worst existing series {}" + RESET,
                         dto.getName(), worst.getName());
                 return false;
@@ -141,41 +134,17 @@ public class TvSeriesIngestService {
             this.productionCompanyService.saveAllProduction(productionCompaniesMap.get("toSave"));
         }
 
-        tvSeries.setSeasons(mapSeasonsAndEpisodesFromResponse(responseById.getSeasons(), tvSeries));
+        tvSeries.setSeasons(this.seasonsService.mapSeasonsAndEpisodesFromResponse(responseById.getSeasons(), tvSeries));
         this.tvSeriesRepository.save(tvSeries);
 
-        List<CrewApiDTO> crewDto = responseById.getCrew().stream().limit(6).toList();
-        Set<Crew> crewSet = this.crewService.mapToSet(crewDto);
-        processTvSeriesCrew(crewDto, tvSeries, crewSet);
+        this.crewService.processTvSeriesCrew(responseById.getCrew(), tvSeries);
 
         Set<CastApiDTO> cast = responseById.getCredits().getCast();
         if (cast != null && !cast.isEmpty()) {
-            List<CastApiDTO> castDto = this.castService.filterCastApiDto(cast);
-            Set<Cast> castSet = this.castService.mapToSet(castDto);
-            processTvSeriesCast(castDto, tvSeries, castSet);
+            this.castService.processTvSeriesCast(cast, tvSeries);
         }
 
         return true;
-    }
-
-    private static boolean isBetter(TvSeriesApiDTO cand, TvSeries worst) {
-        int voteCmp = Integer.compare(safeInt(cand.getVoteCount()), safeInt(worst.getVoteCount()));
-        if (voteCmp != 0) {
-            return voteCmp > 0;
-        }
-        int popCmp = Double.compare(safeDouble(cand.getPopularity()), safeDouble(worst.getPopularity()));
-        if (popCmp != 0) {
-            return popCmp > 0;
-        }
-        return cand.getId() < worst.getApiId();
-    }
-
-    private static int safeInt(Integer x) {
-        return x == null ? 0 : x;
-    }
-
-    private static double safeDouble(Double x) {
-        return x == null ? 0.0 : x;
     }
 
     @Transactional
@@ -195,84 +164,5 @@ public class TvSeriesIngestService {
         }
 
         this.tvSeriesRepository.delete(tv);
-    }
-
-    private Set<SeasonTvSeries> mapSeasonsAndEpisodesFromResponse(List<SeasonDTO> seasonsDTO, TvSeries tvSeries) {
-        if ((seasonsDTO == null || seasonsDTO.isEmpty()) || tvSeries == null) {
-            return new HashSet<>();
-        }
-
-        Set<SeasonTvSeries> seasons = new HashSet<>();
-
-        for (SeasonDTO seasonDTO : seasonsDTO) {
-            if (seasonDTO.getAirDate() == null || seasonDTO.getSeasonNumber() < 1) {
-                continue;
-            }
-
-            if (this.seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).isEmpty()) {
-                SeasonTvSeries season = new SeasonTvSeries();
-                season.setApiId(seasonDTO.getId());
-                season.setSeasonNumber(seasonDTO.getSeasonNumber());
-                season.setAirDate(seasonDTO.getAirDate());
-                season.setEpisodeCount(seasonDTO.getEpisodeCount());
-                season.setPosterPath(seasonDTO.getPosterPath());
-                season.setTvSeries(tvSeries);
-                season.setEpisodes(mapEpisodesFromResponse(tvSeries.getApiId(), season));
-                seasons.add(season);
-            }
-        }
-        return seasons;
-    }
-
-    private Set<EpisodeTvSeries> mapEpisodesFromResponse(long id, SeasonTvSeries season) {
-        EpisodesTvSeriesResponseDTO episodesResponse = this.tmdbTvEndpointService.getEpisodesResponse(id, season.getSeasonNumber());
-
-        if (episodesResponse == null) {
-            return new HashSet<>();
-        }
-
-        return episodesResponse.getEpisodes()
-                .stream()
-                .map(dto -> {
-                    EpisodeTvSeries map = this.modelMapper.map(dto, EpisodeTvSeries.class);
-                    map.setSeason(season);
-                    return map;
-                })
-                .collect(Collectors.toSet());
-
-    }
-
-    private void processTvSeriesCrew(List<CrewApiDTO> crewDto, TvSeries tvSeries, Set<Crew> crewSet) {
-        this.crewService.processCrew(
-                crewDto,
-                tvSeries,
-                c -> crewTvSeriesRepository.findByTvSeriesIdAndCrewApiIdAndJobJob(tvSeries.getId(), c.getId(), "Creator"),
-                (c, t) -> {
-                    CrewTvSeries crewTvSeries = new CrewTvSeries();
-                    crewTvSeries.setTvSeries(t);
-                    return crewTvSeries;
-                },
-                crewTvSeriesRepository::save,
-                c -> "Creator",
-                crewSet
-        );
-    }
-
-    private void processTvSeriesCast(List<CastApiDTO> castDto, TvSeries tvSeries, Set<Cast> castSet) {
-        this.castService.processCast(
-                castDto,
-                tvSeries,
-                c -> castTvSeriesRepository.findByTvSeriesIdAndCastApiIdAndCharacter(tvSeries.getId(), c.getId(), c.getCharacter()),
-                (c, t) -> castService.createCastEntity(
-                        c,
-                        t,
-                        castSet,
-                        CastTvSeries::new,
-                        CastTvSeries::setTvSeries,
-                        CastTvSeries::setCast,
-                        CastTvSeries::setCharacter
-                ),
-                castTvSeriesRepository::save
-        );
     }
 }
