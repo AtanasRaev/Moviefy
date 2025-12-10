@@ -1,25 +1,16 @@
-buildscript {
-    dependencies {
-        classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.4.2'
-    }
-}
-
 plugins {
     id 'org.springframework.boot' version '3.2.5'
     id 'io.spring.dependency-management' version '1.1.4'
     id 'java'
 }
 
-group = 'watchitnow'
+group = 'com.moviefy'
 version = '0.0.1-SNAPSHOT'
-
 
 repositories {
     mavenCentral()
-    google()
     gradlePluginPortal()
 }
-
 
 configurations {
     configureEach {
@@ -27,13 +18,10 @@ configurations {
     }
 }
 
-apply plugin: 'com.google.cloud.tools.appengine'
-
 java {
     sourceCompatibility = '17'
     targetCompatibility = '17'
 }
-
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -48,7 +36,6 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.1'
     implementation 'com.fasterxml.jackson.core:jackson-core:2.15.1'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.1'
-    implementation 'com.google.cloud:google-cloud-secretmanager:2.1.0'
     implementation 'com.squareup.okhttp3:okhttp:4.9.1'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'me.paulschwarz:spring-dotenv:3.0.0'

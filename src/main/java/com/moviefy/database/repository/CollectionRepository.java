@@ -96,7 +96,7 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
                            m.collection_id,
                            m.id
                     FROM movies m
-                    ORDER BY 
+                    ORDER BY
                         m.collection_id,
                         m.release_date ASC NULLS LAST,
                         m.id ASC
@@ -117,7 +117,7 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
                 WITH matched AS (
                     SELECT c.id
                     FROM collections c
-                    WHERE 
+                    WHERE
                           c.poster_path IS NOT NULL
                           AND (
                               :q IS NULL OR :q = '' OR
