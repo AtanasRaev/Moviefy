@@ -4,6 +4,7 @@ import com.moviefy.database.model.dto.apiDto.TvSeriesApiDTO;
 import com.moviefy.database.model.dto.apiDto.TvSeriesResponseApiDTO;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
 import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
+import com.moviefy.utils.MediaValidationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -38,8 +38,6 @@ public class TvSeriesIngestJob {
     @Transactional
     @Async
     public CompletableFuture<Integer> addNewSeries() {
-        final long startNs = System.nanoTime();
-
         logger.info(BLUE + "📺 Starting TV SERIES ingest job… (thread={})" + RESET,
                 Thread.currentThread().getName());
 
@@ -70,13 +68,7 @@ public class TvSeriesIngestJob {
             final LocalDate now = LocalDate.now();
 
             Set<TvSeriesApiDTO> filtered = candidates.stream()
-                    .filter(dto -> {
-                        if (isInvalid(dto) || dto.getFirstAirDate() == null) return false;
-                        long days = ChronoUnit.DAYS.between(dto.getFirstAirDate(), now);
-                        if (days <= 7)  return dto.getPopularity() >= 5 || trendingIds.contains(dto.getId());
-                        if (days <= 30) return dto.getVoteCount() >= 5 || dto.getPopularity() >= 10;
-                        return dto.getVoteCount() >= 20 || dto.getPopularity() >= 20;
-                    })
+                    .filter(dto -> MediaValidationUtil.isValidForUpdate(dto, now, trendingIds))
                     .collect(Collectors.toSet());
 
             logger.debug(BLUE + "Page {}: {} candidates → {} filtered" + RESET,
@@ -128,21 +120,12 @@ public class TvSeriesIngestJob {
             page++;
         }
 
-        long tookMs = (System.nanoTime() - startNs) / 1_000_000L;
-        logger.info(BLUE + "📺 TV SERIES ingest finished: inserted={} • took={} ms" + RESET, insertedToday, tookMs);
-
+        logger.info(BLUE + "📺 TV SERIES ingest finished: inserted={}" + RESET, insertedToday);
         return CompletableFuture.completedFuture(insertedToday);
     }
 
     private static Set<Long> buildTrendingIdSet(TvSeriesResponseApiDTO trending) {
         if (trending == null || trending.getResults() == null) return Collections.emptySet();
         return trending.getResults().stream().map(TvSeriesApiDTO::getId).collect(Collectors.toSet());
-    }
-
-    private static boolean isInvalid(TvSeriesApiDTO dto) {
-        return dto.getPosterPath() == null || dto.getPosterPath().isBlank()
-                || dto.getOverview() == null || dto.getOverview().isBlank()
-                || dto.getName() == null || dto.getName().isBlank()
-                || dto.getBackdropPath() == null || dto.getBackdropPath().isBlank();
     }
 }
