@@ -13,7 +13,7 @@ import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
-import com.moviefy.database.repository.media.CollectionRepository;
+import com.moviefy.database.repository.CollectionRepository;
 import com.moviefy.service.credit.crew.CrewService;
 import org.modelmapper.ModelMapper;
 import org.springframework.cache.annotation.Cacheable;

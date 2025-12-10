@@ -1,4 +1,4 @@
-package com.moviefy.database.repository.media;
+package com.moviefy.database.repository;
 
 import com.moviefy.database.model.dto.pageDto.CollectionPageProjection;
 import com.moviefy.database.model.entity.media.Collection;
