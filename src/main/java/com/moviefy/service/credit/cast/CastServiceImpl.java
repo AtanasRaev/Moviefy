@@ -7,6 +7,8 @@ import com.moviefy.database.model.entity.credit.Credit;
 import com.moviefy.database.model.entity.credit.cast.Cast;
 import com.moviefy.database.model.entity.credit.cast.CastMovie;
 import com.moviefy.database.model.entity.credit.cast.CastTvSeries;
+import com.moviefy.database.model.entity.media.Movie;
+import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.credit.cast.CastMovieRepository;
 import com.moviefy.database.repository.credit.cast.CastRepository;
 import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
@@ -40,7 +42,7 @@ public class CastServiceImpl implements CastService {
     }
 
     @Override
-    public Set<Cast> mapToSet(List<CastApiDTO> castDto) {
+    public Set<Cast> filterAndSave(List<CastApiDTO> castDto) {
         return creditRetrievalUtil.creditRetrieval(
                 castDto,
                 this.castMapper::mapToCast,
@@ -74,7 +76,50 @@ public class CastServiceImpl implements CastService {
     }
 
     @Override
-    public <T, E> void processCast(
+    public void processTvSeriesCast(Set<CastApiDTO> castDTO, TvSeries tvSeries) {
+        List<CastApiDTO> castList = this.filterCastApiDto(castDTO);
+        Set<Cast> castSet = this.filterAndSave(castList);
+
+        this.processCast(
+                castList,
+                tvSeries,
+                c -> castTvSeriesRepository.findByTvSeriesIdAndCastApiIdAndCharacter(tvSeries.getId(), c.getId(), c.getCharacter()),
+                (c, t) -> this.createCastEntity(
+                        c,
+                        t,
+                        castSet,
+                        CastTvSeries::new,
+                        CastTvSeries::setTvSeries,
+                        CastTvSeries::setCast,
+                        CastTvSeries::setCharacter
+                ),
+                castTvSeriesRepository::save
+        );
+    }
+
+    @Override
+    public void processMovieCast(Set<CastApiDTO> castDto, Movie movie) {
+        List<CastApiDTO> castList = this.filterCastApiDto(castDto);
+        Set<Cast> castSet = this.filterAndSave(castList);
+
+        this.processCast(
+                castList,
+                movie,
+                c -> castMovieRepository.findByMovieIdAndCastApiIdAndCharacter(movie.getId(), c.getId(), c.getCharacter()),
+                (c, m) -> this.createCastEntity(
+                        c,
+                        m,
+                        castSet,
+                        CastMovie::new,
+                        CastMovie::setMovie,
+                        CastMovie::setCast,
+                        CastMovie::setCharacter
+                ),
+                castMovieRepository::save
+        );
+    }
+
+    private  <T, E> void processCast(
             List<CastApiDTO> castDto,
             T parentEntity,
             Function<CastApiDTO, Optional<E>> findFunction,
@@ -90,8 +135,7 @@ public class CastServiceImpl implements CastService {
         });
     }
 
-    @Override
-    public <T, E> E createCastEntity(
+    private  <T, E> E createCastEntity(
             CastApiDTO dto,
             T parentEntity,
             Set<Cast> castSet,
