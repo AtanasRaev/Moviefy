@@ -4,12 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-import java.util.List;
-
-public class MovieApiByIdResponseDTO {
-    @JsonProperty("production_companies")
-    private List<ProductionApiDTO> productionCompanies;
-
+public class MovieApiByIdResponseDTO extends MediaApiByIdResponseDTO{
     @JsonProperty("belongs_to_collection")
     private CollectionApiDTO collection;
 
@@ -19,16 +14,6 @@ public class MovieApiByIdResponseDTO {
 
     @JsonProperty("imdb_id")
     private String imdbId;
-
-    private MediaResponseCreditsDTO credits;
-
-    public List<ProductionApiDTO> getProductionCompanies() {
-        return productionCompanies;
-    }
-
-    public void setProductionCompanies(List<ProductionApiDTO> productionCompanies) {
-        this.productionCompanies = productionCompanies;
-    }
 
     public CollectionApiDTO getCollection() {
         return collection;
@@ -52,13 +37,5 @@ public class MovieApiByIdResponseDTO {
 
     public void setImdbId(String imdbId) {
         this.imdbId = imdbId;
-    }
-
-    public MediaResponseCreditsDTO getCredits() {
-        return credits;
-    }
-
-    public void setCredits(MediaResponseCreditsDTO credits) {
-        this.credits = credits;
     }
 }
