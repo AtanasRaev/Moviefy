@@ -96,7 +96,7 @@ public class SearchMediaUtil {
                         seriesDTO.setTitle(dto.getName());
                         seriesDTO.setType("series");
 
-                        List<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(seriesDTO.getId());
+                        Set<SeasonTvSeries> seasons = this.seasonTvSeriesRepository.findAllByTvSeriesId(seriesDTO.getId());
                         seasons.stream()
                                 .max(Comparator.comparing(SeasonTvSeries::getSeasonNumber))
                                 .ifPresent(lastSeason -> {

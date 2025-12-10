@@ -372,9 +372,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
               FROM movies
               WHERE ranking_year = :year
                 AND favourite_count = 0
+                AND inserted_at < NOW() - INTERVAL '14 days'
               ORDER BY
-                vote_count ASC,
-                popularity ASC,
+                vote_count,
+                popularity,
                 id DESC
               LIMIT 1
             """, nativeQuery = true)
