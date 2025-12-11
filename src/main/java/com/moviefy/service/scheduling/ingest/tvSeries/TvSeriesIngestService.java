@@ -1,4 +1,4 @@
-package com.moviefy.service.ingest.tvSeries;
+package com.moviefy.service.scheduling.ingest.tvSeries;
 
 import com.moviefy.database.model.dto.apiDto.creditDto.CastApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;

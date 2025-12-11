@@ -1,10 +1,9 @@
-package com.moviefy.service.ingest;
+package com.moviefy.service.scheduling.ingest;
 
-import com.moviefy.service.ingest.movie.MovieIngestJob;
-import com.moviefy.service.ingest.tvSeries.TvSeriesIngestJob;
+import com.moviefy.service.scheduling.ingest.movie.MovieIngestJob;
+import com.moviefy.service.scheduling.ingest.tvSeries.TvSeriesIngestJob;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;

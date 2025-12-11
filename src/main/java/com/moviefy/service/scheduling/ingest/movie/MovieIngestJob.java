@@ -1,4 +1,4 @@
-package com.moviefy.service.ingest.movie;
+package com.moviefy.service.scheduling.ingest.movie;
 
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;

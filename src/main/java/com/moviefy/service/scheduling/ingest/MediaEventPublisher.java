@@ -1,4 +1,4 @@
-package com.moviefy.service.ingest;
+package com.moviefy.service.scheduling.ingest;
 
 import com.moviefy.config.cache.events.LatestChangedMediaEvent;
 import com.moviefy.config.cache.events.LatestChangedMoviesEvent;
