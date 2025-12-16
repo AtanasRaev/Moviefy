@@ -1,6 +1,6 @@
 package com.moviefy.utils.mappers;
 
-import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.entity.media.Media;
@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public abstract class MediaMapper {
-    protected void mapCommonFields(Media media, MediaApiDTO dto, TrailerResponseApiDTO responseTrailer) {
+    protected void mapCommonFields(Media media, MediaApiByIdResponseDTO dto, TrailerResponseApiDTO responseTrailer) {
         BigDecimal popularity = BigDecimal.valueOf(dto.getPopularity()).setScale(1, RoundingMode.HALF_UP);
         BigDecimal voteAverage = BigDecimal.valueOf(dto.getVoteAverage()).setScale(1, RoundingMode.HALF_UP);
 
@@ -22,6 +22,7 @@ public abstract class MediaMapper {
         media.setVoteCount(dto.getVoteCount());
         media.setPopularity(popularity.doubleValue());
         media.setVoteAverage(voteAverage.doubleValue());
+        media.setRefreshedAt(null);
         media.setFavouriteCount(0);
 
         List<TrailerApiDTO> trailers = responseTrailer.getResults();
