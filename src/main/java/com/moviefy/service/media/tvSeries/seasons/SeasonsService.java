@@ -16,4 +16,6 @@ public interface SeasonsService {
     List<EpisodeDTO> getEpisodesFromSeason(Long seasonId);
 
     Integer getSeasonNumberById(Long seasonId);
+
+    boolean updateSeasonsAndEpisodes(List<SeasonDTO> seasonsDTO, TvSeries tvSeries);
 }

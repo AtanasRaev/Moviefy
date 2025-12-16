@@ -12,10 +12,8 @@ import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,14 +47,7 @@ public class SeasonsServiceImpl implements SeasonsService {
             }
 
             if (this.seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).isEmpty()) {
-                SeasonTvSeries season = new SeasonTvSeries();
-                season.setApiId(seasonDTO.getId());
-                season.setSeasonNumber(seasonDTO.getSeasonNumber());
-                season.setAirDate(seasonDTO.getAirDate());
-                season.setEpisodeCount(seasonDTO.getEpisodeCount());
-                season.setPosterPath(seasonDTO.getPosterPath());
-                season.setTvSeries(tvSeries);
-                season.setEpisodes(mapEpisodesFromResponse(tvSeries.getApiId(), season));
+                SeasonTvSeries season = mapSeason(seasonDTO, tvSeries);
                 seasons.add(season);
             }
         }
@@ -84,8 +75,97 @@ public class SeasonsServiceImpl implements SeasonsService {
                 .orElse(null);
     }
 
-    private Set<EpisodeTvSeries> mapEpisodesFromResponse(long id, SeasonTvSeries season) {
-        EpisodesTvSeriesResponseDTO episodesResponse = this.tmdbTvEndpointService.getEpisodesResponse(id, season.getSeasonNumber());
+    @Override
+    public boolean updateSeasonsAndEpisodes(List<SeasonDTO> seasonsDTO, TvSeries tvSeries) {
+        if (tvSeries == null || seasonsDTO == null || seasonsDTO.isEmpty()) {
+            return false;
+        }
+
+        boolean updated = false;
+
+        for (SeasonDTO seasonDTO : seasonsDTO) {
+            if (seasonDTO.getAirDate() == null || seasonDTO.getSeasonNumber() < 1) {
+                continue;
+            }
+
+            SeasonTvSeries season = seasonTvSeriesRepository.findByApiId(seasonDTO.getId()).orElse(null);
+
+            if (season == null) {
+                season = mapSeason(seasonDTO, tvSeries);
+                seasonTvSeriesRepository.save(season);
+                updated = true;
+                continue;
+            }
+
+            if ((season.getPosterPath() == null || season.getPosterPath().isBlank())
+                    && seasonDTO.getPosterPath() != null) {
+                season.setPosterPath(seasonDTO.getPosterPath());
+                updated = true;
+            }
+
+            if (!Objects.equals(season.getEpisodeCount(), seasonDTO.getEpisodeCount())) {
+                season.setEpisodeCount(seasonDTO.getEpisodeCount());
+                updated = true;
+            }
+
+            EpisodesTvSeriesResponseDTO resp = tmdbTvEndpointService.getEpisodesResponse(tvSeries.getApiId(), season.getSeasonNumber());
+
+            if (resp == null || resp.getEpisodes() == null) {
+                continue;
+            }
+
+            Map<Integer, EpisodeTvSeries> byNumber = season.getEpisodes().stream()
+                    .collect(Collectors.toMap(EpisodeTvSeries::getEpisodeNumber, Function.identity(), (a, b) -> a));
+
+            for (EpisodeDTO e : resp.getEpisodes()) {
+                if (e.getEpisodeNumber() == null || e.getEpisodeNumber() < 1) {
+                    continue;
+                }
+
+                EpisodeTvSeries target = byNumber.get(e.getEpisodeNumber());
+
+                if (target == null) {
+                    target = modelMapper.map(e, EpisodeTvSeries.class);
+                    target.setSeason(season);
+                    season.getEpisodes().add(target);
+                    updated = true;
+                    continue;
+                }
+
+                boolean beforeUpdateStillPathNull = target.getStillPath() == null;
+
+                String beforeJson = target.toString();
+                modelMapper.map(e, target);
+
+                if (beforeUpdateStillPathNull && e.getStillPath() != null) {
+                    target.setStillPath(e.getStillPath());
+                    updated = true;
+                }
+
+                if (!beforeJson.equals(target.toString())) {
+                    updated = true;
+                }
+            }
+            seasonTvSeriesRepository.save(season);
+        }
+        return updated;
+    }
+
+    private SeasonTvSeries mapSeason(SeasonDTO seasonDTO, TvSeries tvSeries) {
+        SeasonTvSeries season = new SeasonTvSeries();
+        season.setApiId(seasonDTO.getId());
+        season.setSeasonNumber(seasonDTO.getSeasonNumber());
+        season.setAirDate(seasonDTO.getAirDate());
+        season.setTvSeries(tvSeries);
+        season.setPosterPath(seasonDTO.getPosterPath());
+        season.setEpisodeCount(seasonDTO.getEpisodeCount());
+        season.setEpisodes(mapEpisodesFromResponse(tvSeries.getApiId(), season));
+
+        return season;
+    }
+
+    private Set<EpisodeTvSeries> mapEpisodesFromResponse(long tvSeriesId, SeasonTvSeries season) {
+        EpisodesTvSeriesResponseDTO episodesResponse = this.tmdbTvEndpointService.getEpisodesResponse(tvSeriesId, season.getSeasonNumber());
 
         if (episodesResponse == null) {
             return new HashSet<>();
