@@ -41,13 +41,8 @@ public class SeriesGenreServiceImpl implements SeriesGenreService {
     }
 
     @Override
-    public Set<SeriesGenre> getAllGenresByApiIds(Set<Long> genres) {
-        Set<SeriesGenre> genresList = new HashSet<>();
-        for (Long genre : genres) {
-            Optional<SeriesGenre> optional = this.genreRepository.findByApiId(genre);
-            optional.ifPresent(genresList::add);
-        }
-        return genresList;
+    public Set<SeriesGenre> getAllGenresByApiIds(Set<Long> genresApiIds) {
+        return this.genreRepository.findAllByApiId(genresApiIds);
     }
 
     @Override
