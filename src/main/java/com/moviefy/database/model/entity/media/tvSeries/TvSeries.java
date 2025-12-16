@@ -6,6 +6,7 @@ import com.moviefy.database.model.entity.media.Media;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -30,9 +31,9 @@ public class TvSeries extends Media {
 
     @OneToMany(mappedBy = "tvSeries",
             fetch = FetchType.LAZY,
-            cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
             orphanRemoval = true)
-    private Set<SeasonTvSeries> seasons;
+    private Set<SeasonTvSeries> seasons = new HashSet<>();
 
     @Column(name = "number_of_seasons")
     private Integer numberOfSeasons;
