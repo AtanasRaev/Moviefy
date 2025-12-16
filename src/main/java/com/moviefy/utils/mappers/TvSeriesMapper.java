@@ -2,10 +2,12 @@ package com.moviefy.utils.mappers;
 
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 public class TvSeriesMapper extends MediaMapper {
@@ -15,7 +17,7 @@ public class TvSeriesMapper extends MediaMapper {
         this.seriesGenreService = seriesGenreService;
     }
 
-    public TvSeries mapToTvSeries(TvSeriesApiDTO dto, TvSeriesApiByIdResponseDTO responseById, TrailerResponseApiDTO responseTrailer) {
+    public TvSeries mapToTvSeries(TvSeriesApiByIdResponseDTO dto, TrailerResponseApiDTO responseTrailer) {
         TvSeries tvSeries = new TvSeries();
 
         super.mapCommonFields(tvSeries, dto, responseTrailer);
@@ -25,16 +27,20 @@ public class TvSeriesMapper extends MediaMapper {
         tvSeries.setRankingYear(dto.getFirstAirDate().getYear());
         tvSeries.setGenres(this.seriesGenreService.getAllGenresByApiIds(dto.getGenres()));
         tvSeries.setAdult(dto.isAdult());
-        tvSeries.setType(responseById.getType());
-        tvSeries.setNumberOfSeasons(responseById.getNumberOfSeasons());
-        tvSeries.setNumberOfEpisodes(responseById.getNumberOfEpisodes());
-        if (responseById.getExternalIds() != null) {
-            tvSeries.setImdbId(responseById.getExternalIds().getImdbId() == null || responseById.getExternalIds().getImdbId().isBlank() ? null : responseById.getExternalIds().getImdbId());
+        tvSeries.setType(dto.getType());
+        tvSeries.setNumberOfSeasons(dto.getNumberOfSeasons());
+        tvSeries.setNumberOfEpisodes(dto.getNumberOfEpisodes());
+        if (dto.getExternalIds() != null) {
+            tvSeries.setImdbId(dto.getExternalIds().getImdbId() == null || dto.getExternalIds().getImdbId().isBlank() ? null : dto.getExternalIds().getImdbId());
         }
 
-        if (responseById.getStatus() != null && !responseById.getStatus().isBlank()) {
-            tvSeries.setStatus(responseById.getStatus());
+        if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
+            tvSeries.setStatus(dto.getStatus());
         }
+
+        tvSeries.setInsertedAt(dto.getFirstAirDate().isBefore(LocalDate.now()) || dto.getFirstAirDate().isEqual(LocalDate.now())
+                ? LocalDateTime.now()
+                : dto.getFirstAirDate().atStartOfDay());
 
         return tvSeries;
     }

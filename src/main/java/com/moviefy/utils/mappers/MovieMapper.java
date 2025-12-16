@@ -1,11 +1,13 @@
 package com.moviefy.utils.mappers;
 
-import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.service.genre.movieGenre.MovieGenreService;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 public class MovieMapper extends MediaMapper {
@@ -15,7 +17,7 @@ public class MovieMapper extends MediaMapper {
         this.genreService = genreService;
     }
 
-    public Movie mapToMovie(MovieApiDTO dto, MovieApiByIdResponseDTO responseById, TrailerResponseApiDTO responseTrailer) {
+    public Movie mapToMovie(MovieApiByIdResponseDTO dto, TrailerResponseApiDTO responseTrailer) {
         Movie movie = new Movie();
 
         super.mapCommonFields(movie, dto, responseTrailer);
@@ -24,9 +26,12 @@ public class MovieMapper extends MediaMapper {
         movie.setReleaseDate(dto.getReleaseDate());
         movie.setRankingYear(dto.getReleaseDate().getYear());
         movie.setAdult(dto.isAdult());
-        movie.setImdbId(responseById.getImdbId() == null || responseById.getImdbId().isBlank() ? null : responseById.getImdbId());
-        movie.setRuntime(responseById.getRuntime());
+        movie.setImdbId(dto.getImdbId() == null || dto.getImdbId().isBlank() ? null : dto.getImdbId());
+        movie.setRuntime(dto.getRuntime());
         movie.setGenres(this.genreService.getAllGenresByApiIds(dto.getGenres()));
+        movie.setInsertedAt(dto.getReleaseDate().isBefore(LocalDate.now()) || dto.getReleaseDate().isEqual(LocalDate.now())
+                ? LocalDateTime.now()
+                : dto.getReleaseDate().atStartOfDay());
 
         return movie;
     }
