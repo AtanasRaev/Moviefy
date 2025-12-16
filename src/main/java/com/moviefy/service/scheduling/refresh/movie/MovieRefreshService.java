@@ -88,7 +88,7 @@ public class MovieRefreshService {
                 if (updated) {
                     updatedCount++;
                     refreshedToday.add(apiId);
-                    logger.info(GREEN + "Refreshed movie apiId={} (updated #{})" + RESET, apiId, updatedCount);
+                    logger.info(GREEN + "✔Refreshed movie apiId={} ({})" + RESET, apiId, dto.getTitle());
                 } else {
                     logger.debug(YELLOW + "No changes for apiId={} — up to date" + RESET, apiId);
                 }
