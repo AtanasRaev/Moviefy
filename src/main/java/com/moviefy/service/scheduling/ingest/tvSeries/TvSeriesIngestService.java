@@ -1,5 +1,6 @@
 package com.moviefy.service.scheduling.ingest.tvSeries;
 
+import com.moviefy.config.FetchMediaConfig;
 import com.moviefy.database.model.dto.apiDto.creditDto.CastApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
@@ -15,11 +16,13 @@ import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.media.tvSeries.seasons.SeasonsService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.service.scheduling.MediaEventPublisher;
 import com.moviefy.utils.EntityComparator;
 import com.moviefy.utils.mappers.TvSeriesMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -41,9 +44,9 @@ public class TvSeriesIngestService {
     private final CrewService crewService;
     private final SeasonsService seasonsService;
     private final TvSeriesMapper tvSeriesMapper;
+    private final MediaEventPublisher mediaEventPublisher;
 
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestService.class);
-    private static final int MAX_SERIES_PER_YEAR = 600;
 
     public TvSeriesIngestService(TvSeriesRepository tvSeriesRepository,
                                  CrewTvSeriesRepository crewTvSeriesRepository,
@@ -54,7 +57,8 @@ public class TvSeriesIngestService {
                                  CastService castService,
                                  CrewService crewService,
                                  TvSeriesMapper tvSeriesMapper,
-                                 SeasonsService seasonsService) {
+                                 SeasonsService seasonsService,
+                                 MediaEventPublisher mediaEventPublisher) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;
@@ -65,9 +69,10 @@ public class TvSeriesIngestService {
         this.castService = castService;
         this.crewService = crewService;
         this.tvSeriesMapper = tvSeriesMapper;
+        this.mediaEventPublisher = mediaEventPublisher;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean persistSeriesIfEligible(TvSeriesApiDTO dto) {
 
         LocalDate fad = dto.getFirstAirDate();
@@ -101,7 +106,7 @@ public class TvSeriesIngestService {
         }
 
         long countByYear = this.tvSeriesRepository.findCountByRankingYear(rankingYear);
-        if (countByYear >= MAX_SERIES_PER_YEAR) {
+        if (countByYear >= FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
             Optional<TvSeries> worstOpt = this.tvSeriesRepository.findLowestRatedSeriesByRankingYear(rankingYear);
             if (worstOpt.isEmpty()) {
                 logger.warn(YELLOW + "Skip series {} — year {} full, and no worst series found" + RESET,
@@ -124,7 +129,7 @@ public class TvSeriesIngestService {
 
         TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(dto.getId(), "tv");
 
-        TvSeries tvSeries = this.tvSeriesMapper.mapToTvSeries(dto, responseById, responseTrailer);
+        TvSeries tvSeries = this.tvSeriesMapper.mapToTvSeries(responseById, responseTrailer);
 
         Map<String, Set<ProductionCompany>> productionCompaniesMap =
                 this.productionCompanyService.getProductionCompaniesFromResponse(responseById, tvSeries);
@@ -142,6 +147,14 @@ public class TvSeriesIngestService {
         Set<CastApiDTO> cast = responseById.getCredits().getCast();
         if (cast != null && !cast.isEmpty()) {
             this.castService.processTvSeriesCast(cast, tvSeries);
+
+            Set<Long> castIds = this.castTvSeriesRepository.findCastIdsByTvSeriesId(tvSeries.getId());
+            this.mediaEventPublisher.publishCastByTvSeriesChangedEvent(castIds);
+            this.mediaEventPublisher.publishCastByMediaChangedEvent(castIds);
+
+            Set<Long> crewIds = this.crewTvSeriesRepository.findCrewIdsByTvSeriesId(tvSeries.getId());
+            this.mediaEventPublisher.publishCrewByTvSeriesChangedEvent(crewIds);
+            this.mediaEventPublisher.publishCrewByMediaChangedEvent(crewIds);
         }
 
         return true;
@@ -149,8 +162,16 @@ public class TvSeriesIngestService {
 
     @Transactional
     protected void detachAndDelete(TvSeries tv) {
+        Set<Long> castIds = this.castTvSeriesRepository.findCastIdsByTvSeriesId(tv.getId());
         this.castTvSeriesRepository.deleteByTvSeriesId(tv.getId());
+        this.mediaEventPublisher.publishCastByTvSeriesChangedEvent(castIds);
+        this.mediaEventPublisher.publishCastByMediaChangedEvent(castIds);
+
+        Set<Long> crewIds = this.crewTvSeriesRepository.findCrewIdsByTvSeriesId(tv.getId());
+        this.mediaEventPublisher.publishCrewByTvSeriesChangedEvent(crewIds);
+        this.mediaEventPublisher.publishCrewByMediaChangedEvent(crewIds);
         this.crewTvSeriesRepository.deleteByTvSeriesId(tv.getId());
+
         if (tv.getGenres() != null) {
             tv.getGenres().clear();
         }

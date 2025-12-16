@@ -1,5 +1,6 @@
 package com.moviefy.service.scheduling.ingest.tvSeries;
 
+import com.moviefy.config.cache.IngestConfig;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesResponseApiDTO;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
@@ -9,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -25,7 +25,6 @@ public class TvSeriesIngestJob {
     private final TmdbTvEndpointService tmdbTvEndpointService;
 
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestJob.class);
-    private static final int DAILY_INSERT_LIMIT = 10;
 
     public TvSeriesIngestJob(TvSeriesRepository tvSeriesRepository,
                              TvSeriesIngestService tvSeriesIngestService,
@@ -35,16 +34,15 @@ public class TvSeriesIngestJob {
         this.tmdbTvEndpointService = tmdbTvEndpointService;
     }
 
-    @Transactional
     @Async
-    public CompletableFuture<Integer> addNewSeries() {
+    public CompletableFuture<List<Long>> addNewSeries() {
         logger.info(BLUE + "📺 Starting TV SERIES ingest job… (thread={})" + RESET,
                 Thread.currentThread().getName());
 
         int page = 1;
-        int insertedToday = 0;
+        List<Long> insertedToday = new ArrayList<>();
 
-        while (insertedToday < DAILY_INSERT_LIMIT) {
+        while (insertedToday.size() < IngestConfig.DAILY_INSERT_LIMIT) {
             logger.debug(BLUE + "Fetching series (page={})…" + RESET, page);
 
             TvSeriesResponseApiDTO discover = this.tmdbTvEndpointService.getNewTvSeriesUTCTime(page);
@@ -101,22 +99,26 @@ public class TvSeriesIngestJob {
                     .toList();
 
             for (TvSeriesApiDTO dto : queue) {
-                if (insertedToday >= DAILY_INSERT_LIMIT) {
-                    logger.debug(YELLOW + "Reached daily insert limit ({}) . Stopping series ingest." + RESET, DAILY_INSERT_LIMIT);
+                if (insertedToday.size() >= IngestConfig.DAILY_INSERT_LIMIT) {
+                    logger.debug(YELLOW + "Reached daily insert limit ({}) . Stopping series ingest." + RESET, IngestConfig.DAILY_INSERT_LIMIT);
                     break;
                 }
 
-                boolean inserted = this.tvSeriesIngestService.persistSeriesIfEligible(dto);
+                try {
+                    boolean inserted = this.tvSeriesIngestService.persistSeriesIfEligible(dto);
 
-                if (inserted) {
-                    insertedToday++;
-                    logger.info(PURPLE + "Inserted series: {} (#{}/{} • voteCount={} • popularity={})" + RESET,
-                            dto.getName(), insertedToday, DAILY_INSERT_LIMIT, dto.getVoteCount(), dto.getPopularity());
-                } else {
-                    logger.debug(YELLOW + "Skipped series: {} (ID={})" + RESET, dto.getName(), dto.getId());
+                    if (inserted) {
+                        insertedToday.add(dto.getId());
+                        logger.info(PURPLE + "Inserted series: {} (#{}/{} • voteCount={} • popularity={})" + RESET,
+                                dto.getName(), insertedToday, IngestConfig.DAILY_INSERT_LIMIT, dto.getVoteCount(), dto.getPopularity());
+                    } else {
+                        logger.debug(YELLOW + "Skipped series: {} (ID={})" + RESET, dto.getName(), dto.getId());
+                    }
+                } catch (Exception ex) {
+                    logger.error(RED + "Failed to ingest series: {} (ID={})" + RESET,
+                            dto.getName(), dto.getId(), ex);
                 }
             }
-
             page++;
         }
 
