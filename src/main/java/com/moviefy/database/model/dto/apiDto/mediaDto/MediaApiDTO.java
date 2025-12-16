@@ -2,8 +2,6 @@ package com.moviefy.database.model.dto.apiDto.mediaDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Set;
-
 public abstract class MediaApiDTO {
     private Long id;
 
@@ -11,22 +9,14 @@ public abstract class MediaApiDTO {
 
     private Double popularity;
 
-    @JsonProperty("genre_ids")
-    private Set<Long> genres;
-
     @JsonProperty("poster_path")
     private String posterPath;
 
     @JsonProperty("backdrop_path")
     private String backdropPath;
 
-    @JsonProperty("vote_average")
-    private Double voteAverage;
-
     @JsonProperty("vote_count")
     private Integer voteCount;
-
-    private boolean adult;
 
     public Long getId() {
         return id;
@@ -68,35 +58,11 @@ public abstract class MediaApiDTO {
         this.backdropPath = backdropPath;
     }
 
-    public Set<Long> getGenres() {
-        return genres;
-    }
-
-    public void setGenres(Set<Long> genres) {
-        this.genres = genres;
-    }
-
-    public Double getVoteAverage() {
-        return voteAverage;
-    }
-
-    public void setVoteAverage(Double voteAverage) {
-        this.voteAverage = voteAverage;
-    }
-
     public Integer getVoteCount() {
         return voteCount;
     }
 
     public void setVoteCount(Integer voteCount) {
         this.voteCount = voteCount;
-    }
-
-    public boolean isAdult() {
-        return adult;
-    }
-
-    public void setAdult(boolean adult) {
-        this.adult = adult;
     }
 }
