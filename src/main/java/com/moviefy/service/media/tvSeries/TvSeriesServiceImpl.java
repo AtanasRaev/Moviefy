@@ -1,5 +1,6 @@
 package com.moviefy.service.media.tvSeries;
 
+import com.moviefy.config.FetchMediaConfig;
 import com.moviefy.config.cache.CacheKeys;
 import com.moviefy.database.model.dto.apiDto.creditDto.CastApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
@@ -53,10 +54,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final TvSeriesMapper tvSeriesMapper;
     private final GenreNormalizationUtil genreNormalizationUtil;
     private final TvSeriesTypesNormalizationUtil tvSeriesTypesNormalizationUtil;
+
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesServiceImpl.class);
-    private static final int START_YEAR = 1970;
-    private static final int MAX_SERIES_PER_YEAR = 600;
-    private static final double API_TV_SERIES_PER_PAGE = 20.0;
 
     public TvSeriesServiceImpl(TvSeriesRepository tvSeriesRepository,
                                TmdbTvEndpointService tmdbTvEndpointService,
@@ -311,7 +310,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 //    @Scheduled(fixedDelay = 100000000)
     public void fetchSeries() {
         logger.info(BLUE + "Starting to fetch tv series..." + RESET);
-        int year = START_YEAR;
+        int year = FetchMediaConfig.START_YEAR;
 
         int page = 1;
         Long countNewestTvSeries = this.tvSeriesRepository.countNewestTvSeries();
@@ -320,11 +319,11 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         if (count > 0) {
             year = this.tvSeriesRepository.findNewestTvSeriesYear();
 
-            if (count >= MAX_SERIES_PER_YEAR) {
+            if (count >= FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
                 year += 1;
                 count = 0;
             } else {
-                page = (int) Math.ceil(count / API_TV_SERIES_PER_PAGE);
+                page = (int) Math.ceil(count / FetchMediaConfig.API_MEDIA_PER_PAGE);
             }
         }
 
@@ -332,7 +331,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             return;
         }
 
-        while (count < MAX_SERIES_PER_YEAR) {
+        while (count < FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
 
             logger.info(BLUE + "TV series - Fetching page {} of year {}" + RESET, page, year);
 
@@ -356,7 +355,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
             for (TvSeriesApiDTO dto : response.getResults()) {
 
-                if (count >= MAX_SERIES_PER_YEAR) {
+                if (count >= FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
                     break;
                 }
 
@@ -391,7 +390,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
 
                 TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(dto.getId(), "tv");
 
-                TvSeries tvSeries = this.tvSeriesMapper.mapToTvSeries(dto, responseById, responseTrailer);
+                TvSeries tvSeries = this.tvSeriesMapper.mapToTvSeries(responseById, responseTrailer);
 
                 Map<String, Set<ProductionCompany>> productionCompaniesMap =
                         this.productionCompanyService.getProductionCompaniesFromResponse(responseById, tvSeries);

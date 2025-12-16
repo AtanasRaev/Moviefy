@@ -1,7 +1,10 @@
 package com.moviefy.service.media.movie;
 
+import com.moviefy.config.FetchMediaConfig;
 import com.moviefy.config.cache.CacheKeys;
-import com.moviefy.database.model.dto.apiDto.mediaDto.*;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaResponseCreditsDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
@@ -52,11 +55,8 @@ public class MovieServiceImpl implements MovieService {
     private final ModelMapper modelMapper;
     private final MovieMapper movieMapper;
     private final GenreNormalizationUtil genreNormalizationUtil;
+
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
-    private static final int START_YEAR = 1970;
-    private static final int MAX_MOVIES_PER_YEAR = 600;
-    private static final int MIN_MOVIE_RUNTIME = 45;
-    private static final double API_MOVIES_PER_PAGE = 20.0;
 
     public MovieServiceImpl(MovieRepository movieRepository,
                             TmdbMoviesEndpointService tmdbMoviesEndpointService,
@@ -303,7 +303,7 @@ public class MovieServiceImpl implements MovieService {
 //    @Scheduled(fixedDelay = 100000000)
     public void fetchMovies() {
         logger.info(CYAN + "Starting to fetch movies..." + RESET);
-        int year = START_YEAR;
+        int year = FetchMediaConfig.START_YEAR;
 
         int page = 1;
         Long countNewestMovies = this.movieRepository.countNewestMovies();
@@ -312,11 +312,11 @@ public class MovieServiceImpl implements MovieService {
         if (count > 0) {
             year = this.movieRepository.findNewestMovieYear();
 
-            if (count >= MAX_MOVIES_PER_YEAR) {
+            if (count >= FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
                 year += 1;
                 count = 0;
             } else {
-                page = (int) Math.ceil(countNewestMovies / API_MOVIES_PER_PAGE);
+                page = (int) Math.ceil(countNewestMovies / FetchMediaConfig.API_MEDIA_PER_PAGE);
             }
         }
 
@@ -324,7 +324,7 @@ public class MovieServiceImpl implements MovieService {
             return;
         }
 
-        while (count < MAX_MOVIES_PER_YEAR) {
+        while (count < FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
             logger.info(CYAN + "Movie - Fetching page {} of year {}" + RESET, page, year);
 
             MovieResponseApiDTO response = this.tmdbMoviesEndpointService.getMoviesResponseByDateAndVoteCount(page, year);
@@ -346,7 +346,7 @@ public class MovieServiceImpl implements MovieService {
             }
 
             for (MovieApiDTO dto : response.getResults()) {
-                if (count >= MAX_MOVIES_PER_YEAR) {
+                if (count >= FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
                     break;
                 }
 
@@ -362,7 +362,7 @@ public class MovieServiceImpl implements MovieService {
 
                 MovieApiByIdResponseDTO responseById = this.tmdbMoviesEndpointService.getMovieResponseById(dto.getId());
 
-                if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < MIN_MOVIE_RUNTIME) {
+                if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < FetchMediaConfig.MIN_MOVIE_RUNTIME) {
                     continue;
                 }
 
@@ -370,7 +370,7 @@ public class MovieServiceImpl implements MovieService {
                         dto.getId(),
                         "movie");
 
-                Movie movie = movieMapper.mapToMovie(dto, responseById, responseTrailer);
+                Movie movie = movieMapper.mapToMovie(responseById, responseTrailer);
 
                 if (responseById.getCollection() != null) {
                     Collection collection = this.collectionService.getCollectionFromResponse(responseById.getCollection(), movie);
