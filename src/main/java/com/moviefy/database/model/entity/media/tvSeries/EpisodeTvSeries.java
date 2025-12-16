@@ -2,8 +2,13 @@ package com.moviefy.database.model.entity.media.tvSeries;
 
 import jakarta.persistence.*;
 
+import java.util.Objects;
+
 @Entity
-@Table(name = "episodes")
+@Table(
+        name = "episodes",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"season_id", "episode_number"})
+)
 public class EpisodeTvSeries {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,6 +27,30 @@ public class EpisodeTvSeries {
     @JoinColumn(name = "season_id", referencedColumnName = "id")
     private SeasonTvSeries season;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof EpisodeTvSeries that)) return false;
+
+        if (episodeNumber == null || that.episodeNumber == null) return false;
+        if (season == null || that.season == null) return false;
+
+        Long thisSeasonApiId = season.getApiId();
+        Long thatSeasonApiId = that.season.getApiId();
+
+        if (thisSeasonApiId == null || thatSeasonApiId == null) return false;
+
+        return episodeNumber.equals(that.episodeNumber)
+                && thisSeasonApiId.equals(thatSeasonApiId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                (season != null ? season.getApiId() : null),
+                episodeNumber
+        );
+    }
 
     public long getId() {
         return id;
