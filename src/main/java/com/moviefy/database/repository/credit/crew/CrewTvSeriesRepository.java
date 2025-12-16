@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface CrewTvSeriesRepository extends JpaRepository<CrewTvSeries, Long> {
@@ -17,4 +18,7 @@ public interface CrewTvSeriesRepository extends JpaRepository<CrewTvSeries, Long
     List<CrewTvSeries> findCrewByTvSeriesId(Long movieId);
 
     void deleteByTvSeriesId(long id);
+
+    @Query("SELECT cts.crew.id FROM CrewTvSeries cts WHERE cts.tvSeries.id =:tvSeriesId")
+    Set<Long> findCrewIdsByTvSeriesId(@Param("tvSeriesId") long tvSeriesId);
 }
