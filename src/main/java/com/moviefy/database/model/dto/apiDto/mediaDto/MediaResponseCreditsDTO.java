@@ -5,7 +5,7 @@ import com.moviefy.database.model.dto.apiDto.creditDto.CrewApiDTO;
 
 import java.util.Set;
 
-public abstract class MediaResponseCreditsDTO {
+public class MediaResponseCreditsDTO {
     Set<CastApiDTO> cast;
 
     Set<CrewApiDTO> crew;
