@@ -12,7 +12,8 @@ import java.util.Set;
 
 @Repository
 public interface MovieGenreRepository extends JpaRepository<MovieGenre, Long> {
-    Optional<MovieGenre> findByApiId(Long genre);
+    @Query("SELECT mg FROM MovieGenre mg WHERE mg.apiId IN :genresApiIds")
+    Set<MovieGenre> findAllByApiId(@Param("genresApiIds") Set<Long> genresApiIds);
 
     Optional<MovieGenre> findByName(String genreType);
 

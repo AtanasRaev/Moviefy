@@ -10,7 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface SeriesGenreRepository extends JpaRepository<SeriesGenre, Long> {
-    Optional<SeriesGenre> findByApiId(Long genre);
+    @Query("SELECT sg FROM SeriesGenre sg WHERE sg.apiId IN :genresApiIds")
+    Set<SeriesGenre> findAllByApiId(@Param("genresApiIds") Set<Long> genresApiIds);
 
     Optional<SeriesGenre> findByName(String genreType);
 

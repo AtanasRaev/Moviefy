@@ -42,13 +42,8 @@ public class MovieGenreServiceImpl implements MovieGenreService {
     }
 
     @Override
-    public Set<MovieGenre> getAllGenresByApiIds(Set<Long> genreIds) {
-        Set<MovieGenre> genresList = new HashSet<>();
-        for (Long genre : genreIds) {
-            Optional<MovieGenre> optional = this.genreRepository.findByApiId(genre);
-            optional.ifPresent(genresList::add);
-        }
-        return genresList;
+    public Set<MovieGenre> getAllGenresByApiIds(Set<Long> genreApiIds) {
+        return this.genreRepository.findAllByApiId(genreApiIds);
     }
 
     @Override

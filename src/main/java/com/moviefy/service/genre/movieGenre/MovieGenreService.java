@@ -10,7 +10,7 @@ public interface MovieGenreService {
 
     boolean isEmpty();
 
-    Set<MovieGenre> getAllGenresByApiIds(Set<Long> genreIds);
+    Set<MovieGenre> getAllGenresByApiIds(Set<Long> genreApiIds);
 
     List<MovieGenre> getAllGenresByMovieId(Long movieId);
 
