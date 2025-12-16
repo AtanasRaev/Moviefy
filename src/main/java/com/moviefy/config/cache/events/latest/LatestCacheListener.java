@@ -1,4 +1,4 @@
-package com.moviefy.config.cache.events;
+package com.moviefy.config.cache.events.latest;
 
 import com.moviefy.config.cache.CacheInvalidation;
 import com.moviefy.config.cache.CacheKeys;
@@ -14,17 +14,17 @@ public class LatestCacheListener {
         this.caches = caches;
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onLatestChangedMovies(LatestChangedMoviesEvent e) {
         caches.clear(CacheKeys.LATEST_MOVIES);
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onLatestChangedTvSeries(LatestChangedTvSeriesEvent e) {
         caches.clear(CacheKeys.LATEST_TV_SERIES);
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onLatestChangedMedia(LatestChangedMediaEvent e) {
         caches.clear(CacheKeys.LATEST_MEDIA);
     }
