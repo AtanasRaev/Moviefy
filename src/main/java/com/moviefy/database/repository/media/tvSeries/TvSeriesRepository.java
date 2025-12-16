@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -453,6 +454,24 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
               WHERE tv.api_id IN (:ids)
             """, nativeQuery = true)
     Set<Long> findIdsAllByApiIdIn(@Param("ids") Set<Long> incomingIds);
+
+    @Query(value = """
+                      SELECT *
+                      FROM tv_series
+                      ORDER BY
+                        popularity DESC
+                    LIMIT :limit
+            """, nativeQuery = true)
+    List<TvSeries> findAllByPopularityDesc(@Param("limit")int limit);
+
+    @Query(value = """
+                      SELECT *
+                      FROM tv_series tv
+                      WHERE tv.inserted_at <= :endDate AND tv.inserted_at >= :startDate AND tv.refreshed_at IS NULL
+                      ORDER BY tv.inserted_at, tv.id
+                      LIMIT :limit
+            """, nativeQuery = true)
+    List<TvSeries> findAllNewTvSeriesByDate(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, @Param("limit") int limit);
 
 //    @Query(
 //            value = """

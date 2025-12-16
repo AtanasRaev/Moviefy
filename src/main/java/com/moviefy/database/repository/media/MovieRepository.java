@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,9 @@ import java.util.Set;
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
     Optional<Movie> findByApiId(Long apiId);
+
+    @Query("select m.apiId from Movie m where m.collection.apiId = :collectionApiId")
+    Set<Long> findApiIdsByCollectionApiId(@Param("collectionApiId") Long collectionApiId);
 
     @Query("SELECT COUNT(m) FROM Movie m WHERE EXTRACT(YEAR FROM m.releaseDate) = " +
             "(SELECT MAX(EXTRACT(YEAR FROM m.releaseDate)) FROM Movie m)")
@@ -380,6 +384,24 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
               LIMIT 1
             """, nativeQuery = true)
     Optional<Movie> findLowestRatedMovieByRankingYear(@Param("year") int year);
+
+    @Query(value = """
+                      SELECT *
+                      FROM movies
+                      ORDER BY
+                        popularity DESC
+                    LIMIT :limit
+            """, nativeQuery = true)
+    List<Movie> findAllByPopularityDesc(@Param("limit") int limit);
+
+    @Query(value = """
+                      SELECT *
+                      FROM movies m
+                      WHERE m.inserted_at <= :endDate AND m.inserted_at >= :startDate AND m.refreshed_at IS NULL
+                      ORDER BY m.inserted_at, m.id
+                      LIMIT :limit
+            """, nativeQuery = true)
+    List<Movie> findAllNewMoviesByDate(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, @Param("limit") int limit);
 
 //    @Query(
 //            value = """
