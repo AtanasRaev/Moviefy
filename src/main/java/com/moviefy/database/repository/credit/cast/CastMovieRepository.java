@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface CastMovieRepository extends JpaRepository<CastMovie, Long> {
@@ -15,6 +16,9 @@ public interface CastMovieRepository extends JpaRepository<CastMovie, Long> {
     Optional<CastMovie> findByMovieIdAndCastApiIdAndCharacter(@Param("movieId") Long movieId, @Param("crewApiId") Long crewApiId, @Param("character") String character);
 
     List<CastMovie> findCastByMovieId(Long movieId);
+
+    @Query("SELECT cm.cast.id FROM CastMovie cm WHERE cm.movie.id =:movieId")
+    Set<Long> findCastIdsByMovieId(@Param("movieId") Long movieId);
 
     void deleteByMovieId(long id);
 }
