@@ -46,7 +46,7 @@ public class CacheConfig {
                 CacheKeys.TOP_RATED_TV_SERIES,
                 CacheKeys.TOP_RATED_MEDIA,
 
-                CacheKeys.MOVIES_BY_API_ID,
+                CacheKeys.MOVIES_BY_COLLECTION_API_ID,
                 CacheKeys.POPULAR_COLLECTIONS,
 
                 CacheKeys.MOVIES_BY_GENRES,
@@ -68,7 +68,7 @@ public class CacheConfig {
         );
 
         addAll(caches, singleEntry,
-                CacheKeys.COLLECTIONS_BY_NAME,
+                CacheKeys.COLLECTION_BY_NAME,
                 CacheKeys.MOVIES_HOME_BY_COLLECTION,
                 CacheKeys.HOME_SERIES_BY_COLLECTION
         );

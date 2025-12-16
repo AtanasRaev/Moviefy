@@ -1,5 +1,6 @@
 package com.moviefy.config.cache;
 
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +14,17 @@ public class CacheInvalidation {
 
     public void clear(String... names) {
         for (String n : names) {
-            var c = cacheManager.getCache(n);
-            if (c != null) c.clear();
+            Cache cache = cacheManager.getCache(n);
+            if (cache != null) {
+                cache.clear();
+            }
+        }
+    }
+
+    public void evict(String name, Object key) {
+        Cache cache = cacheManager.getCache(name);
+        if (cache != null) {
+            cache.evict(key);
         }
     }
 }
