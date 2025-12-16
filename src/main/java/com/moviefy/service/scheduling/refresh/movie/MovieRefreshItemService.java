@@ -53,8 +53,6 @@ public class MovieRefreshItemService {
 
         try {
             this.movieRepository.save(movie);
-            logger.info(GREEN + "✔ Updated movie apiId={} ({})" + RESET,
-                    apiId, movie.getTitle());
         } catch (Exception ex) {
             logger.error(RED + "❌ Failed to save refreshed movie apiId={}" + RESET, apiId, ex);
             return false;

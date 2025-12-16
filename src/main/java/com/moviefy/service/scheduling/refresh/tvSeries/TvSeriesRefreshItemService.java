@@ -59,9 +59,6 @@ public class TvSeriesRefreshItemService {
 
         try {
             this.tvSeriesRepository.save(series);
-            logger.info(GREEN + "✔ Updated TV series apiId={} ({})" + RESET,
-                    apiId,
-                    series.getName());
         } catch (Exception ex) {
             logger.error(RED + "❌ Failed to save refreshed TV series apiId={}" + RESET, apiId, ex);
             return false;
