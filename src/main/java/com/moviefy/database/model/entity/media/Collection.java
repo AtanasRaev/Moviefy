@@ -21,9 +21,7 @@ public class Collection {
     @Column(name = "api_id", unique = true)
     private long apiId;
 
-    @OneToMany(mappedBy = "collection",
-            fetch = FetchType.EAGER,
-            orphanRemoval = true)
+    @OneToMany(mappedBy = "collection", fetch = FetchType.EAGER)
     private Set<Movie> movies;
 
     @Column(name = "vote_count_average")
