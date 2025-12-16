@@ -95,20 +95,16 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    @Cacheable(
-            cacheNames = CacheKeys.COLLECTIONS_BY_NAME,
-            key = "#input",
-            unless = "#result == null || #result.isEmpty()"
-    )
     public List<CollectionPageDTO> getCollectionsByName(List<String> input) {
-        return this.collectionRepository.findAllByNameIn(input).stream()
-                .map(this::mapCollectionPageDTO)
+        return input.stream()
+                .map(this::getCollectionByName)
+                .filter(Objects::nonNull)
                 .toList();
     }
 
     @Override
     @Cacheable(
-            cacheNames = CacheKeys.MOVIES_BY_API_ID,
+            cacheNames = CacheKeys.MOVIES_BY_COLLECTION_API_ID,
             key = "#apiId",
             unless = "#result == null || #result.isEmpty()"
     )
@@ -174,6 +170,19 @@ public class CollectionServiceImpl implements CollectionService {
     @Override
     public Page<CollectionPageProjection> searchCollections(String query, Pageable pageable) {
         return this.collectionRepository.searchCollectionByName(query, pageable);
+    }
+
+    @Cacheable(
+            cacheNames = CacheKeys.COLLECTION_BY_NAME,
+            key = "#name",
+            unless = "#result == null"
+    )
+    public CollectionPageDTO getCollectionByName(String name) {
+        List<Collection> byName = collectionRepository.findByName(name);
+        if (byName.isEmpty()) {
+            return null;
+        }
+        return this.modelMapper.map(byName.get(0),  CollectionPageDTO.class);
     }
 
     private MovieDetailsHomeDTO mapFirstMovie(Movie movie) {
