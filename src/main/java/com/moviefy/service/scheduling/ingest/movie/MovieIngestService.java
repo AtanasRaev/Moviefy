@@ -1,5 +1,6 @@
 package com.moviefy.service.scheduling.ingest.movie;
 
+import com.moviefy.config.FetchMediaConfig;
 import com.moviefy.database.model.dto.apiDto.mediaDto.MediaResponseCreditsDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
@@ -16,17 +17,17 @@ import com.moviefy.service.collection.CollectionService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.service.scheduling.MediaEventPublisher;
 import com.moviefy.utils.EntityComparator;
 import com.moviefy.utils.mappers.MovieMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static com.moviefy.utils.Ansi.*;
 
@@ -42,10 +43,9 @@ public class MovieIngestService {
     private final CastService castService;
     private final CrewService crewService;
     private final MovieMapper movieMapper;
+    private final MediaEventPublisher mediaEventPublisher;
 
     private static final Logger logger = LoggerFactory.getLogger(MovieIngestService.class);
-    private static final int MAX_MOVIES_PER_YEAR = 600;
-    private static final int MIN_MOVIE_RUNTIME = 45;
 
     public MovieIngestService(MovieRepository movieRepository,
                               CastMovieRepository castMovieRepository,
@@ -56,7 +56,8 @@ public class MovieIngestService {
                               ProductionCompanyService productionCompanyService,
                               CastService castService,
                               CrewService crewService,
-                              MovieMapper movieMapper) {
+                              MovieMapper movieMapper,
+                              MediaEventPublisher mediaEventPublisher) {
         this.movieRepository = movieRepository;
         this.castMovieRepository = castMovieRepository;
         this.crewMovieRepository = crewMovieRepository;
@@ -67,9 +68,10 @@ public class MovieIngestService {
         this.castService = castService;
         this.crewService = crewService;
         this.movieMapper = movieMapper;
+        this.mediaEventPublisher = mediaEventPublisher;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean persistMovieIfEligible(MovieApiDTO dto) {
         LocalDate rd = dto.getReleaseDate();
         if (rd == null) {
@@ -85,13 +87,13 @@ public class MovieIngestService {
         final int rankingYear = rd.getYear();
 
         MovieApiByIdResponseDTO responseById = this.tmdbMoviesEndpointService.getMovieResponseById(dto.getId());
-        if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < MIN_MOVIE_RUNTIME) {
+        if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < FetchMediaConfig.MIN_MOVIE_RUNTIME) {
             logger.debug(YELLOW + "Skip movie: {} — runtime invalid or details missing" + RESET, dto.getTitle());
             return false;
         }
 
         long countByYear = this.movieRepository.findCountByRankingYear(rankingYear);
-        if (countByYear >= MAX_MOVIES_PER_YEAR) {
+        if (countByYear >= FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
             Optional<Movie> worstOpt = this.movieRepository.findLowestRatedMovieByRankingYear(rankingYear);
             if (worstOpt.isEmpty()) {
                 logger.warn(YELLOW + "Skip movie: {} — year {} full and no 'worst' movie found" + RESET,
@@ -114,7 +116,7 @@ public class MovieIngestService {
 
         TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(dto.getId(), "movie");
 
-        Movie movie = movieMapper.mapToMovie(dto, responseById, responseTrailer);
+        Movie movie = movieMapper.mapToMovie(responseById, responseTrailer);
 
         if (responseById.getCollection() != null) {
             Collection collection = this.collectionService.getCollectionFromResponse(responseById.getCollection(), movie);
@@ -131,26 +133,66 @@ public class MovieIngestService {
 
         this.movieRepository.save(movie);
 
+        if (movie.getCollection() != null && movie.getCollection().getName() != null) {
+            this.mediaEventPublisher.publishCollectionChangedEvent(movie.getCollection().getName());
+            this.mediaEventPublisher.publishMoviesByCollectionChangedEvent(movie.getCollection().getApiId());
+            this.mediaEventPublisher.publishMoviesDetailsByCollectionChangedEvent(movie.getCollection().getApiId());
+        }
+
         MediaResponseCreditsDTO credits = responseById.getCredits();
         if (credits != null) {
             this.castService.processMovieCast(credits.getCast(), movie);
             this.crewService.processMovieCrew(credits.getCrew(), movie);
+
+            Set<Long> castIds = this.castMovieRepository.findCastIdsByMovieId(movie.getId());
+            this.mediaEventPublisher.publishCastByMovieChangedEvent(castIds);
+            this.mediaEventPublisher.publishCastByMediaChangedEvent(castIds);
+
+            Set<Long> crewIds = this.crewMovieRepository.findCrewIdsByMovieId(movie.getId());
+            this.mediaEventPublisher.publishCrewByMovieChangedEvent(crewIds);
+            this.mediaEventPublisher.publishCrewByMediaChangedEvent(crewIds);
         }
 
         return true;
     }
 
     @Transactional
-    protected void detachAndDelete(Movie m) {
-        this.castMovieRepository.deleteByMovieId(m.getId());
-        this.crewMovieRepository.deleteByMovieId(m.getId());
-        if (m.getGenres() != null) {
-            m.getGenres().clear();
+    protected void detachAndDelete(Movie movie) {
+        Set<Long> castIds = this.castMovieRepository.findCastIdsByMovieId(movie.getId());
+        this.castMovieRepository.deleteByMovieId(movie.getId());
+        this.mediaEventPublisher.publishCastByMovieChangedEvent(castIds);
+        this.mediaEventPublisher.publishCastByMediaChangedEvent(castIds);
+
+        Set<Long> crewIds = this.crewMovieRepository.findCrewIdsByMovieId(movie.getId());
+        this.crewMovieRepository.deleteByMovieId(movie.getId());
+        this.mediaEventPublisher.publishCrewByMovieChangedEvent(crewIds);
+        this.mediaEventPublisher.publishCrewByMediaChangedEvent(crewIds);
+
+        if (movie.getGenres() != null) {
+            movie.getGenres().clear();
         }
-        if (m.getProductionCompanies() != null) {
-            m.getProductionCompanies().clear();
+        if (movie.getProductionCompanies() != null) {
+            movie.getProductionCompanies().clear();
         }
-        m.setCollection(null);
-        this.movieRepository.delete(m);
+
+        String removedCollection = null;
+        Long collectionApiId = null;
+
+        if (movie.getCollection() != null) {
+            removedCollection = movie.getCollection().getName();
+            collectionApiId = movie.getCollection().getApiId();
+            movie.setCollection(null);
+        }
+
+        this.movieRepository.delete(movie);
+
+        if (removedCollection != null) {
+            this.mediaEventPublisher.publishCollectionChangedEvent(removedCollection);
+        }
+
+        if (collectionApiId != null) {
+            this.mediaEventPublisher.publishMoviesByCollectionChangedEvent(collectionApiId);
+            this.mediaEventPublisher.publishMoviesDetailsByCollectionChangedEvent(collectionApiId);
+        }
     }
 }

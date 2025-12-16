@@ -1,5 +1,6 @@
 package com.moviefy.service.scheduling.ingest.movie;
 
+import com.moviefy.config.cache.IngestConfig;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
 import com.moviefy.database.repository.media.MovieRepository;
@@ -9,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -25,7 +25,6 @@ public class MovieIngestJob {
     private final MovieIngestService movieIngestService;
 
     private static final Logger logger = LoggerFactory.getLogger(MovieIngestJob.class);
-    private static final int DAILY_INSERT_LIMIT = 10;
 
     public MovieIngestJob(MovieRepository movieRepository,
                           TmdbMoviesEndpointService tmdbMoviesEndpointService,
@@ -35,15 +34,14 @@ public class MovieIngestJob {
         this.movieIngestService = movieIngestService;
     }
 
-    @Transactional
     @Async
-    public CompletableFuture<Integer> addNewMovies() {
+    public CompletableFuture<List<Long>> addNewMovies() {
         logger.info(CYAN + "🎬 Starting MOVIE INGEST job (thread={})" + RESET, Thread.currentThread().getName());
 
         int page = 1;
-        int insertedToday = 0;
+        List<Long> insertedToday = new ArrayList<>();
 
-        while (insertedToday < DAILY_INSERT_LIMIT) {
+        while (insertedToday.size() < IngestConfig.DAILY_INSERT_LIMIT) {
             logger.debug(CYAN + "Fetching movies (page={})…" + RESET, page);
 
             MovieResponseApiDTO discover = this.tmdbMoviesEndpointService.getNewMoviesUTCTime(page);
@@ -100,21 +98,27 @@ public class MovieIngestJob {
                     .toList();
 
             for (MovieApiDTO dto : queue) {
-                if (insertedToday >= DAILY_INSERT_LIMIT) {
-                    logger.debug(CYAN + "Reached daily insert limit ({}). Stopping." + RESET, DAILY_INSERT_LIMIT);
+                if (insertedToday.size() >= IngestConfig.DAILY_INSERT_LIMIT) {
+                    logger.debug(CYAN + "Reached daily insert limit ({}). Stopping." + RESET, IngestConfig.DAILY_INSERT_LIMIT);
                     break;
                 }
 
-                boolean inserted = movieIngestService.persistMovieIfEligible(dto);
-                if (inserted) {
-                    insertedToday++;
-                    logger.info(GREEN + "Inserted movie: {} (#{}/{} • voteCount={} • popularity={})" + RESET,
-                            dto.getTitle(), insertedToday, DAILY_INSERT_LIMIT, dto.getVoteCount(), dto.getPopularity());
-                } else {
-                    logger.debug(YELLOW + "Skipped movie: {} (ID={})" + RESET, dto.getTitle(), dto.getId());
+                try {
+                    boolean inserted = movieIngestService.persistMovieIfEligible(dto);
+                    if (inserted) {
+                        insertedToday.add(dto.getId());
+                        logger.info(GREEN + "Inserted movie: {} (#{}/{} • voteCount={} • popularity={})" + RESET,
+                                dto.getTitle(), insertedToday, IngestConfig.DAILY_INSERT_LIMIT, dto.getVoteCount(), dto.getPopularity());
+
+                    } else {
+                        logger.debug(YELLOW + "Skipped movie: {} (ID={})" + RESET, dto.getTitle(), dto.getId());
+                    }
+
+                } catch (Exception ex) {
+                    logger.error(RED + "Failed to ingest movie: {} (ID={})" + RESET,
+                            dto.getTitle(), dto.getId(), ex);
                 }
             }
-
             page++;
         }
 
