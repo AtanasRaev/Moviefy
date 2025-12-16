@@ -2,6 +2,7 @@ package com.moviefy.database.model.dto.apiDto.mediaDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.moviefy.database.model.dto.apiDto.ProductionApiDTO;
+import com.moviefy.database.model.dto.databaseDto.GenreDTO;
 
 import java.util.List;
 import java.util.Set;
@@ -13,8 +14,7 @@ public abstract class MediaApiByIdResponseDTO {
 
     private Double popularity;
 
-    @JsonProperty("genre_ids")
-    private Set<Long> genres;
+    private Set<GenreDTO> genres;
 
     @JsonProperty("poster_path")
     private String posterPath;
@@ -59,11 +59,11 @@ public abstract class MediaApiByIdResponseDTO {
         this.popularity = popularity;
     }
 
-    public Set<Long> getGenres() {
+    public Set<GenreDTO> getGenres() {
         return genres;
     }
 
-    public void setGenres(Set<Long> genres) {
+    public void setGenres(Set<GenreDTO> genres) {
         this.genres = genres;
     }
 
