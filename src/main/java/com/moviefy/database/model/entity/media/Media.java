@@ -1,7 +1,7 @@
 package com.moviefy.database.model.entity.media;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.Hibernate;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -46,15 +46,32 @@ public abstract class Media {
     private int rankingYear;
 
     @Column(name = "inserted_at", updatable = false)
-    @CreationTimestamp
     private LocalDateTime insertedAt;
 
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(name = "refreshed_at")
+    private LocalDateTime refreshedAt;
+
     @Column(name = "favourite_count", nullable = false)
     private int favouriteCount;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        Media other = (Media) o;
+        if (id != 0 && other.id != 0) return id == other.id;
+        return apiId != null && apiId.equals(other.apiId);
+    }
+
+    @Override
+    public int hashCode() {
+        return (id != 0) ? Long.hashCode(id) : (apiId != null ? apiId.hashCode() : 0);
+    }
 
     public long getId() {
         return id;
@@ -166,6 +183,14 @@ public abstract class Media {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getRefreshedAt() {
+        return refreshedAt;
+    }
+
+    public void setRefreshedAt(LocalDateTime refreshedAt) {
+        this.refreshedAt = refreshedAt;
     }
 
     public int getFavouriteCount() {
