@@ -5,10 +5,19 @@ import com.moviefy.database.model.dto.apiDto.creditDto.CrewApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiByIdResponseDTO;
 import com.moviefy.database.model.dto.databaseDto.SeasonDTO;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
 public class TvSeriesApiByIdResponseDTO extends MediaApiByIdResponseDTO {
+    private String name;
+
+    @JsonProperty("original_name")
+    private String originalName;
+
+    @JsonProperty("first_air_date")
+    private LocalDate firstAirDate;
+
     @JsonProperty("created_by")
     private Set<CrewApiDTO> crew;
 
@@ -26,6 +35,30 @@ public class TvSeriesApiByIdResponseDTO extends MediaApiByIdResponseDTO {
 
     @JsonProperty("external_ids")
     private ExternalIdsDTO externalIds;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
+    }
+
+    public LocalDate getFirstAirDate() {
+        return firstAirDate;
+    }
+
+    public void setFirstAirDate(LocalDate firstAirDate) {
+        this.firstAirDate = firstAirDate;
+    }
 
     public Set<CrewApiDTO> getCrew() {
         return crew;
