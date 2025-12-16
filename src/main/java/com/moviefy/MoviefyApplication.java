@@ -9,9 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableAsync
 public class MoviefyApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(MoviefyApplication.class, args);
     }
-
 }
