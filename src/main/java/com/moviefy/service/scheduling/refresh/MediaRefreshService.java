@@ -1,10 +1,11 @@
 package com.moviefy.service.scheduling.refresh;
 
 import com.moviefy.service.scheduling.MediaEventPublisher;
-import com.moviefy.service.scheduling.refresh.movie.MovieRefreshService;
-import com.moviefy.service.scheduling.refresh.tvSeries.TvSeriesRefreshService;
+import com.moviefy.service.scheduling.refresh.movie.MovieRefreshOrchestrator;
+import com.moviefy.service.scheduling.refresh.tvSeries.TvSeriesRefreshOrchestrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,24 +16,24 @@ import static com.moviefy.utils.Ansi.*;
 
 @Service
 public class MediaRefreshService {
-    private final MovieRefreshService movieRefreshService;
-    private final TvSeriesRefreshService tvSeriesRefreshService;
+    private final MovieRefreshOrchestrator movieRefreshOrchestrator;
+    private final TvSeriesRefreshOrchestrator tvSeriesRefreshOrchestrator;
     private final MediaEventPublisher mediaEventPublisher;
 
     private static final Logger logger = LoggerFactory.getLogger(MediaRefreshService.class);
 
-    public MediaRefreshService(MovieRefreshService movieRefreshService,
-                               TvSeriesRefreshService tvSeriesRefreshService,
+    public MediaRefreshService(MovieRefreshOrchestrator movieRefreshOrchestrator,
+                               TvSeriesRefreshOrchestrator tvSeriesRefreshOrchestrator,
                                MediaEventPublisher mediaEventPublisher) {
-        this.movieRefreshService = movieRefreshService;
-        this.tvSeriesRefreshService = tvSeriesRefreshService;
+        this.movieRefreshOrchestrator = movieRefreshOrchestrator;
+        this.tvSeriesRefreshOrchestrator = tvSeriesRefreshOrchestrator;
         this.mediaEventPublisher = mediaEventPublisher;
     }
 
 //    @Scheduled(cron = "0 34 19 * * *", zone = "Europe/Sofia")
     public void refreshMedia() {
-        CompletableFuture<List<Long>> moviesFuture = result(this.movieRefreshService.refreshMovies(), "Movies refresh");
-        CompletableFuture<List<Long>> seriesFuture = result(this.tvSeriesRefreshService.refreshTvSeries(),  "TvSeries refresh");
+        CompletableFuture<List<Long>> moviesFuture = result(this.movieRefreshOrchestrator.refreshMovies(), "Movies refresh");
+        CompletableFuture<List<Long>> seriesFuture = result(this.tvSeriesRefreshOrchestrator.refreshTvSeries(),  "TvSeries refresh");
 
         CompletableFuture.allOf(moviesFuture, seriesFuture).join();
 

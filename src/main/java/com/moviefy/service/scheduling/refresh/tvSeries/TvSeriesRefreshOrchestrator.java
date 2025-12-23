@@ -18,19 +18,19 @@ import java.util.concurrent.CompletableFuture;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class TvSeriesRefreshService {
+public class TvSeriesRefreshOrchestrator {
     private final TvSeriesRepository tvSeriesRepository;
     private final TmdbTvEndpointService tmdbTvEndpointService;
-    private final TvSeriesRefreshItemService tvSeriesRefreshItemService;
+    private final TvSeriesRefreshWorker tvSeriesRefreshWorker;
 
-    private static final Logger logger = LoggerFactory.getLogger(TvSeriesRefreshService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TvSeriesRefreshOrchestrator.class);
 
-    public TvSeriesRefreshService(TvSeriesRepository tvSeriesRepository,
-                                  TmdbTvEndpointService tmdbTvEndpointService,
-                                  TvSeriesRefreshItemService tvSeriesRefreshItemService) {
+    public TvSeriesRefreshOrchestrator(TvSeriesRepository tvSeriesRepository,
+                                       TmdbTvEndpointService tmdbTvEndpointService,
+                                       TvSeriesRefreshWorker tvSeriesRefreshWorker) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.tmdbTvEndpointService = tmdbTvEndpointService;
-        this.tvSeriesRefreshItemService = tvSeriesRefreshItemService;
+        this.tvSeriesRefreshWorker = tvSeriesRefreshWorker;
     }
 
     @Async
@@ -50,8 +50,8 @@ public class TvSeriesRefreshService {
         LocalDateTime startDate = now.minusDays(RefreshConfig.DAYS_CAP);
         LocalDateTime endDate = now.minusDays(RefreshConfig.DAYS_GUARD);
 
-        List<TvSeries> recent = this.tvSeriesRepository.findAllNewTvSeriesByDate(
-                startDate, endDate, Math.max(0, RefreshConfig.REFRESH_CAP - trending.size())
+        List<TvSeries> recent = this.tvSeriesRepository.findTvSeriesDueForRefresh(
+                startDate, endDate, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - trending.size())
         );
 
         logger.debug(CYAN + "Selected {} recent TV series [{} .. {}), cap={}, remaining={}" + RESET,
@@ -90,7 +90,7 @@ public class TvSeriesRefreshService {
                     continue;
                 }
 
-                boolean refreshed = this.tvSeriesRefreshItemService.refreshOneTvSeries(apiId, dto, now);
+                boolean refreshed = this.tvSeriesRefreshWorker.refreshOneTvSeries(apiId, dto, now);
                 if (refreshed) {
                     updated++;
                     refreshedToday.add(apiId);

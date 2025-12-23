@@ -32,7 +32,7 @@ import java.util.*;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class MovieIngestService {
+public class MovieIngestWorker {
     private final MovieRepository movieRepository;
     private final CastMovieRepository castMovieRepository;
     private final CrewMovieRepository crewMovieRepository;
@@ -45,19 +45,19 @@ public class MovieIngestService {
     private final MovieMapper movieMapper;
     private final MediaEventPublisher mediaEventPublisher;
 
-    private static final Logger logger = LoggerFactory.getLogger(MovieIngestService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MovieIngestWorker.class);
 
-    public MovieIngestService(MovieRepository movieRepository,
-                              CastMovieRepository castMovieRepository,
-                              CrewMovieRepository crewMovieRepository,
-                              TmdbMoviesEndpointService tmdbMoviesEndpointService,
-                              TmdbCommonEndpointService tmdbCommonEndpointService,
-                              CollectionService collectionService,
-                              ProductionCompanyService productionCompanyService,
-                              CastService castService,
-                              CrewService crewService,
-                              MovieMapper movieMapper,
-                              MediaEventPublisher mediaEventPublisher) {
+    public MovieIngestWorker(MovieRepository movieRepository,
+                             CastMovieRepository castMovieRepository,
+                             CrewMovieRepository crewMovieRepository,
+                             TmdbMoviesEndpointService tmdbMoviesEndpointService,
+                             TmdbCommonEndpointService tmdbCommonEndpointService,
+                             CollectionService collectionService,
+                             ProductionCompanyService productionCompanyService,
+                             CastService castService,
+                             CrewService crewService,
+                             MovieMapper movieMapper,
+                             MediaEventPublisher mediaEventPublisher) {
         this.movieRepository = movieRepository;
         this.castMovieRepository = castMovieRepository;
         this.crewMovieRepository = crewMovieRepository;

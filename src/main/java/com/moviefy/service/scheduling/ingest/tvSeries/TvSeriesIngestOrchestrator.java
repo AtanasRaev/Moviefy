@@ -19,18 +19,18 @@ import java.util.stream.Collectors;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class TvSeriesIngestJob {
+public class TvSeriesIngestOrchestrator {
     private final TvSeriesRepository tvSeriesRepository;
-    private final TvSeriesIngestService tvSeriesIngestService;
+    private final TvSeriesIngestWorker tvSeriesIngestWorker;
     private final TmdbTvEndpointService tmdbTvEndpointService;
 
-    private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestOrchestrator.class);
 
-    public TvSeriesIngestJob(TvSeriesRepository tvSeriesRepository,
-                             TvSeriesIngestService tvSeriesIngestService,
-                             TmdbTvEndpointService tmdbTvEndpointService) {
+    public TvSeriesIngestOrchestrator(TvSeriesRepository tvSeriesRepository,
+                                      TvSeriesIngestWorker tvSeriesIngestWorker,
+                                      TmdbTvEndpointService tmdbTvEndpointService) {
         this.tvSeriesRepository = tvSeriesRepository;
-        this.tvSeriesIngestService = tvSeriesIngestService;
+        this.tvSeriesIngestWorker = tvSeriesIngestWorker;
         this.tmdbTvEndpointService = tmdbTvEndpointService;
     }
 
@@ -105,7 +105,7 @@ public class TvSeriesIngestJob {
                 }
 
                 try {
-                    boolean inserted = this.tvSeriesIngestService.persistSeriesIfEligible(dto);
+                    boolean inserted = this.tvSeriesIngestWorker.persistSeriesIfEligible(dto);
 
                     if (inserted) {
                         insertedToday.add(dto.getId());

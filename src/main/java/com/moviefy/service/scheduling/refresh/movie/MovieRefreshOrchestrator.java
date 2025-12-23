@@ -18,19 +18,19 @@ import java.util.concurrent.CompletableFuture;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class MovieRefreshService {
+public class MovieRefreshOrchestrator {
     private final MovieRepository movieRepository;
     private final TmdbMoviesEndpointService tmdbMoviesEndpointService;
-    private final MovieRefreshItemService movieRefreshItemService;
+    private final MovieRefreshWorker movieRefreshWorker;
 
-    private static final Logger logger = LoggerFactory.getLogger(MovieRefreshService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MovieRefreshOrchestrator.class);
 
-    public MovieRefreshService(MovieRepository movieRepository,
-                               TmdbMoviesEndpointService tmdbMoviesEndpointService,
-                               MovieRefreshItemService movieRefreshItemService) {
+    public MovieRefreshOrchestrator(MovieRepository movieRepository,
+                                    TmdbMoviesEndpointService tmdbMoviesEndpointService,
+                                    MovieRefreshWorker movieRefreshWorker) {
         this.movieRepository = movieRepository;
         this.tmdbMoviesEndpointService = tmdbMoviesEndpointService;
-        this.movieRefreshItemService = movieRefreshItemService;
+        this.movieRefreshWorker = movieRefreshWorker;
     }
 
     @Async
@@ -48,8 +48,8 @@ public class MovieRefreshService {
 
         LocalDateTime startDate = now.minusDays(RefreshConfig.DAYS_CAP);
         LocalDateTime endDate = now.minusDays(RefreshConfig.DAYS_GUARD);
-        List<Movie> allNewMoviesByDate = this.movieRepository.findAllNewMoviesByDate(
-                startDate, endDate, Math.max(0, RefreshConfig.REFRESH_CAP - allByPopularityDesc.size())
+        List<Movie> allNewMoviesByDate = this.movieRepository.findMoviesDueForRefresh(
+                startDate, endDate, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - allByPopularityDesc.size())
         );
         logger.debug(CYAN + "Selected {} recent candidates between [{} .. {}), cap={} (remaining from {})" + RESET,
                 allNewMoviesByDate.size(), startDate, endDate, RefreshConfig.REFRESH_CAP,
@@ -84,7 +84,7 @@ public class MovieRefreshService {
                     continue;
                 }
 
-                boolean updated = this.movieRefreshItemService.refreshOneMovie(apiId, dto, now);
+                boolean updated = this.movieRefreshWorker.refreshOneMovie(apiId, dto, now);
                 if (updated) {
                     updatedCount++;
                     refreshedToday.add(apiId);

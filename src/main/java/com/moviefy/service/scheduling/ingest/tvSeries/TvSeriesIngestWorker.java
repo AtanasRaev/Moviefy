@@ -33,7 +33,7 @@ import java.util.Set;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class TvSeriesIngestService {
+public class TvSeriesIngestWorker {
     private final TvSeriesRepository tvSeriesRepository;
     private final CrewTvSeriesRepository crewTvSeriesRepository;
     private final CastTvSeriesRepository castTvSeriesRepository;
@@ -46,19 +46,19 @@ public class TvSeriesIngestService {
     private final TvSeriesMapper tvSeriesMapper;
     private final MediaEventPublisher mediaEventPublisher;
 
-    private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestWorker.class);
 
-    public TvSeriesIngestService(TvSeriesRepository tvSeriesRepository,
-                                 CrewTvSeriesRepository crewTvSeriesRepository,
-                                 CastTvSeriesRepository castTvSeriesRepository,
-                                 TmdbTvEndpointService tmdbTvEndpointService,
-                                 TmdbCommonEndpointService tmdbCommonEndpointService,
-                                 ProductionCompanyService productionCompanyService,
-                                 CastService castService,
-                                 CrewService crewService,
-                                 TvSeriesMapper tvSeriesMapper,
-                                 SeasonsService seasonsService,
-                                 MediaEventPublisher mediaEventPublisher) {
+    public TvSeriesIngestWorker(TvSeriesRepository tvSeriesRepository,
+                                CrewTvSeriesRepository crewTvSeriesRepository,
+                                CastTvSeriesRepository castTvSeriesRepository,
+                                TmdbTvEndpointService tmdbTvEndpointService,
+                                TmdbCommonEndpointService tmdbCommonEndpointService,
+                                ProductionCompanyService productionCompanyService,
+                                CastService castService,
+                                CrewService crewService,
+                                TvSeriesMapper tvSeriesMapper,
+                                SeasonsService seasonsService,
+                                MediaEventPublisher mediaEventPublisher) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;

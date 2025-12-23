@@ -19,19 +19,19 @@ import java.util.stream.Collectors;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class MovieIngestJob {
+public class MovieIngestOrchestrator {
     private final MovieRepository movieRepository;
     private final TmdbMoviesEndpointService tmdbMoviesEndpointService;
-    private final MovieIngestService movieIngestService;
+    private final MovieIngestWorker movieIngestWorker;
 
-    private static final Logger logger = LoggerFactory.getLogger(MovieIngestJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(MovieIngestOrchestrator.class);
 
-    public MovieIngestJob(MovieRepository movieRepository,
-                          TmdbMoviesEndpointService tmdbMoviesEndpointService,
-                          MovieIngestService movieIngestService) {
+    public MovieIngestOrchestrator(MovieRepository movieRepository,
+                                   TmdbMoviesEndpointService tmdbMoviesEndpointService,
+                                   MovieIngestWorker movieIngestWorker) {
         this.movieRepository = movieRepository;
         this.tmdbMoviesEndpointService = tmdbMoviesEndpointService;
-        this.movieIngestService = movieIngestService;
+        this.movieIngestWorker = movieIngestWorker;
     }
 
     @Async
@@ -104,7 +104,7 @@ public class MovieIngestJob {
                 }
 
                 try {
-                    boolean inserted = movieIngestService.persistMovieIfEligible(dto);
+                    boolean inserted = movieIngestWorker.persistMovieIfEligible(dto);
                     if (inserted) {
                         insertedToday.add(dto.getId());
                         logger.info(GREEN + "Inserted movie: {} (#{}/{} • voteCount={} • popularity={})" + RESET,

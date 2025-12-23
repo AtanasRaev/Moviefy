@@ -16,12 +16,12 @@ import java.util.Optional;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class MovieRefreshItemService {
+public class MovieRefreshWorker {
     private final MovieRepository movieRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(MovieRefreshItemService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MovieRefreshWorker.class);
 
-    public MovieRefreshItemService(MovieRepository movieRepository) {
+    public MovieRefreshWorker(MovieRepository movieRepository) {
         this.movieRepository = movieRepository;
     }
 

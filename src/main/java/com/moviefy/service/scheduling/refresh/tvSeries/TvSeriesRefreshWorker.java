@@ -17,14 +17,14 @@ import java.util.Optional;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class TvSeriesRefreshItemService {
+public class TvSeriesRefreshWorker {
     private final TvSeriesRepository tvSeriesRepository;
     private final SeasonsService seasonsService;
 
-    private static final Logger logger = LoggerFactory.getLogger(TvSeriesRefreshItemService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TvSeriesRefreshWorker.class);
 
-    public TvSeriesRefreshItemService(TvSeriesRepository tvSeriesRepository,
-                                      SeasonsService seasonsService) {
+    public TvSeriesRefreshWorker(TvSeriesRepository tvSeriesRepository,
+                                 SeasonsService seasonsService) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.seasonsService = seasonsService;
     }

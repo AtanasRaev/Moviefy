@@ -1,8 +1,8 @@
 package com.moviefy.service.scheduling.ingest;
 
 import com.moviefy.service.scheduling.MediaEventPublisher;
-import com.moviefy.service.scheduling.ingest.movie.MovieIngestJob;
-import com.moviefy.service.scheduling.ingest.tvSeries.TvSeriesIngestJob;
+import com.moviefy.service.scheduling.ingest.movie.MovieIngestOrchestrator;
+import com.moviefy.service.scheduling.ingest.tvSeries.TvSeriesIngestOrchestrator;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,25 +16,25 @@ import static com.moviefy.utils.Ansi.*;
 
 @Service
 public class MediaIngestService {
-    private final MovieIngestJob movieIngestJob;
-    private final TvSeriesIngestJob tvSeriesIngestJob;
+    private final MovieIngestOrchestrator movieIngestOrchestrator;
+    private final TvSeriesIngestOrchestrator tvSeriesIngestOrchestrator;
     private final MediaEventPublisher mediaEventPublisher;
 
     private static final Logger logger = LoggerFactory.getLogger(MediaIngestService.class);
 
 
-    public MediaIngestService(MovieIngestJob movieIngestJob,
-                              TvSeriesIngestJob tvSeriesIngestJob,
+    public MediaIngestService(MovieIngestOrchestrator movieIngestOrchestrator,
+                              TvSeriesIngestOrchestrator tvSeriesIngestOrchestrator,
                               MediaEventPublisher mediaEventPublisher) {
-        this.movieIngestJob = movieIngestJob;
-        this.tvSeriesIngestJob = tvSeriesIngestJob;
+        this.movieIngestOrchestrator = movieIngestOrchestrator;
+        this.tvSeriesIngestOrchestrator = tvSeriesIngestOrchestrator;
         this.mediaEventPublisher = mediaEventPublisher;
     }
 
 //    @Scheduled(cron = "0 13 19 * * *", zone = "Europe/Sofia")
     public void addNewMedia() {
-        CompletableFuture<List<Long>> moviesFuture = result(this.movieIngestJob.addNewMovies(), "Movies ingest job");
-        CompletableFuture<List<Long>> seriesFuture = result(this.tvSeriesIngestJob.addNewSeries(), "Series ingest job");
+        CompletableFuture<List<Long>> moviesFuture = result(this.movieIngestOrchestrator.addNewMovies(), "Movies ingest job");
+        CompletableFuture<List<Long>> seriesFuture = result(this.tvSeriesIngestOrchestrator.addNewSeries(), "Series ingest job");
 
         CompletableFuture.allOf(moviesFuture, seriesFuture).join();
 
