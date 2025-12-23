@@ -395,13 +395,29 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     List<Movie> findAllByPopularityDesc(@Param("limit") int limit);
 
     @Query(value = """
-                      SELECT *
-                      FROM movies m
-                      WHERE m.inserted_at <= :endDate AND m.inserted_at >= :startDate AND m.refreshed_at IS NULL
-                      ORDER BY m.inserted_at, m.id
-                      LIMIT :limit
+                SELECT *
+                FROM movies m
+                WHERE m.inserted_at BETWEEN :startDate AND :endDate
+                  AND (
+                        m.refreshed_at IS NULL
+                        OR m.refreshed_at < (
+                            CAST(:now AS timestamp)
+                            - (CAST(:cooldownDays AS int) * INTERVAL '1 day')
+                        )
+                      )
+                ORDER BY COALESCE(m.refreshed_at, TIMESTAMP '1970-01-01') ASC,
+                         m.inserted_at ASC,
+                         m.id ASC
+                LIMIT :limit
             """, nativeQuery = true)
-    List<Movie> findAllNewMoviesByDate(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, @Param("limit") int limit);
+    List<Movie> findMoviesDueForRefresh(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("now") LocalDateTime now,
+            @Param("cooldownDays") int cooldownDays,
+            @Param("limit") int limit
+    );
+
 
 //    @Query(
 //            value = """

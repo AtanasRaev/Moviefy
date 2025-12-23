@@ -465,14 +465,28 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     List<TvSeries> findAllByPopularityDesc(@Param("limit")int limit);
 
     @Query(value = """
-                      SELECT *
-                      FROM tv_series tv
-                      WHERE tv.inserted_at <= :endDate AND tv.inserted_at >= :startDate AND tv.refreshed_at IS NULL
-                      ORDER BY tv.inserted_at, tv.id
-                      LIMIT :limit
+                SELECT *
+                FROM tv_series tv
+                WHERE tv.inserted_at BETWEEN :startDate AND :endDate
+                  AND (
+                        tv.refreshed_at IS NULL
+                        OR tv.refreshed_at < (
+                            CAST(:now AS timestamp)
+                            - (CAST(:cooldownDays AS int) * INTERVAL '1 day')
+                        )
+                      )
+                ORDER BY COALESCE(tv.refreshed_at, TIMESTAMP '1970-01-01') ASC,
+                         tv.inserted_at ASC,
+                         tv.id ASC
+                LIMIT :limit
             """, nativeQuery = true)
-    List<TvSeries> findAllNewTvSeriesByDate(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate, @Param("limit") int limit);
-
+    List<TvSeries> findTvSeriesDueForRefresh(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("now") LocalDateTime now,
+            @Param("cooldownDays") int cooldownDays,
+            @Param("limit") int limit
+    );
 //    @Query(
 //            value = """
 //                    WITH q AS (
