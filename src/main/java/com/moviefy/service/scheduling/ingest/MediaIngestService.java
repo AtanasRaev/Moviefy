@@ -1,8 +1,6 @@
 package com.moviefy.service.scheduling.ingest;
 
 import com.moviefy.service.scheduling.MediaEventPublisher;
-import com.moviefy.service.scheduling.ingest.movie.MovieIngestOrchestrator;
-import com.moviefy.service.scheduling.ingest.tvSeries.TvSeriesIngestOrchestrator;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,7 +29,7 @@ public class MediaIngestService {
         this.mediaEventPublisher = mediaEventPublisher;
     }
 
-//    @Scheduled(cron = "0 13 19 * * *", zone = "Europe/Sofia")
+    @Scheduled(cron = "0 0 2 * * *")
     public void addNewMedia() {
         CompletableFuture<List<Long>> moviesFuture = result(this.movieIngestOrchestrator.addNewMovies(), "Movies ingest job");
         CompletableFuture<List<Long>> seriesFuture = result(this.tvSeriesIngestOrchestrator.addNewSeries(), "Series ingest job");
@@ -44,14 +42,14 @@ public class MediaIngestService {
         boolean anyInserted = (moviesInserted.size() + seriesInserted.size()) > 0;
 
         if (!moviesInserted.isEmpty()) {
-            logger.info(GREEN + "Publishing LatestMoviesChangedEvent ({} new movies)" + RESET, moviesInserted);
+            logger.info(GREEN + "Publishing LatestMoviesChangedEvent ({} new movies)" + RESET, moviesInserted.size());
             this.mediaEventPublisher.publishLatestMoviesChangedEvent();
         } else {
             logger.debug(YELLOW + "No new movies inserted — skipping movies event." + RESET);
         }
 
         if (!seriesInserted.isEmpty()) {
-            logger.info(GREEN + "Publishing LatestSeriesChangedEvent ({} new series)" + RESET, seriesInserted);
+            logger.info(GREEN + "Publishing LatestSeriesChangedEvent ({} new series)" + RESET, seriesInserted.size());
             this.mediaEventPublisher.publishLatestSeriesChangedEvent();
         } else {
             logger.debug(YELLOW + "No new series inserted — skipping series event." + RESET);
@@ -59,7 +57,7 @@ public class MediaIngestService {
 
         if (anyInserted) {
             logger.info(GREEN + "Publishing LatestMediaChangedEvent (movies={}, series={})" + RESET,
-                    moviesInserted, seriesInserted);
+                    moviesInserted.size(), seriesInserted.size());
             this.mediaEventPublisher.publishLatestMediaChangedEvent();
         } else {
             logger.debug(YELLOW + "No media inserted — skipping global media event." + RESET);

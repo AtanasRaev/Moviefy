@@ -1,10 +1,12 @@
-package com.moviefy.service.scheduling.ingest.movie;
+package com.moviefy.service.scheduling.ingest;
 
 import com.moviefy.config.cache.IngestConfig;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
 import com.moviefy.database.repository.media.MovieRepository;
 import com.moviefy.service.api.movie.TmdbMoviesEndpointService;
+import com.moviefy.service.scheduling.IngestEnum;
+import com.moviefy.service.scheduling.persistence.MoviePersistenceWorker;
 import com.moviefy.utils.MediaValidationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,16 +24,16 @@ import static com.moviefy.utils.Ansi.*;
 public class MovieIngestOrchestrator {
     private final MovieRepository movieRepository;
     private final TmdbMoviesEndpointService tmdbMoviesEndpointService;
-    private final MovieIngestWorker movieIngestWorker;
+    private final MoviePersistenceWorker moviePersistenceWorker;
 
     private static final Logger logger = LoggerFactory.getLogger(MovieIngestOrchestrator.class);
 
     public MovieIngestOrchestrator(MovieRepository movieRepository,
                                    TmdbMoviesEndpointService tmdbMoviesEndpointService,
-                                   MovieIngestWorker movieIngestWorker) {
+                                   MoviePersistenceWorker moviePersistenceWorker) {
         this.movieRepository = movieRepository;
         this.tmdbMoviesEndpointService = tmdbMoviesEndpointService;
-        this.movieIngestWorker = movieIngestWorker;
+        this.moviePersistenceWorker = moviePersistenceWorker;
     }
 
     @Async
@@ -104,12 +106,11 @@ public class MovieIngestOrchestrator {
                 }
 
                 try {
-                    boolean inserted = movieIngestWorker.persistMovieIfEligible(dto);
-                    if (inserted) {
+                    IngestEnum result = moviePersistenceWorker.persistMovieIfEligible(dto.getId());
+                    if (result == IngestEnum.INSERTED) {
                         insertedToday.add(dto.getId());
                         logger.info(GREEN + "Inserted movie: {} (#{}/{} • voteCount={} • popularity={})" + RESET,
                                 dto.getTitle(), insertedToday, IngestConfig.DAILY_INSERT_LIMIT, dto.getVoteCount(), dto.getPopularity());
-
                     } else {
                         logger.debug(YELLOW + "Skipped movie: {} (ID={})" + RESET, dto.getTitle(), dto.getId());
                     }

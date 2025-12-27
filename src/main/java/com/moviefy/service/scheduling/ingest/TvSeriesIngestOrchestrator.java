@@ -1,10 +1,12 @@
-package com.moviefy.service.scheduling.ingest.tvSeries;
+package com.moviefy.service.scheduling.ingest;
 
 import com.moviefy.config.cache.IngestConfig;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesResponseApiDTO;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
 import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
+import com.moviefy.service.scheduling.IngestEnum;
+import com.moviefy.service.scheduling.persistence.TvSeriesPersistenceWorker;
 import com.moviefy.utils.MediaValidationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +23,16 @@ import static com.moviefy.utils.Ansi.*;
 @Service
 public class TvSeriesIngestOrchestrator {
     private final TvSeriesRepository tvSeriesRepository;
-    private final TvSeriesIngestWorker tvSeriesIngestWorker;
+    private final TvSeriesPersistenceWorker tvSeriesPersistenceWorker;
     private final TmdbTvEndpointService tmdbTvEndpointService;
 
     private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestOrchestrator.class);
 
     public TvSeriesIngestOrchestrator(TvSeriesRepository tvSeriesRepository,
-                                      TvSeriesIngestWorker tvSeriesIngestWorker,
+                                      TvSeriesPersistenceWorker tvSeriesPersistenceWorker,
                                       TmdbTvEndpointService tmdbTvEndpointService) {
         this.tvSeriesRepository = tvSeriesRepository;
-        this.tvSeriesIngestWorker = tvSeriesIngestWorker;
+        this.tvSeriesPersistenceWorker = tvSeriesPersistenceWorker;
         this.tmdbTvEndpointService = tmdbTvEndpointService;
     }
 
@@ -105,9 +107,9 @@ public class TvSeriesIngestOrchestrator {
                 }
 
                 try {
-                    boolean inserted = this.tvSeriesIngestWorker.persistSeriesIfEligible(dto);
+                    IngestEnum result = this.tvSeriesPersistenceWorker.persistSeriesIfEligible(dto.getId());
 
-                    if (inserted) {
+                    if (result == IngestEnum.INSERTED) {
                         insertedToday.add(dto.getId());
                         logger.info(PURPLE + "Inserted series: {} (#{}/{} • voteCount={} • popularity={})" + RESET,
                                 dto.getName(), insertedToday, IngestConfig.DAILY_INSERT_LIMIT, dto.getVoteCount(), dto.getPopularity());
