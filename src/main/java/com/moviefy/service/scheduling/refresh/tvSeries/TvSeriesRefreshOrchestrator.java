@@ -39,12 +39,12 @@ public class TvSeriesRefreshOrchestrator {
         final LocalDateTime start = LocalDateTime.now();
         final List<Long> refreshedToday = new ArrayList<>();
 
-        logger.info(CYAN + "📺 Starting TV SERIES REFRESH (thread={})" + RESET, thread);
+        logger.info(BLUE + "📺 Starting TV SERIES REFRESH (thread={})" + RESET, thread);
 
         LocalDateTime now = LocalDateTime.now();
 
         List<TvSeries> trending = this.tvSeriesRepository.findAllByPopularityDesc(RefreshConfig.TRENDING_CAP);
-        logger.debug(CYAN + "Selected {} trending TV series (limit={})" + RESET,
+        logger.debug(BLUE + "Selected {} trending TV series (limit={})" + RESET,
                 trending.size(), RefreshConfig.TRENDING_CAP);
 
         LocalDateTime startDate = now.minusDays(RefreshConfig.DAYS_CAP);
@@ -54,7 +54,7 @@ public class TvSeriesRefreshOrchestrator {
                 startDate, endDate, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - trending.size())
         );
 
-        logger.debug(CYAN + "Selected {} recent TV series [{} .. {}), cap={}, remaining={}" + RESET,
+        logger.debug(BLUE + "Selected {} recent TV series [{} .. {}), cap={}, remaining={}" + RESET,
                 recent.size(), startDate, endDate, RefreshConfig.REFRESH_CAP,
                 Math.max(0, RefreshConfig.REFRESH_CAP - trending.size()));
 
@@ -67,7 +67,7 @@ public class TvSeriesRefreshOrchestrator {
                 .map(TvSeries::getApiId)
                 .toList();
 
-        logger.info(CYAN + "TV refresh queue prepared: {} items (cap={})" + RESET,
+        logger.info(BLUE + "TV refresh queue prepared: {} items (cap={})" + RESET,
                 apiIdsToRefresh.size(), RefreshConfig.REFRESH_CAP);
 
         int attempted = 0;
@@ -79,7 +79,7 @@ public class TvSeriesRefreshOrchestrator {
             attempted++;
 
             try {
-                logger.debug(CYAN + "Fetching details for tvApiId={} ({}/{})" + RESET,
+                logger.debug(BLUE + "Fetching details for tvApiId={} ({}/{})" + RESET,
                         apiId, attempted, apiIdsToRefresh.size());
 
                 TvSeriesApiByIdResponseDTO dto = this.tmdbTvEndpointService.getTvSeriesResponseById(apiId);
@@ -106,7 +106,7 @@ public class TvSeriesRefreshOrchestrator {
         }
 
         Duration elapsed = Duration.between(start, LocalDateTime.now());
-        logger.info(CYAN + "📺 TV series refresh finished: attempted={} • updated={} • nullDTO={} • failed={} • took={}ms" + RESET,
+        logger.info(BLUE + "📺 TV series refresh finished: attempted={} • updated={} • nullDTO={} • failed={} • took={}ms" + RESET,
                 attempted, updated, nullDto, failed, elapsed.toMillis());
 
         return CompletableFuture.completedFuture(refreshedToday);

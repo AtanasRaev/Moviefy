@@ -30,7 +30,7 @@ public class MediaRefreshService {
         this.mediaEventPublisher = mediaEventPublisher;
     }
 
-//    @Scheduled(cron = "0 34 19 * * *", zone = "Europe/Sofia")
+    @Scheduled(cron = "0 0 3 */3 * *")
     public void refreshMedia() {
         CompletableFuture<List<Long>> moviesFuture = result(this.movieRefreshOrchestrator.refreshMovies(), "Movies refresh");
         CompletableFuture<List<Long>> seriesFuture = result(this.tvSeriesRefreshOrchestrator.refreshTvSeries(),  "TvSeries refresh");
@@ -54,7 +54,7 @@ public class MediaRefreshService {
 
         if (!seriesRefreshed.isEmpty()) {
             List<Long> distinctIds = seriesRefreshed.stream().distinct().toList();
-            logger.info(GREEN + "Publishing TrendingSeriesChangedEvent ({} updated series)" + RESET, seriesRefreshed);
+            logger.info(GREEN + "Publishing TrendingSeriesChangedEvent ({} updated series)" + RESET, seriesRefreshed.size());
             this.mediaEventPublisher.publishTrendingSeriesChangedEvent();
             this.mediaEventPublisher.publishByGenresChangedTvSeriesEvent();
             this.mediaEventPublisher.publishTvSeriesDetailsChangedEvent(distinctIds);
