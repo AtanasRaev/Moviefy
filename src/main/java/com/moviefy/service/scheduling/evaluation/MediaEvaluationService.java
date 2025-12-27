@@ -47,7 +47,7 @@ public class MediaEvaluationService {
             this.mediaEventPublisher.publishByGenresChangedMoviesEvent();
             this.mediaEventPublisher.publishLatestMoviesChangedEvent();
         } else {
-            logger.debug(YELLOW + "No movies evaluated — skipping movies event." + RESET);
+            logger.info(YELLOW + "No movies evaluated — skipping movies event." + RESET);
         }
 
         if (!seriesEvaluated.isEmpty()) {
@@ -56,7 +56,7 @@ public class MediaEvaluationService {
             this.mediaEventPublisher.publishByGenresChangedTvSeriesEvent();
             this.mediaEventPublisher.publishLatestSeriesChangedEvent();
         } else {
-            logger.debug(YELLOW + "No new series evaluated — skipping series event." + RESET);
+            logger.info(YELLOW + "No new series evaluated — skipping series event." + RESET);
         }
 
         if (anyInserted) {
@@ -65,7 +65,7 @@ public class MediaEvaluationService {
             this.mediaEventPublisher.publishByGenresChangedMediaEvent();
             this.mediaEventPublisher.publishLatestMediaChangedEvent();
         } else {
-            logger.debug(YELLOW + "No media evaluated — skipping media event." + RESET);
+            logger.info(YELLOW + "No media evaluated — skipping media event." + RESET);
         }
     }
 

@@ -49,7 +49,7 @@ public class MediaRefreshService {
             this.mediaEventPublisher.publishByGenresChangedMoviesEvent();
             this.mediaEventPublisher.publishMoviesDetailsChangedEvent(distinctIds);
         } else {
-            logger.debug(YELLOW + "No movies updated — skipping movies event." + RESET);
+            logger.info(YELLOW + "No movies updated — skipping movies event." + RESET);
         }
 
         if (!seriesRefreshed.isEmpty()) {
@@ -59,7 +59,7 @@ public class MediaRefreshService {
             this.mediaEventPublisher.publishByGenresChangedTvSeriesEvent();
             this.mediaEventPublisher.publishTvSeriesDetailsChangedEvent(distinctIds);
         } else {
-            logger.debug(YELLOW + "No series updated — skipping series event." + RESET);
+            logger.info(YELLOW + "No series updated — skipping series event." + RESET);
         }
 
         if (anyRefreshed) {
@@ -67,7 +67,7 @@ public class MediaRefreshService {
             this.mediaEventPublisher.publishTrendingMediaChangedEvent();
             this.mediaEventPublisher.publishByGenresChangedMediaEvent();
         } else {
-            logger.debug(YELLOW + "No media updated — skipping media event." + RESET);
+            logger.info(YELLOW + "No media updated — skipping media event." + RESET);
         }
     }
 

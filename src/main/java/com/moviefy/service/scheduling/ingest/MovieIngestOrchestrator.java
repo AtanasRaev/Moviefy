@@ -44,6 +44,10 @@ public class MovieIngestOrchestrator {
         List<Long> insertedToday = new ArrayList<>();
 
         while (insertedToday.size() < IngestConfig.DAILY_INSERT_LIMIT) {
+            if (page >= 4) {
+                return CompletableFuture.completedFuture(insertedToday);
+            }
+
             logger.debug(CYAN + "Fetching movies (page={})…" + RESET, page);
 
             MovieResponseApiDTO discover = this.tmdbMoviesEndpointService.getNewMoviesUTCTime(page);

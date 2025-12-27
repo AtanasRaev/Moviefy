@@ -45,14 +45,14 @@ public class MediaIngestService {
             logger.info(GREEN + "Publishing LatestMoviesChangedEvent ({} new movies)" + RESET, moviesInserted.size());
             this.mediaEventPublisher.publishLatestMoviesChangedEvent();
         } else {
-            logger.debug(YELLOW + "No new movies inserted — skipping movies event." + RESET);
+            logger.info(YELLOW + "No new movies inserted — skipping movies event." + RESET);
         }
 
         if (!seriesInserted.isEmpty()) {
             logger.info(GREEN + "Publishing LatestSeriesChangedEvent ({} new series)" + RESET, seriesInserted.size());
             this.mediaEventPublisher.publishLatestSeriesChangedEvent();
         } else {
-            logger.debug(YELLOW + "No new series inserted — skipping series event." + RESET);
+            logger.info(YELLOW + "No new series inserted — skipping series event." + RESET);
         }
 
         if (anyInserted) {
@@ -60,7 +60,7 @@ public class MediaIngestService {
                     moviesInserted.size(), seriesInserted.size());
             this.mediaEventPublisher.publishLatestMediaChangedEvent();
         } else {
-            logger.debug(YELLOW + "No media inserted — skipping global media event." + RESET);
+            logger.info(YELLOW + "No media inserted — skipping global media event." + RESET);
         }
     }
 

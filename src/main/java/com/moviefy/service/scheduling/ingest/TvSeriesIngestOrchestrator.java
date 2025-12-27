@@ -45,6 +45,10 @@ public class TvSeriesIngestOrchestrator {
         List<Long> insertedToday = new ArrayList<>();
 
         while (insertedToday.size() < IngestConfig.DAILY_INSERT_LIMIT) {
+            if (page >= 4) {
+                return CompletableFuture.completedFuture(insertedToday);
+            }
+
             logger.debug(BLUE + "Fetching series (page={})…" + RESET, page);
 
             TvSeriesResponseApiDTO discover = this.tmdbTvEndpointService.getNewTvSeriesUTCTime(page);
