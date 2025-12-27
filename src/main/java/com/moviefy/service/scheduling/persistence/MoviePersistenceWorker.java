@@ -1,10 +1,9 @@
-package com.moviefy.service.scheduling.ingest.movie;
+package com.moviefy.service.scheduling.persistence;
 
 import com.moviefy.config.FetchMediaConfig;
 import com.moviefy.database.model.dto.apiDto.mediaDto.MediaResponseCreditsDTO;
-import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.Collection;
 import com.moviefy.database.model.entity.media.Movie;
@@ -17,6 +16,7 @@ import com.moviefy.service.collection.CollectionService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.service.scheduling.IngestEnum;
 import com.moviefy.service.scheduling.MediaEventPublisher;
 import com.moviefy.utils.EntityComparator;
 import com.moviefy.utils.mappers.MovieMapper;
@@ -27,12 +27,14 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class MovieIngestWorker {
+public class MoviePersistenceWorker {
     private final MovieRepository movieRepository;
     private final CastMovieRepository castMovieRepository;
     private final CrewMovieRepository crewMovieRepository;
@@ -45,19 +47,19 @@ public class MovieIngestWorker {
     private final MovieMapper movieMapper;
     private final MediaEventPublisher mediaEventPublisher;
 
-    private static final Logger logger = LoggerFactory.getLogger(MovieIngestWorker.class);
+    private static final Logger logger = LoggerFactory.getLogger(MoviePersistenceWorker.class);
 
-    public MovieIngestWorker(MovieRepository movieRepository,
-                             CastMovieRepository castMovieRepository,
-                             CrewMovieRepository crewMovieRepository,
-                             TmdbMoviesEndpointService tmdbMoviesEndpointService,
-                             TmdbCommonEndpointService tmdbCommonEndpointService,
-                             CollectionService collectionService,
-                             ProductionCompanyService productionCompanyService,
-                             CastService castService,
-                             CrewService crewService,
-                             MovieMapper movieMapper,
-                             MediaEventPublisher mediaEventPublisher) {
+    public MoviePersistenceWorker(MovieRepository movieRepository,
+                                  CastMovieRepository castMovieRepository,
+                                  CrewMovieRepository crewMovieRepository,
+                                  TmdbMoviesEndpointService tmdbMoviesEndpointService,
+                                  TmdbCommonEndpointService tmdbCommonEndpointService,
+                                  CollectionService collectionService,
+                                  ProductionCompanyService productionCompanyService,
+                                  CastService castService,
+                                  CrewService crewService,
+                                  MovieMapper movieMapper,
+                                  MediaEventPublisher mediaEventPublisher) {
         this.movieRepository = movieRepository;
         this.castMovieRepository = castMovieRepository;
         this.crewMovieRepository = crewMovieRepository;
@@ -72,49 +74,50 @@ public class MovieIngestWorker {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean persistMovieIfEligible(MovieApiDTO dto) {
-        LocalDate rd = dto.getReleaseDate();
-        if (rd == null) {
-            logger.debug(YELLOW + "Skip movie: {} — missing release date" + RESET, dto.getTitle());
-            return false;
+    public IngestEnum persistMovieIfEligible(Long apiId) {
+        MovieApiByIdResponseDTO responseById = this.tmdbMoviesEndpointService.getMovieResponseById(apiId);
+
+        if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < FetchMediaConfig.MIN_MOVIE_RUNTIME) {
+            logger.debug(YELLOW + "Skip movie with apiId: {} — runtime invalid or details missing" + RESET, apiId);
+            return IngestEnum.INVALID;
         }
 
-        if (this.movieRepository.findByApiId(dto.getId()).isPresent()) {
-            logger.debug(YELLOW + "Skip movie: {} — already exists" + RESET, dto.getTitle());
-            return false;
+        LocalDate rd = responseById.getReleaseDate();
+        if (rd == null) {
+            logger.debug(YELLOW + "Skip movie: {} — missing release date" + RESET, responseById.getTitle());
+            return IngestEnum.INVALID;
+        }
+
+        if (this.movieRepository.findByApiId(responseById.getId()).isPresent()) {
+            logger.debug(YELLOW + "Skip movie: {} — already exists" + RESET, responseById.getTitle());
+            return IngestEnum.INVALID;
         }
 
         final int rankingYear = rd.getYear();
-
-        MovieApiByIdResponseDTO responseById = this.tmdbMoviesEndpointService.getMovieResponseById(dto.getId());
-        if (responseById == null || responseById.getRuntime() == null || responseById.getRuntime() < FetchMediaConfig.MIN_MOVIE_RUNTIME) {
-            logger.debug(YELLOW + "Skip movie: {} — runtime invalid or details missing" + RESET, dto.getTitle());
-            return false;
-        }
 
         long countByYear = this.movieRepository.findCountByRankingYear(rankingYear);
         if (countByYear >= FetchMediaConfig.MAX_MEDIA_PER_YEAR) {
             Optional<Movie> worstOpt = this.movieRepository.findLowestRatedMovieByRankingYear(rankingYear);
             if (worstOpt.isEmpty()) {
                 logger.warn(YELLOW + "Skip movie: {} — year {} full and no 'worst' movie found" + RESET,
-                        dto.getTitle(), rankingYear);
-                return false;
+                        responseById.getTitle(), rankingYear);
+                return IngestEnum.STOP_EVALUATION;
             }
 
             Movie worst = worstOpt.get();
-            if (!EntityComparator.isBetter(dto, worst)) {
+            if (!EntityComparator.isBetter(responseById, worst)) {
                 logger.debug(YELLOW + "Skip movie: {} — not better than worst movie {}" + RESET,
-                        dto.getTitle(), worst.getTitle());
-                return false;
+                        responseById.getTitle(), worst.getTitle());
+                return IngestEnum.STOP_EVALUATION;
             }
 
             logger.info(CYAN + "Replacing worst movie '{}' with '{}'" + RESET,
-                    worst.getTitle(), dto.getTitle());
+                    worst.getTitle(), responseById.getTitle());
 
             detachAndDelete(worst);
         }
 
-        TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(dto.getId(), "movie");
+        TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(responseById.getId(), "movie");
 
         Movie movie = movieMapper.mapToMovie(responseById, responseTrailer);
 
@@ -153,7 +156,7 @@ public class MovieIngestWorker {
             this.mediaEventPublisher.publishCrewByMediaChangedEvent(crewIds);
         }
 
-        return true;
+        return IngestEnum.INSERTED;
     }
 
     @Transactional

@@ -34,7 +34,7 @@ public class TvSeriesRefreshWorker {
                                       TvSeriesApiByIdResponseDTO dto,
                                       LocalDateTime now) {
 
-        logger.debug(CYAN + "📺 Refreshing TV series apiId={} (tx=REQUIRES_NEW)" + RESET, apiId);
+        logger.debug(BLUE + "📺 Refreshing TV series apiId={} (tx=REQUIRES_NEW)" + RESET, apiId);
 
         Optional<TvSeries> opt = this.tvSeriesRepository.findByApiId(apiId);
         if (opt.isEmpty()) {

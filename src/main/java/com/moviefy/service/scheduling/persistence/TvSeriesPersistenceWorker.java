@@ -1,10 +1,9 @@
-package com.moviefy.service.scheduling.ingest.tvSeries;
+package com.moviefy.service.scheduling.persistence;
 
 import com.moviefy.config.FetchMediaConfig;
 import com.moviefy.database.model.dto.apiDto.creditDto.CastApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
-import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiDTO;
 import com.moviefy.database.model.entity.ProductionCompany;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
@@ -16,6 +15,7 @@ import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.media.tvSeries.seasons.SeasonsService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.service.scheduling.IngestEnum;
 import com.moviefy.service.scheduling.MediaEventPublisher;
 import com.moviefy.utils.EntityComparator;
 import com.moviefy.utils.mappers.TvSeriesMapper;
@@ -33,7 +33,7 @@ import java.util.Set;
 import static com.moviefy.utils.Ansi.*;
 
 @Service
-public class TvSeriesIngestWorker {
+public class TvSeriesPersistenceWorker {
     private final TvSeriesRepository tvSeriesRepository;
     private final CrewTvSeriesRepository crewTvSeriesRepository;
     private final CastTvSeriesRepository castTvSeriesRepository;
@@ -46,19 +46,19 @@ public class TvSeriesIngestWorker {
     private final TvSeriesMapper tvSeriesMapper;
     private final MediaEventPublisher mediaEventPublisher;
 
-    private static final Logger logger = LoggerFactory.getLogger(TvSeriesIngestWorker.class);
+    private static final Logger logger = LoggerFactory.getLogger(TvSeriesPersistenceWorker.class);
 
-    public TvSeriesIngestWorker(TvSeriesRepository tvSeriesRepository,
-                                CrewTvSeriesRepository crewTvSeriesRepository,
-                                CastTvSeriesRepository castTvSeriesRepository,
-                                TmdbTvEndpointService tmdbTvEndpointService,
-                                TmdbCommonEndpointService tmdbCommonEndpointService,
-                                ProductionCompanyService productionCompanyService,
-                                CastService castService,
-                                CrewService crewService,
-                                TvSeriesMapper tvSeriesMapper,
-                                SeasonsService seasonsService,
-                                MediaEventPublisher mediaEventPublisher) {
+    public TvSeriesPersistenceWorker(TvSeriesRepository tvSeriesRepository,
+                                     CrewTvSeriesRepository crewTvSeriesRepository,
+                                     CastTvSeriesRepository castTvSeriesRepository,
+                                     TmdbTvEndpointService tmdbTvEndpointService,
+                                     TmdbCommonEndpointService tmdbCommonEndpointService,
+                                     ProductionCompanyService productionCompanyService,
+                                     CastService castService,
+                                     CrewService crewService,
+                                     TvSeriesMapper tvSeriesMapper,
+                                     SeasonsService seasonsService,
+                                     MediaEventPublisher mediaEventPublisher) {
         this.tvSeriesRepository = tvSeriesRepository;
         this.crewTvSeriesRepository = crewTvSeriesRepository;
         this.castTvSeriesRepository = castTvSeriesRepository;
@@ -73,26 +73,25 @@ public class TvSeriesIngestWorker {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean persistSeriesIfEligible(TvSeriesApiDTO dto) {
-
-        LocalDate fad = dto.getFirstAirDate();
-        if (fad == null) {
-            logger.debug(YELLOW + "Skip series {} — missing firstAirDate" + RESET, dto.getName());
-            return false;
+    public IngestEnum persistSeriesIfEligible(Long apiId) {
+        TvSeriesApiByIdResponseDTO responseById = this.tmdbTvEndpointService.getTvSeriesResponseById(apiId);
+        if (responseById == null || responseById.getType() == null) {
+            logger.debug(YELLOW + "Skip series with apiId{} — missing details or type" + RESET, apiId);
+            return IngestEnum.INVALID;
         }
 
-        if (this.tvSeriesRepository.findByApiId(dto.getId()).isPresent()) {
-            logger.debug(YELLOW + "Skip series {} — already exists" + RESET, dto.getName());
-            return false;
+        LocalDate fad = responseById.getFirstAirDate();
+        if (fad == null) {
+            logger.debug(YELLOW + "Skip series {} — missing firstAirDate" + RESET, responseById.getName());
+            return IngestEnum.INVALID;
+        }
+
+        if (this.tvSeriesRepository.findByApiId(responseById.getId()).isPresent()) {
+            logger.debug(YELLOW + "Skip series {} — already exists" + RESET, responseById.getName());
+            return IngestEnum.INVALID;
         }
 
         final int rankingYear = fad.getYear();
-
-        TvSeriesApiByIdResponseDTO responseById = this.tmdbTvEndpointService.getTvSeriesResponseById(dto.getId());
-        if (responseById == null || responseById.getType() == null) {
-            logger.debug(YELLOW + "Skip series {} — missing details or type" + RESET, dto.getName());
-            return false;
-        }
 
         if (!responseById.getType().equalsIgnoreCase("scripted")
                 && !responseById.getType().equalsIgnoreCase("reality")
@@ -101,8 +100,8 @@ public class TvSeriesIngestWorker {
                 && !responseById.getType().equalsIgnoreCase("animation")) {
 
             logger.warn(YELLOW + "Invalid TV series type: id-{} type-{}" + RESET,
-                    dto.getId(), responseById.getType());
-            return false;
+                    responseById.getId(), responseById.getType());
+            return IngestEnum.INVALID;
         }
 
         long countByYear = this.tvSeriesRepository.findCountByRankingYear(rankingYear);
@@ -110,24 +109,24 @@ public class TvSeriesIngestWorker {
             Optional<TvSeries> worstOpt = this.tvSeriesRepository.findLowestRatedSeriesByRankingYear(rankingYear);
             if (worstOpt.isEmpty()) {
                 logger.warn(YELLOW + "Skip series {} — year {} full, and no worst series found" + RESET,
-                        dto.getName(), rankingYear);
-                return false;
+                        responseById.getName(), rankingYear);
+                return IngestEnum.STOP_EVALUATION;
             }
 
             TvSeries worst = worstOpt.get();
-            if (!EntityComparator.isBetter(dto, worst)) {
+            if (!EntityComparator.isBetter(responseById, worst)) {
                 logger.debug(YELLOW + "Skip series {} — not better than worst existing series {}" + RESET,
-                        dto.getName(), worst.getName());
-                return false;
+                        responseById.getName(), worst.getName());
+                return IngestEnum.STOP_EVALUATION;
             }
 
             logger.info(BLUE + "Replacing worst series '{}' with '{}'" + RESET,
-                    worst.getName(), dto.getName());
+                    worst.getName(), responseById.getName());
 
             detachAndDelete(worst);
         }
 
-        TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(dto.getId(), "tv");
+        TrailerResponseApiDTO responseTrailer = this.tmdbCommonEndpointService.getTrailerResponseById(responseById.getId(), "tv");
 
         TvSeries tvSeries = this.tvSeriesMapper.mapToTvSeries(responseById, responseTrailer);
 
@@ -157,7 +156,7 @@ public class TvSeriesIngestWorker {
             this.mediaEventPublisher.publishCrewByMediaChangedEvent(crewIds);
         }
 
-        return true;
+        return IngestEnum.INSERTED;
     }
 
     @Transactional
