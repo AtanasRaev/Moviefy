@@ -1,10 +1,11 @@
 package com.moviefy.utils;
 
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiByIdResponseDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
 import com.moviefy.database.model.entity.media.Media;
 
 public class EntityComparator {
-    public static boolean isBetter(MediaApiDTO cand, Media worst) {
+    public static boolean isBetter(MediaApiByIdResponseDTO cand, Media worst) {
         int voteCmp = Integer.compare(safeInt(cand.getVoteCount()), safeInt(worst.getVoteCount()));
         if (voteCmp != 0) {
             return voteCmp > 0;
