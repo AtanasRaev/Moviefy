@@ -405,9 +405,9 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                             - (CAST(:cooldownDays AS int) * INTERVAL '1 day')
                         )
                       )
-                ORDER BY COALESCE(m.refreshed_at, TIMESTAMP '1970-01-01') ASC,
-                         m.inserted_at ASC,
-                         m.id ASC
+                ORDER BY COALESCE(m.refreshed_at, TIMESTAMP '1970-01-01'),
+                         m.inserted_at,
+                         m.id
                 LIMIT :limit
             """, nativeQuery = true)
     List<Movie> findMoviesDueForRefresh(
@@ -417,6 +417,9 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             @Param("cooldownDays") int cooldownDays,
             @Param("limit") int limit
     );
+
+    @Query("SELECT m.apiId FROM Movie m WHERE m.apiId IN :apiIds")
+    Set<Long> findAllApiIdsByApiIdIn(@Param("apiIds") Set<Long> apiIds);
 
 
 //    @Query(

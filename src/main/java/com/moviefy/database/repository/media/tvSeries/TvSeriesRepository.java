@@ -475,9 +475,9 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                             - (CAST(:cooldownDays AS int) * INTERVAL '1 day')
                         )
                       )
-                ORDER BY COALESCE(tv.refreshed_at, TIMESTAMP '1970-01-01') ASC,
-                         tv.inserted_at ASC,
-                         tv.id ASC
+                ORDER BY COALESCE(tv.refreshed_at, TIMESTAMP '1970-01-01'),
+                         tv.inserted_at,
+                         tv.id
                 LIMIT :limit
             """, nativeQuery = true)
     List<TvSeries> findTvSeriesDueForRefresh(
@@ -487,6 +487,9 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             @Param("cooldownDays") int cooldownDays,
             @Param("limit") int limit
     );
+
+    @Query("SELECT tv.apiId FROM TvSeries tv WHERE tv.apiId IN :apiIds")
+    Set<Long> findAllApiIdsByApiIdIn(@Param("apiIds") Set<Long> apiIds);
 //    @Query(
 //            value = """
 //                    WITH q AS (
