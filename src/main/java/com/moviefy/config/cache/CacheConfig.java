@@ -41,13 +41,7 @@ public class CacheConfig {
                 CacheKeys.TRENDING_TV_SERIES,
                 CacheKeys.TRENDING_MEDIA,
 
-                CacheKeys.POPULAR_MEDIA,
-                CacheKeys.TOP_RATED_MOVIES,
-                CacheKeys.TOP_RATED_TV_SERIES,
-                CacheKeys.TOP_RATED_MEDIA,
-
                 CacheKeys.MOVIES_BY_COLLECTION_API_ID,
-                CacheKeys.POPULAR_COLLECTIONS,
 
                 CacheKeys.MOVIES_BY_GENRES,
                 CacheKeys.TV_SERIES_BY_GENRES,
@@ -64,7 +58,12 @@ public class CacheConfig {
 
         addAll(caches, jan1Expiry100,
                 CacheKeys.POPULAR_MOVIES,
-                CacheKeys.POPULAR_TV_SERIES
+                CacheKeys.POPULAR_TV_SERIES,
+                CacheKeys.POPULAR_MEDIA,
+                CacheKeys.POPULAR_COLLECTIONS,
+                CacheKeys.TOP_RATED_MOVIES,
+                CacheKeys.TOP_RATED_TV_SERIES,
+                CacheKeys.TOP_RATED_MEDIA
         );
 
         addAll(caches, singleEntry,
