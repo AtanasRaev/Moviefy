@@ -398,6 +398,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                 SELECT *
                 FROM movies m
                 WHERE m.inserted_at BETWEEN :startDate AND :endDate
+                  AND (m.ranking_year = :currentYear OR m.ranking_year = :previousYear)
                   AND (
                         m.refreshed_at IS NULL
                         OR m.refreshed_at < (
@@ -413,6 +414,8 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     List<Movie> findMoviesDueForRefresh(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
+            @Param("currentYear") int currentYear,
+            @Param("previousYear") int previousYear,
             @Param("now") LocalDateTime now,
             @Param("cooldownDays") int cooldownDays,
             @Param("limit") int limit

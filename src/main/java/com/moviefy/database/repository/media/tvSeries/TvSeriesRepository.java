@@ -468,6 +468,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                 SELECT *
                 FROM tv_series tv
                 WHERE tv.inserted_at BETWEEN :startDate AND :endDate
+                  AND (tv.ranking_year = :currentYear OR tv.ranking_year = :previousYear)
                   AND (
                         tv.refreshed_at IS NULL
                         OR tv.refreshed_at < (
@@ -483,6 +484,8 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
     List<TvSeries> findTvSeriesDueForRefresh(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
+            @Param("currentYear") int currentYear,
+            @Param("previousYear") int previousYear,
             @Param("now") LocalDateTime now,
             @Param("cooldownDays") int cooldownDays,
             @Param("limit") int limit
