@@ -94,7 +94,7 @@ public class TvSeriesRefreshOrchestrator {
                 if (refreshed) {
                     updated++;
                     refreshedToday.add(apiId);
-                    logger.info(GREEN + "✔Refreshed series apiId={} ({})" + RESET, apiId, dto.getName());
+                    logger.info(PURPLE + "✔Refreshed series apiId={} ({})" + RESET, apiId, dto.getName());
                 } else {
                     logger.debug(YELLOW + "No changes for tvApiId={} — up to date" + RESET, apiId);
                 }
