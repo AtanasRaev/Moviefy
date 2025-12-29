@@ -51,7 +51,7 @@ public class TvSeriesRefreshOrchestrator {
         LocalDateTime endDate = now.minusDays(RefreshConfig.DAYS_GUARD);
 
         List<TvSeries> recent = this.tvSeriesRepository.findTvSeriesDueForRefresh(
-                startDate, endDate, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - trending.size())
+                startDate, endDate,now.getYear(), now.getYear() - 1, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - trending.size())
         );
 
         logger.debug(BLUE + "Selected {} recent TV series [{} .. {}), cap={}, remaining={}" + RESET,

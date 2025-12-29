@@ -49,7 +49,7 @@ public class MovieRefreshOrchestrator {
         LocalDateTime startDate = now.minusDays(RefreshConfig.DAYS_CAP);
         LocalDateTime endDate = now.minusDays(RefreshConfig.DAYS_GUARD);
         List<Movie> allNewMoviesByDate = this.movieRepository.findMoviesDueForRefresh(
-                startDate, endDate, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - allByPopularityDesc.size())
+                startDate, endDate, now.getYear(), now.getYear() - 1, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - allByPopularityDesc.size())
         );
         logger.debug(CYAN + "Selected {} recent candidates between [{} .. {}), cap={} (remaining from {})" + RESET,
                 allNewMoviesByDate.size(), startDate, endDate, RefreshConfig.REFRESH_CAP,
