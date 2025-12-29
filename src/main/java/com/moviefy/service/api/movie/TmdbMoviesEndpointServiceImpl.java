@@ -39,7 +39,10 @@ public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService 
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(MovieResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching movies for year {} page {}. URL={}", year, page, uri, e);
             return null;
@@ -57,7 +60,10 @@ public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService 
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(MovieApiByIdResponseDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(MovieApiByIdResponseDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching movie by ID {}. URL={}", apiId, uri, e);
             return null;
@@ -72,11 +78,15 @@ public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService 
                 .queryParam("api_key", this.apiConfig.getKey())
                 .queryParam("page", 1)
                 .queryParam("query", query)
-                .build(true)
+                .build()
+                .encode()
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(MovieResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error searching movies with query '{}'. URL={}", query, uri, e);
             return null;
@@ -87,7 +97,7 @@ public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService 
     public MovieResponseApiDTO getNewMoviesUTCTime(int page) {
         LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
         LocalDate fromDate = todayUtc.minusDays(2);
-        LocalDate toDate   = todayUtc.plusDays(2);
+        LocalDate toDate = todayUtc.plusDays(2);
 
         URI uri = UriComponentsBuilder
                 .fromHttpUrl(this.apiConfig.getUrl())
@@ -101,7 +111,10 @@ public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService 
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(MovieResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching today's discover movies ({} to {}). page={} URL={}",
                     fromDate, toDate, page, uri, e);
@@ -120,7 +133,10 @@ public class TmdbMoviesEndpointServiceImpl implements TmdbMoviesEndpointService 
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(MovieResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(MovieResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching trending movies. page={} URL={}", page, uri, e);
             return null;

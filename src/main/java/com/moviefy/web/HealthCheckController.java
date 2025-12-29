@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthCheckController {
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
+        System.out.println("pong");
         return ResponseEntity.ok("pong");
     }
 }

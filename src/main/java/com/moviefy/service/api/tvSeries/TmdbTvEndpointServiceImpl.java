@@ -40,7 +40,10 @@ public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching TV series by date & vote count. year={}, page={}. URL={}",
                     year, page, uri, e);
@@ -59,7 +62,10 @@ public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(TvSeriesApiByIdResponseDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(TvSeriesApiByIdResponseDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching TV series by ID. apiId={}. URL={}", apiId, uri, e);
             return null;
@@ -74,11 +80,15 @@ public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
                 .queryParam("api_key", this.apiConfig.getKey())
                 .queryParam("page", 1)
                 .queryParam("query", query)
-                .build(true)
+                .build()
+                .encode()
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error searching TV series. query='{}'. URL={}", query, uri, e);
             return null;
@@ -103,7 +113,10 @@ public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching discover TV series from {} to {}. page={}, URL={}",
                     fromDate, toDate, page, uri, e);
@@ -122,7 +135,10 @@ public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(TvSeriesResponseApiDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(TvSeriesResponseApiDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching trending TV series. page={}, URL={}", page, uri, e);
             return null;
@@ -139,7 +155,10 @@ public class TmdbTvEndpointServiceImpl implements TmdbTvEndpointService {
                 .toUri();
 
         try {
-            return this.restClient.get().uri(uri).retrieve().body(EpisodesTvSeriesResponseDTO.class);
+            return this.restClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(EpisodesTvSeriesResponseDTO.class);
         } catch (Exception e) {
             logger.error("Error fetching season for TV series. tvId={}, season={}, URL={}",
                     tvId, season, uri, e);
