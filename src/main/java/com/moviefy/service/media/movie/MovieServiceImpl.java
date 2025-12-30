@@ -98,7 +98,7 @@ public class MovieServiceImpl implements MovieService {
         genres = this.genreNormalizationUtil.processMovieGenres(genres);
 
         return movieRepository.findByReleaseDateAndGenres(
-                getStartOfCurrentMonth(),
+                LocalDate.now(),
                 genres,
                 pageable
         );
@@ -239,10 +239,6 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public Page<MoviePageProjection> getMoviesByProductionCompanyId(long id, Pageable pageable) {
         return this.movieRepository.findTopRatedMoviesByProductionCompanyId(id, pageable);
-    }
-
-    private LocalDate getStartOfCurrentMonth() {
-        return LocalDate.now().minusDays(7);
     }
 
     private MovieDetailsDTO mapToMovieDetailsDTO(Movie movie) {

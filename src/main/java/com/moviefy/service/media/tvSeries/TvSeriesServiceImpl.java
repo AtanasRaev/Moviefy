@@ -101,7 +101,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         types = this.tvSeriesTypesNormalizationUtil.processTypes(types);
 
         return this.tvSeriesRepository.findByFirstAirDateAndGenres(
-                getStartOfCurrentMonth(),
+                LocalDate.now(),
                 genres,
                 types,
                 pageable
@@ -302,10 +302,6 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                 .stream()
                 .sorted(Comparator.comparingInt(SeasonTvSeriesDTO::getSeasonNumber))
                 .collect(Collectors.toCollection(LinkedHashSet::new)));
-    }
-
-    private LocalDate getStartOfCurrentMonth() {
-        return LocalDate.now().minusDays(7);
     }
 
 //    @Scheduled(fixedDelay = 100000000)
