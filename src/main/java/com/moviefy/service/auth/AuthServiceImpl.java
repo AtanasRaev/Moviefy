@@ -91,6 +91,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void resendEmail(EmailVerificationTokenDTO emailVerificationTokenDTO) {
         Optional<EmailVerificationToken> token = this.emailService.findToken(emailVerificationTokenDTO.getToken());
 
