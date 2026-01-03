@@ -93,16 +93,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void resendEmail(EmailVerificationTokenDTO emailVerificationTokenDTO) {
-        Optional<EmailVerificationToken> token = this.emailService.findToken(emailVerificationTokenDTO.getToken());
+        Optional<EmailVerificationToken> optional = this.emailService.findToken(emailVerificationTokenDTO.getToken());
 
-        if (token.isEmpty()) {
-            throw new InvalidTokenException("Invalid token.");
+        if (optional.isEmpty()) {
+            throw new InvalidTokenException("Invalid optional.");
         }
 
-        EmailVerificationToken emailVerificationToken = token.get();
+        EmailVerificationToken emailVerificationToken = optional.get();
         String email = emailVerificationToken.getUser().getEmail();
 
-        this.emailService.sendVerificationEmail(email, emailVerificationTokenDTO.getToken());
+        String token = this.emailService.generateToken(emailVerificationToken.getUser());
+        this.emailService.sendVerificationEmail(email, token);
         this.emailService.delete(emailVerificationToken);
     }
 
