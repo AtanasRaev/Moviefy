@@ -1,4 +1,12 @@
 spring:
+  session:
+    store-type: redis
+    timeout: 7d
+
+  data:
+    redis:
+      url: ${REDIS_URL}
+
   task:
     scheduling:
       pool:
@@ -34,6 +42,27 @@ spring:
       idle-timeout: 60000
       keepalive-time: 30000
 
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+moviefy:
+  frontend:
+    url: ${MOVIEFY_FRONTEND_URL}
+  admin:
+    emails: ${MOVIEFY_ADMIN_EMAILS:}
+
+mail:
+  from: ${MAIL_FROM}
+
 logging:
   level:
     org:
@@ -46,10 +75,15 @@ logging:
     runtime: INFO
     instance class: INFO
 
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      cookie:
+        same-site: Lax
+        secure: false
+
 tmdb:
   api:
     url: "https://api.themoviedb.org/3"
     key: ${TMDB_API_KEY}
-
-server:
-  port: ${PORT:8080}
