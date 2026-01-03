@@ -7,10 +7,7 @@ import com.moviefy.service.auth.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -41,6 +38,18 @@ public class AuthController {
                 .body(ApiResponse.success(
                         HttpStatus.OK.value(),
                         "Email verified successfully.",
+                        null
+                ));
+    }
+
+    @PostMapping("/resend-email")
+    public ResponseEntity<ApiResponse<Void>> resendEmail(@RequestBody EmailVerificationTokenDTO emailVerificationTokenDTO) {
+        this.authService.resendEmail(emailVerificationTokenDTO);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        HttpStatus.OK.value(),
+                        "Email verification link resent successfully.",
                         null
                 ));
     }

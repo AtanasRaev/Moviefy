@@ -90,6 +90,21 @@ public class AuthServiceImpl implements AuthService {
         this.userRepository.save(user);
     }
 
+    @Override
+    public void resendEmail(EmailVerificationTokenDTO emailVerificationTokenDTO) {
+        Optional<EmailVerificationToken> token = this.emailService.findToken(emailVerificationTokenDTO.getToken());
+
+        if (token.isEmpty()) {
+            throw new InvalidTokenException("Invalid token.");
+        }
+
+        EmailVerificationToken emailVerificationToken = token.get();
+        String email = emailVerificationToken.getUser().getEmail();
+
+        this.emailService.sendVerificationEmail(email, emailVerificationTokenDTO.getToken());
+        this.emailService.delete(emailVerificationToken);
+    }
+
     private static String normalizeName(String s) {
         if (s == null) return null;
         String t = s.trim();

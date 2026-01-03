@@ -7,4 +7,6 @@ public interface AuthService {
     void register(RegisterUserDTO registerUserDTO);
 
     void verifyEmail(EmailVerificationTokenDTO emailVerificationTokenDTO);
+
+    void resendEmail(EmailVerificationTokenDTO emailVerificationTokenDTO);
 }
