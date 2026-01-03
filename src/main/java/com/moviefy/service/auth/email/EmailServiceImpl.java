@@ -68,6 +68,11 @@ public class EmailServiceImpl implements EmailService {
         this.tokenRepository.delete(emailVerificationToken);
     }
 
+    @Override
+    public Optional<EmailVerificationToken> findToken(String token) {
+        return this.tokenRepository.findByToken(token);
+    }
+
     private String tokenGenerator() {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
