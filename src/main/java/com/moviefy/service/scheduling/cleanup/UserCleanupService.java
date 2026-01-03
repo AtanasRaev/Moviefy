@@ -20,7 +20,7 @@ public class UserCleanupService {
         this.userRepository = userRepository;
     }
 
-    @Scheduled(cron = "0 0 22 ? * SUN")
+    @Scheduled(cron = "0 0 1 ? * SUN")
     @Transactional
     public void cleanupOldUsers() {
         LocalDateTime threshold = LocalDateTime.now().minusHours(24);

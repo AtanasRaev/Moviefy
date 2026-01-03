@@ -18,7 +18,7 @@ public class EmailVerificationTokenCleanupService {
         this.tokenRepository = tokenRepository;
     }
 
-    @Scheduled(cron = "0 0 1 */3 * ?")
+    @Scheduled(cron = "0 30 1 ? * SUN")
     @Transactional
     public void cleanupExpiredTokens() {
         int deleted = tokenRepository.deleteExpiredTokens(LocalDateTime.now());
