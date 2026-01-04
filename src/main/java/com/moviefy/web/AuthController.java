@@ -1,9 +1,6 @@
 package com.moviefy.web;
 
-import com.moviefy.database.model.dto.databaseDto.user.EmailVerificationTokenDTO;
-import com.moviefy.database.model.dto.databaseDto.user.PasswordResetConfirmDTO;
-import com.moviefy.database.model.dto.databaseDto.user.PasswordResetRequestDTO;
-import com.moviefy.database.model.dto.databaseDto.user.RegisterUserDTO;
+import com.moviefy.database.model.dto.databaseDto.user.*;
 import com.moviefy.database.model.dto.response.ApiResponse;
 import com.moviefy.service.auth.AuthService;
 import jakarta.validation.Valid;
@@ -65,6 +62,19 @@ public class AuthController {
                 .body(ApiResponse.success(
                         HttpStatus.OK.value(),
                         "If an account with that email exists, a password reset email has been sent.",
+                        null
+                ));
+    }
+
+    @PostMapping("/password-reset/token-check")
+    public ResponseEntity<ApiResponse<Void>> checkPasswordResetToken(@Valid @RequestBody PasswordResetTokenCheckDTO passwordResetTokenCheckDTO) {
+        this.authService.checkPasswordResetToken(passwordResetTokenCheckDTO);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        HttpStatus.OK.value(),
+                        "Token is valid.",
                         null
                 ));
     }
