@@ -15,6 +15,7 @@ public interface UserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByEmail(String email);
 
     Optional<AppUser> findByEmail(String email);
+
     @Query("""
                 SELECT u FROM AppUser u
                 WHERE u.emailVerified = false
