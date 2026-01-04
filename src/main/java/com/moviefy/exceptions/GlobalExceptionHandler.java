@@ -21,16 +21,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDisabled() {
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(
-                        HttpStatus.FORBIDDEN.value(),
-                        "Please verify your email before logging in."
-                ));
-    }
-
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidToken(InvalidTokenException ex) {
         return ResponseEntity
