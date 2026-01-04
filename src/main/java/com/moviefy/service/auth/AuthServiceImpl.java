@@ -1,9 +1,6 @@
 package com.moviefy.service.auth;
 
-import com.moviefy.database.model.dto.databaseDto.user.EmailVerificationTokenDTO;
-import com.moviefy.database.model.dto.databaseDto.user.PasswordResetConfirmDTO;
-import com.moviefy.database.model.dto.databaseDto.user.PasswordResetRequestDTO;
-import com.moviefy.database.model.dto.databaseDto.user.RegisterUserDTO;
+import com.moviefy.database.model.dto.databaseDto.user.*;
 import com.moviefy.database.model.entity.user.AppUser;
 import com.moviefy.database.model.entity.user.EmailVerificationToken;
 import com.moviefy.database.model.entity.user.PasswordResetToken;
@@ -125,24 +122,21 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void confirmPasswordReset(PasswordResetConfirmDTO passwordResetConfirmDTO) {
-        Optional<PasswordResetToken> validToken = this.emailService.findValidPasswordResetToken(passwordResetConfirmDTO.getToken());
-
-        if (validToken.isEmpty()) {
-            throw new InvalidTokenException("Invalid token.");
-        }
-
-        PasswordResetToken passwordResetToken = validToken.get();
-
-        if (passwordResetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new ExpiredPasswordResetTokenException("Password reset token has expired.");
-        }
+        PasswordResetToken passwordResetToken = validateToken(passwordResetConfirmDTO.getToken());
 
         AppUser user = passwordResetToken.getUser();
         user.setPasswordHash(this.passwordEncoder.encode(passwordResetConfirmDTO.getPassword()));
 
         this.emailService.deletePasswordResetToken(passwordResetToken);
         this.userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void checkPasswordResetToken(PasswordResetTokenCheckDTO passwordResetTokenCheckDTO) {
+        validateToken(passwordResetTokenCheckDTO.getToken());
     }
 
     private static String normalizeName(String s) {
@@ -161,5 +155,21 @@ public class AuthServiceImpl implements AuthService {
         return this.adminEmails.stream()
                 .map(s -> s == null ? "" : s.trim().toLowerCase())
                 .anyMatch(s -> !s.isBlank() && s.equals(normalized));
+    }
+
+    private PasswordResetToken validateToken(String token) {
+        Optional<PasswordResetToken> validToken = this.emailService.findValidPasswordResetToken(token);
+
+        if (validToken.isEmpty()) {
+            throw new InvalidTokenException("Invalid token.");
+        }
+
+        PasswordResetToken passwordResetToken = validToken.get();
+
+        if (passwordResetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new ExpiredPasswordResetTokenException("Password reset token has expired.");
+        }
+
+        return passwordResetToken;
     }
 }

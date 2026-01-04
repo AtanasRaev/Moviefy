@@ -1,9 +1,6 @@
 package com.moviefy.service.auth;
 
-import com.moviefy.database.model.dto.databaseDto.user.EmailVerificationTokenDTO;
-import com.moviefy.database.model.dto.databaseDto.user.PasswordResetConfirmDTO;
-import com.moviefy.database.model.dto.databaseDto.user.PasswordResetRequestDTO;
-import com.moviefy.database.model.dto.databaseDto.user.RegisterUserDTO;
+import com.moviefy.database.model.dto.databaseDto.user.*;
 
 public interface AuthService {
     void register(RegisterUserDTO registerUserDTO);
@@ -15,4 +12,6 @@ public interface AuthService {
     void requestPasswordReset(PasswordResetRequestDTO passwordResetRequestDTO);
 
     void confirmPasswordReset(PasswordResetConfirmDTO passwordResetConfirmDTO);
+
+    void checkPasswordResetToken(PasswordResetTokenCheckDTO passwordResetTokenCheckDTO);
 }
