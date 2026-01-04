@@ -2,17 +2,26 @@ package com.moviefy.service.auth.email;
 
 import com.moviefy.database.model.entity.user.AppUser;
 import com.moviefy.database.model.entity.user.EmailVerificationToken;
+import com.moviefy.database.model.entity.user.PasswordResetToken;
 
 import java.util.Optional;
 
 public interface EmailService {
+    String generateEmailVerificationToken(AppUser user);
+
     void sendVerificationEmail(String to, String token);
 
-    String generateToken(AppUser user);
+    Optional<EmailVerificationToken> findValidEmailVerificationToken(String token);
 
-    Optional<EmailVerificationToken> findValidToken(String token);
+    void deleteEmailVerificationTokens(EmailVerificationToken emailVerificationToken);
 
-    void delete(EmailVerificationToken emailVerificationToken);
+    Optional<EmailVerificationToken> findEmailVerificationToken(String token);
 
-    Optional<EmailVerificationToken> findToken(String token);
+    String generatePasswordResetToken(AppUser user);
+
+    void sendPasswordResetEmail(String to, String token);
+
+    Optional<PasswordResetToken> findValidPasswordResetToken(String token);
+
+    void deletePasswordResetToken(PasswordResetToken passwordResetToken);
 }
