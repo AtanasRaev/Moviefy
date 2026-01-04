@@ -1,4 +1,4 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.user;
 
 import com.moviefy.database.model.entity.user.EmailVerificationToken;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,9 +15,9 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
     @Query("""
                 SELECT e
                 FROM EmailVerificationToken e
-                WHERE e.token = :token
+                WHERE e.tokenHash = :tokenHash
             """)
-    Optional<EmailVerificationToken> findByToken(@Param("token") String token);
+    Optional<EmailVerificationToken> findByTokenHash(@Param("tokenHash") String tokenHash);
 
     @Modifying
     @Query("""
@@ -25,5 +25,4 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
                 WHERE em.expiresAt < :now
             """)
     int deleteExpiredTokens(@Param("now") LocalDateTime now);
-
 }

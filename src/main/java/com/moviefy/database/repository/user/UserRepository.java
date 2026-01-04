@@ -1,4 +1,4 @@
-package com.moviefy.database.repository;
+package com.moviefy.database.repository.user;
 
 import com.moviefy.database.model.entity.user.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;

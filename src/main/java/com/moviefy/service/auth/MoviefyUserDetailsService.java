@@ -1,7 +1,7 @@
 package com.moviefy.service.auth;
 
 import com.moviefy.database.model.entity.user.AppUser;
-import com.moviefy.database.repository.UserRepository;
+import com.moviefy.database.repository.user.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;

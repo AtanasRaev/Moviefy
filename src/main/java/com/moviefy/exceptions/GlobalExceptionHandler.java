@@ -3,7 +3,6 @@ package com.moviefy.exceptions;
 import com.moviefy.database.model.dto.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -33,6 +32,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ExpiredVerificationTokenException.class)
     public ResponseEntity<ApiResponse<Void>> handleExpiredVerificationToken(ExpiredVerificationTokenException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        ex.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(ExpiredPasswordResetTokenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleExpiredPasswordResetToken(ExpiredPasswordResetTokenException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error(

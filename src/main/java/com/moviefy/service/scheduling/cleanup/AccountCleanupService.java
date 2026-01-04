@@ -1,8 +1,8 @@
 package com.moviefy.service.scheduling.cleanup;
 
 import com.moviefy.database.model.entity.user.AppUser;
-import com.moviefy.database.repository.EmailVerificationTokenRepository;
-import com.moviefy.database.repository.UserRepository;
+import com.moviefy.database.repository.user.EmailVerificationTokenRepository;
+import com.moviefy.database.repository.user.UserRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
