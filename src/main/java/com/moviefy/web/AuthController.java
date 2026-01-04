@@ -1,6 +1,8 @@
 package com.moviefy.web;
 
 import com.moviefy.database.model.dto.databaseDto.user.EmailVerificationTokenDTO;
+import com.moviefy.database.model.dto.databaseDto.user.PasswordResetConfirmDTO;
+import com.moviefy.database.model.dto.databaseDto.user.PasswordResetRequestDTO;
 import com.moviefy.database.model.dto.databaseDto.user.RegisterUserDTO;
 import com.moviefy.database.model.dto.response.ApiResponse;
 import com.moviefy.service.auth.AuthService;
@@ -31,7 +33,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestBody EmailVerificationTokenDTO emailVerificationTokenDTO) {
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody EmailVerificationTokenDTO emailVerificationTokenDTO) {
         this.authService.verifyEmail(emailVerificationTokenDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -43,13 +45,39 @@ public class AuthController {
     }
 
     @PostMapping("/resend-email")
-    public ResponseEntity<ApiResponse<Void>> resendEmail(@RequestBody EmailVerificationTokenDTO emailVerificationTokenDTO) {
-        this.authService.resendEmail(emailVerificationTokenDTO);
+    public ResponseEntity<ApiResponse<Void>> resendEmail(@Valid @RequestBody EmailVerificationTokenDTO emailVerificationTokenDTO) {
+        this.authService.resendEmailVerification(emailVerificationTokenDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success(
                         HttpStatus.OK.value(),
                         "Email verification link resent successfully.",
+                        null
+                ));
+    }
+
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody PasswordResetRequestDTO passwordResetRequestDTO) {
+        this.authService.requestPasswordReset(passwordResetRequestDTO);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        HttpStatus.OK.value(),
+                        "If an account with that email exists, a password reset email has been sent.",
+                        null
+                ));
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<ApiResponse<Void>> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmDTO passwordResetConfirmDTO) {
+        this.authService.confirmPasswordReset(passwordResetConfirmDTO);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        HttpStatus.OK.value(),
+                        "Password reset successful.",
                         null
                 ));
     }
