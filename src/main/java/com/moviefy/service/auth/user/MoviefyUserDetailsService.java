@@ -1,4 +1,4 @@
-package com.moviefy.service.auth;
+package com.moviefy.service.auth.user;
 
 import com.moviefy.database.model.entity.user.AppUser;
 import com.moviefy.database.repository.user.UserRepository;
