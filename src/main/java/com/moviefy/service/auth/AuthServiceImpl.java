@@ -76,7 +76,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void verifyEmail(EmailVerificationTokenDTO emailVerificationTokenDTO) {
-        Optional<EmailVerificationToken> validToken = this.emailService.findValidEmailVerificationToken(emailVerificationTokenDTO.getToken());
+        Optional<EmailVerificationToken> validToken = this.emailService.findEmailVerificationToken(emailVerificationTokenDTO.getToken());
 
         if (validToken.isEmpty()) {
             throw new InvalidTokenException("Invalid token.");
@@ -101,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
         Optional<EmailVerificationToken> optional = this.emailService.findEmailVerificationToken(emailVerificationTokenDTO.getToken());
 
         if (optional.isEmpty()) {
-            throw new InvalidTokenException("Invalid optional.");
+            throw new InvalidTokenException("Invalid token.");
         }
 
         EmailVerificationToken emailVerificationToken = optional.get();
@@ -164,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private PasswordResetToken validateToken(String token) {
-        Optional<PasswordResetToken> validToken = this.emailService.findValidPasswordResetToken(token);
+        Optional<PasswordResetToken> validToken = this.emailService.findPasswordResetToken(token);
 
         if (validToken.isEmpty()) {
             throw new InvalidTokenException("Invalid token.");
