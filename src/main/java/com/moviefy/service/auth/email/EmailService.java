@@ -11,8 +11,6 @@ public interface EmailService {
 
     void sendVerificationEmail(String to, String token);
 
-    Optional<EmailVerificationToken> findValidEmailVerificationToken(String token);
-
     void deleteEmailVerificationTokens(EmailVerificationToken emailVerificationToken);
 
     Optional<EmailVerificationToken> findEmailVerificationToken(String token);
@@ -21,7 +19,7 @@ public interface EmailService {
 
     void sendPasswordResetEmail(String to, String token);
 
-    Optional<PasswordResetToken> findValidPasswordResetToken(String token);
+    Optional<PasswordResetToken> findPasswordResetToken(String token);
 
     void deletePasswordResetToken(PasswordResetToken passwordResetToken);
 }

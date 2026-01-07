@@ -13,6 +13,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
@@ -93,16 +94,12 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public Optional<EmailVerificationToken> findValidEmailVerificationToken(String token) {
-        return this.emailVerificationTokenRepository.findByTokenHash(hashToken(token));
-    }
-
-    @Override
     public void deleteEmailVerificationTokens(EmailVerificationToken emailVerificationToken) {
         this.emailVerificationTokenRepository.delete(emailVerificationToken);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<EmailVerificationToken> findEmailVerificationToken(String token) {
         return this.emailVerificationTokenRepository.findByTokenHash(hashToken(token));
     }
@@ -145,7 +142,8 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public Optional<PasswordResetToken> findValidPasswordResetToken(String token) {
+    @Transactional(readOnly = true)
+    public Optional<PasswordResetToken> findPasswordResetToken(String token) {
         return this.passwordResetTokenRepository.findByTokenHash(hashToken(token));
     }
 
