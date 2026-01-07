@@ -502,6 +502,7 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                     tv.popularity AS popularity,
                     tv.poster_path AS posterPath,
                     tv.vote_average AS voteAverage,
+                    tv.first_air_date AS releaseDate,
                     CAST(date_part('year', tv.first_air_date) AS integer) AS year,
                     'series' AS mediaType,
                     tv.trailer AS trailer,
