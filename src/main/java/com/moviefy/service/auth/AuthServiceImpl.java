@@ -136,7 +136,7 @@ public class AuthServiceImpl implements AuthService {
         this.emailService.deletePasswordResetToken(passwordResetToken);
         this.userRepository.save(user);
 
-        this.publisher.publishEvent(new PasswordResetConfirmedEvent(user.getEmail()));
+        this.publisher.publishEvent(new PasswordResetConfirmedEvent(user.getEmail().trim().toLowerCase()));
     }
 
     @Override
