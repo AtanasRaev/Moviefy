@@ -13,6 +13,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -41,6 +42,7 @@ public class MediaServiceImpl implements MediaService {
             key = "#genres + ';p=' + #pageable.pageNumber + ';s=' + #pageable.pageSize + ';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MediaProjection> getMediaByGenres(List<String> genres, Pageable pageable) {
         List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
         List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
@@ -57,6 +59,7 @@ public class MediaServiceImpl implements MediaService {
                     "';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MediaProjection> getLatestMedia(List<String> genres, Pageable pageable) {
         List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
@@ -73,6 +76,7 @@ public class MediaServiceImpl implements MediaService {
                     "';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MediaWithGenreProjection> getTrendingMedia(List<String> genres, Pageable pageable) {
         List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
@@ -89,6 +93,7 @@ public class MediaServiceImpl implements MediaService {
                     "';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MediaWithGenreProjection> getPopularMedia(List<String> genres, Pageable pageable) {
         List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
@@ -105,6 +110,7 @@ public class MediaServiceImpl implements MediaService {
                     "';sort=' + T(java.util.Objects).toString(#pageable.sort)",
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MediaWithGenreProjection> getTopRatedMedia(List<String> genres, Pageable pageable) {
         List<String> lowerCaseMoviesGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         List<String> lowerCaseSeriesGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
@@ -123,6 +129,7 @@ public class MediaServiceImpl implements MediaService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MediaProjection> getMediaByCastId(long id, Pageable pageable) {
         return this.mediaRepository.findTopRatedMediaByCastId(id, pageable);
     }
@@ -138,6 +145,7 @@ public class MediaServiceImpl implements MediaService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MediaProjection> getMediaByCastCrewId(long id, Pageable pageable) {
         return this.mediaRepository.findTopRatedMediaByCrewId(id, pageable);
     }
@@ -171,6 +179,7 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<MediaProjection> getMediaByProductionCompanyId(long id, Pageable pageable) {
         return this.mediaRepository.findTopRatedMediaByProductionCompanyId(id, pageable);
     }

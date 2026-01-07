@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -94,6 +94,7 @@ public class MovieServiceImpl implements MovieService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MoviePageProjection> getMoviesFromCurrentMonth(Pageable pageable, List<String> genres) {
         genres = this.genreNormalizationUtil.processMovieGenres(genres);
 
@@ -110,6 +111,7 @@ public class MovieServiceImpl implements MovieService {
             key = "#apiId",
             unless = "#result == null"
     )
+    @Transactional(readOnly = true)
     public MovieDetailsDTO getMovieDetailsByApiId(Long apiId) {
         return this.movieRepository.findMovieByApiId(apiId)
                 .map(this::mapToMovieDetailsDTO)
@@ -127,6 +129,7 @@ public class MovieServiceImpl implements MovieService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MoviePageWithGenreProjection> getTrendingMovies(List<String> genres, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         return this.movieRepository.findAllByGenresMapped(processedGenres, pageable);
@@ -143,6 +146,7 @@ public class MovieServiceImpl implements MovieService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MoviePageWithGenreProjection> getPopularMovies(List<String> genres, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         return this.movieRepository.findAllByGenresMapped(processedGenres, pageable);
@@ -154,6 +158,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MoviePageWithGenreDTO> searchMovies(String query) {
         MovieResponseApiDTO movieResponseApiDTO = this.tmdbMoviesEndpointService.searchMoviesQueryApi(query);
 
@@ -185,6 +190,7 @@ public class MovieServiceImpl implements MovieService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MoviePageProjection> getMoviesByGenres(List<String> genres, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         return this.movieRepository.searchByGenres(processedGenres, pageable);
@@ -201,6 +207,7 @@ public class MovieServiceImpl implements MovieService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MoviePageWithGenreProjection> getTopRatedMovies(List<String> genres, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processMovieGenres(genres);
         return this.movieRepository.findTopRatedByGenres(processedGenres, pageable);
@@ -217,6 +224,7 @@ public class MovieServiceImpl implements MovieService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MoviePageProjection> getMoviesByCastId(long id, Pageable pageable) {
         return this.movieRepository.findTopRatedMoviesByCastId(id, pageable);
     }
@@ -232,11 +240,13 @@ public class MovieServiceImpl implements MovieService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<MoviePageProjection> getMoviesByCrewId(long id, Pageable pageable) {
         return this.movieRepository.findTopRatedMoviesByCrewId(id, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<MoviePageProjection> getMoviesByProductionCompanyId(long id, Pageable pageable) {
         return this.movieRepository.findTopRatedMoviesByProductionCompanyId(id, pageable);
     }

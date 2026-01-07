@@ -10,6 +10,7 @@ import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.ProductionCompanyRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -70,6 +71,7 @@ public class ProductionCompanyServiceImpl implements ProductionCompanyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Set<ProductionCompanyDTO> mapProductionCompanies(Media media) {
         if (media instanceof Movie movie) {
             return mapProductionCompaniesForMedia(movie.getProductionCompanies());

@@ -5,6 +5,7 @@ import com.moviefy.database.model.dto.apiDto.mediaDto.GenreResponseApiDTO;
 import com.moviefy.database.model.entity.genre.SeriesGenre;
 import com.moviefy.database.repository.genre.SeriesGenreRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.util.*;
@@ -41,11 +42,13 @@ public class SeriesGenreServiceImpl implements SeriesGenreService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Set<SeriesGenre> getAllGenresByApiIds(Set<Long> genresApiIds) {
         return this.genreRepository.findAllByApiId(genresApiIds);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SeriesGenre> getAllGenresByMovieId(Long id) {
         return this.genreRepository.findByTvSeriesId(id)
                 .stream()
@@ -54,6 +57,7 @@ public class SeriesGenreServiceImpl implements SeriesGenreService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<String> getAllGenresNames() {
         return this.genreRepository.findAllNames();
     }
@@ -66,8 +70,5 @@ public class SeriesGenreServiceImpl implements SeriesGenreService {
                 .uri(url)
                 .retrieve()
                 .body(GenreResponseApiDTO.class);
-    }
-    public SeriesGenre getGenreByName(String genreType) {
-        return this.genreRepository.findByName(genreType).orElse(null);
     }
 }

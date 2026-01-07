@@ -5,6 +5,7 @@ import com.moviefy.database.model.dto.apiDto.mediaDto.GenreResponseApiDTO;
 import com.moviefy.database.model.entity.genre.MovieGenre;
 import com.moviefy.database.repository.genre.MovieGenreRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.util.*;
@@ -42,11 +43,13 @@ public class MovieGenreServiceImpl implements MovieGenreService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Set<MovieGenre> getAllGenresByApiIds(Set<Long> genreApiIds) {
         return this.genreRepository.findAllByApiId(genreApiIds);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MovieGenre> getAllGenresByMovieId(Long movieId) {
         return this.genreRepository.findByMovieId(movieId)
                 .stream()
@@ -55,6 +58,7 @@ public class MovieGenreServiceImpl implements MovieGenreService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<String> getAllGenresNames() {
         return this.genreRepository.findAllNames();
     }
@@ -67,10 +71,5 @@ public class MovieGenreServiceImpl implements MovieGenreService {
                 .uri(url)
                 .retrieve()
                 .body(GenreResponseApiDTO.class);
-    }
-
-
-    public MovieGenre getGenreByName(String genreType) {
-        return this.genreRepository.findByName(genreType).orElse(null);
     }
 }

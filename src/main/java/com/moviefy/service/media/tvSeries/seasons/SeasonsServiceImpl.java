@@ -60,11 +60,13 @@ public class SeasonsServiceImpl implements SeasonsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Set<SeasonTvSeries> findAllByTvSeriesId(Long id) {
         return this.seasonTvSeriesRepository.findAllByTvSeriesId(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<EpisodeDTO> getEpisodesFromSeason(Long seasonId) {
         return this.episodeTvSeriesRepository.findAllBySeasonId(seasonId)
                 .stream()
@@ -74,6 +76,7 @@ public class SeasonsServiceImpl implements SeasonsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Integer getSeasonNumberById(Long seasonId) {
         return this.seasonTvSeriesRepository.findById(seasonId)
                 .map(SeasonTvSeries::getSeasonNumber)

@@ -34,6 +34,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -96,6 +97,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageProjection> getTvSeriesFromCurrentMonth(Pageable pageable, List<String> genres, List<String> types) {
         genres = this.genreNormalizationUtil.processSeriesGenres(genres);
         types = this.tvSeriesTypesNormalizationUtil.processTypes(types);
@@ -114,6 +116,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             key = "#apiId",
             unless = "#result == null"
     )
+    @Transactional(readOnly = true)
     public TvSeriesDetailsDTO getTvSeriesDetailsByApiId(Long apiId) {
         return this.tvSeriesRepository.findTvSeriesByApiId(apiId)
                 .map(this::mapToTvSeriesDetailsDTO)
@@ -132,6 +135,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageWithGenreProjection> getTrendingTvSeries(List<String> genres, List<String> types, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
         List<String> processedTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
@@ -150,6 +154,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageWithGenreProjection> getPopularTvSeries(List<String> genres, List<String> types, Pageable pageable) {
         List<String> processedGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
         List<String> processedTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
@@ -168,6 +173,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
             key = "#input",
             unless = "#result == null"
     )
+    @Transactional(readOnly = true)
     public List<TvSeriesTrendingPageDTO> getHomeSeriesDTO(List<String> input) {
         return this.tvSeriesRepository.findAllByNames(input)
                 .stream()
@@ -181,6 +187,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TvSeriesPageWithGenreDTO> searchTvSeries(String query) {
         TvSeriesResponseApiDTO tvSeriesResponseApiDTO = this.tmdbTvEndpointService.searchTvSeriesQueryApi(query);
 
@@ -213,6 +220,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageProjection> getTvSeriesByGenres(List<String> genres, List<String> types, Pageable pageable) {
         List<String> lowerCaseGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
         List<String> loweredTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
@@ -232,6 +240,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageWithGenreProjection> getTopRatedTvSeries(List<String> genres, List<String> types, Pageable pageable) {
         List<String> lowerCaseGenres = this.genreNormalizationUtil.processSeriesGenres(genres);
         List<String> loweredTypes = this.tvSeriesTypesNormalizationUtil.processTypes(types);
@@ -249,6 +258,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageProjection> getTvSeriesByCastId(long id, Pageable pageable) {
         return this.tvSeriesRepository.findTopRatedSeriesByCastId(id, pageable);
     }
@@ -264,11 +274,13 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                     """,
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageProjection> getTvSeriesByCrewId(long id, Pageable pageable) {
         return this.tvSeriesRepository.findTopRatedSeriesByCrewId(id, pageable);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<TvSeriesPageProjection> getTvSeriesByProductionCompanyId(long id, Pageable pageable) {
         return this.tvSeriesRepository.findTopRatedSeriesByProductionCompanyId(id, pageable);
     }
