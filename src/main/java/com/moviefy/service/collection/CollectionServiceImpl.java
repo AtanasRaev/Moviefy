@@ -41,19 +41,9 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    public void saveCollection(Collection collection) {
-        this.collectionRepository.save(collection);
-    }
-
-    @Override
-    public Collection findByApiId(long apiId) {
-        return this.collectionRepository.findByApiId(apiId)
-                .orElse(null);
-    }
-
-    @Override
     public Collection getCollectionFromResponse(CollectionApiDTO collectionDto, Movie movie) {
-        Collection collection = findByApiId(collectionDto.getId());
+        Collection collection = this.collectionRepository.findByApiId(collectionDto.getId())
+                .orElse(null);
 
         if (collection == null) {
             collection = new Collection(
@@ -78,23 +68,20 @@ public class CollectionServiceImpl implements CollectionService {
         BigDecimal voteAverage = BigDecimal.valueOf(averageVoteCount).setScale(1, RoundingMode.HALF_UP);
 
         collection.setVoteCountAverage(voteAverage.doubleValue());
-        saveCollection(collection);
+        this.collectionRepository.save(collection);
 
         return collection;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection getCollectionByMovieId(Long movieId) {
         return this.collectionRepository.findCollectionsByMovieId(movieId)
                 .orElse(null);
     }
 
     @Override
-    public List<Collection> getByName(String name) {
-        return this.collectionRepository.findByName(name);
-    }
-
-    @Override
+    @Transactional(readOnly = true)
     public List<CollectionPageDTO> getCollectionsByName(List<String> input) {
         return input.stream()
                 .map(this::getCollectionByName)
@@ -108,8 +95,15 @@ public class CollectionServiceImpl implements CollectionService {
             key = "#apiId",
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Map<String, List<MoviePageDTO>> getMoviesByApiId(Long apiId) {
-        Collection collection = this.findByApiId(apiId);
+        Collection collection = this.collectionRepository.findByApiId(apiId)
+                .orElse(null);
+
+        if (collection == null) {
+            return Map.of();
+        }
+
         return Map.of(collection.getName(), collection.getMovies().stream()
                 .sorted(Comparator.comparing(Movie::getReleaseDate))
                 .map(movie -> {
@@ -126,6 +120,7 @@ public class CollectionServiceImpl implements CollectionService {
             key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()",
             unless = "#result == null || #result.isEmpty()"
     )
+    @Transactional(readOnly = true)
     public Page<CollectionPageProjection> getPopular(Pageable pageable) {
         return this.collectionRepository.findAllByVoteCountAverageDesc(pageable);
     }
@@ -138,7 +133,7 @@ public class CollectionServiceImpl implements CollectionService {
     )
     @Transactional(readOnly = true)
     public Map<String, Object> getMoviesHomeByCollection(String input) {
-        List<Collection> collections = this.getByName(input);
+        List<Collection> collections = this.collectionRepository.findByName(input);
 
         if (collections.isEmpty()) {
             return null;
@@ -168,6 +163,7 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<CollectionPageProjection> searchCollections(String query, Pageable pageable) {
         return this.collectionRepository.searchCollectionByName(query, pageable);
     }
@@ -177,6 +173,7 @@ public class CollectionServiceImpl implements CollectionService {
             key = "#name",
             unless = "#result == null"
     )
+    @Transactional(readOnly = true)
     public CollectionPageDTO getCollectionByName(String name) {
         List<Collection> byName = collectionRepository.findByName(name);
         if (byName.isEmpty()) {
@@ -205,30 +202,5 @@ public class CollectionServiceImpl implements CollectionService {
         );
 
         return movieDTO;
-    }
-
-    private CollectionPageDTO mapCollectionPageDTO(Collection collection) {
-        CollectionPageDTO map = this.modelMapper.map(collection, CollectionPageDTO.class);
-        collection.getMovies()
-                .stream()
-                .min(Comparator.comparing(Movie::getReleaseDate))
-                .stream()
-                .findFirst()
-                .ifPresent(m -> {
-                    map.setOverview(m.getOverview());
-                    map.setRuntime(m.getRuntime());
-                    map.setVoteAverage(m.getVoteAverage());
-                });
-        map.setVoteAverage(
-                Math.round(
-                        collection.getMovies()
-                                .stream()
-                                .mapToDouble(Movie::getVoteAverage)
-                                .average()
-                                .orElse(0) * 100.0
-                ) / 100.0
-        );
-
-        return map;
     }
 }

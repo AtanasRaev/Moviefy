@@ -13,15 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 public interface CollectionService {
-    void saveCollection(Collection collection);
-
-    Collection findByApiId(long apiId);
-
     Collection getCollectionFromResponse(CollectionApiDTO collectionDto, Movie movie);
 
     Collection getCollectionByMovieId(Long movieId);
-
-    List<Collection> getByName(String name);
 
     List<CollectionPageDTO> getCollectionsByName(List<String> input);
 
