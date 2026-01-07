@@ -493,6 +493,46 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
 
     @Query("SELECT tv.apiId FROM TvSeries tv WHERE tv.apiId IN :apiIds")
     Set<Long> findAllApiIdsByApiIdIn(@Param("apiIds") Set<Long> apiIds);
+
+    @Query(value = """
+                SELECT DISTINCT
+                    tv.id AS id,
+                    tv.api_id AS apiId,
+                    tv.name AS name,
+                    tv.popularity AS popularity,
+                    tv.poster_path AS posterPath,
+                    tv.vote_average AS voteAverage,
+                    CAST(date_part('year', tv.first_air_date) AS integer) AS year,
+                    'series' AS mediaType,
+                    tv.trailer AS trailer,
+                    tv.vote_count AS voteCount,
+                    s.seasons_count AS seasonsCount,
+                    s.episodes_count AS episodesCount,
+            
+                    (
+                        SELECT g2.name
+                        FROM series_genre mg2
+                        JOIN series_genres g2 ON g2.id = mg2.genre_id
+                        WHERE mg2.series_id = tv.id
+                        ORDER BY g2.name
+                        LIMIT 1
+                    ) AS genre
+            
+                FROM user_favorite_series ufs
+                JOIN tv_series tv ON tv.id = ufs.tv_id
+                LEFT JOIN (
+                    SELECT
+                        stv.tv_series_id,
+                        COUNT(*) AS seasons_count,
+                        COALESCE(SUM(stv.episode_count), 0) AS episodes_count
+                    FROM seasons stv
+                    GROUP BY stv.tv_series_id
+                ) s ON s.tv_series_id = tv.id
+                WHERE ufs.user_id = :userId
+                ORDER BY tv.first_air_date DESC NULLS LAST, tv.popularity DESC
+            """, nativeQuery = true)
+    List<TvSeriesPageWithGenreProjection> findFavoriteTvSeries(@Param("userId") Long userId);
+
 //    @Query(
 //            value = """
 //                    WITH q AS (

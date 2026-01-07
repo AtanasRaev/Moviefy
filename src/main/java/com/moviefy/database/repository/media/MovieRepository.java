@@ -424,9 +424,37 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("SELECT m.apiId FROM Movie m WHERE m.apiId IN :apiIds")
     Set<Long> findAllApiIdsByApiIdIn(@Param("apiIds") Set<Long> apiIds);
 
+    @Query(value = """
+                SELECT DISTINCT
+                    m.id AS id,
+                    m.api_id AS apiId,
+                    m.title AS title,
+                    m.popularity AS popularity,
+                    m.poster_path AS posterPath,
+                    m.vote_average AS voteAverage,
+                    CAST(date_part('year', m.release_date) AS integer) AS year,
+                    m.release_date AS releaseDate,
+                    m.vote_count AS voteCount,
+                    'movie' AS mediaType,
+                    m.runtime AS runtime,
+                    m.trailer AS trailer,
+            
+                    (
+                        SELECT g2.name
+                        FROM movie_genre mg2
+                        JOIN movies_genres g2 ON g2.id = mg2.genre_id
+                        WHERE mg2.movie_id = m.id
+                        ORDER BY g2.name
+                        LIMIT 1
+                    ) AS genre
+            
+                FROM user_favorite_movies ufm
+                JOIN movies m ON m.id = ufm.movie_id
+                WHERE ufm.user_id = :userId
+                ORDER BY m.release_date DESC NULLS LAST, m.popularity DESC
+            """, nativeQuery = true)
+    List<MoviePageWithGenreProjection> findFavoriteMovies(@Param("userId") Long userId);
 
-//    @Query(
-//            value = """
 //                    WITH q AS (
 //                      SELECT
 //                        regexp_replace(
