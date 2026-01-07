@@ -15,6 +15,7 @@ import com.moviefy.database.repository.credit.cast.CastTvSeriesRepository;
 import com.moviefy.utils.mappers.CastMapper;
 import com.moviefy.utils.CreditRetrievalUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -39,40 +40,6 @@ public class CastServiceImpl implements CastService {
         this.creditRetrievalUtil = creditRetrievalUtil;
         this.castMapper = castMapper;
         this.castTvSeriesRepository = castTvSeriesRepository;
-    }
-
-    @Override
-    public Set<Cast> filterAndSave(List<CastApiDTO> castDto) {
-        return creditRetrievalUtil.creditRetrieval(
-                castDto,
-                this.castMapper::mapToCast,
-                CreditApiDTO::getId,
-                Credit::getApiId,
-                this::findAllByApiId,
-                savedCast -> {
-                    this.saveAll(savedCast);
-                    return null;
-                }
-        );
-    }
-
-    @Override
-    public List<CastApiDTO> filterCastApiDto(Set<CastApiDTO> castDTO) {
-        Map<Long, String> uniqueIds = new HashMap<>();
-        return castDTO
-                .stream()
-                .filter(cast -> cast.getName() != null && !cast.getName().isBlank()
-                        && cast.getCharacter() != null && !cast.getCharacter().isBlank())
-                .filter(cast -> {
-                    if (uniqueIds.containsKey(cast.getId()) && uniqueIds.get(cast.getId()).equals(cast.getCharacter())) {
-                        return false;
-                    }
-                    uniqueIds.put(cast.getId(), cast.getCharacter());
-                    return true;
-                })
-                .sorted(Comparator.comparing(CastApiDTO::getOrder))
-                .limit(10)
-                .toList();
     }
 
     @Override
@@ -119,6 +86,43 @@ public class CastServiceImpl implements CastService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Set<CastPageDTO> getCastByMediaId(String mediaType, long mediaId) {
+        Set<CastPageDTO> castPageDTOs;
+        if ("movie".equals(mediaType)) {
+            castPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
+                    CastPageDTO::new,
+                    castMovieRepository::findCastByMovieId,
+                    CastPageDTO::setId,
+                    CastPageDTO::setCharacter,
+                    CastPageDTO::setName,
+                    CastPageDTO::setProfilePath,
+                    CastMovie::getCastId,
+                    CastMovie::getCharacter,
+                    cm -> cm.getCast().getName(),
+                    cm -> cm.getCast().getProfilePath())
+            );
+        } else if ("tv".equals(mediaType)) {
+            castPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
+                    CastPageDTO::new,
+                    castTvSeriesRepository::findCastByTvSeriesId,
+                    CastPageDTO::setId,
+                    CastPageDTO::setCharacter,
+                    CastPageDTO::setName,
+                    CastPageDTO::setProfilePath,
+                    CastTvSeries::getCastId,
+                    CastTvSeries::getCharacter,
+                    cm -> cm.getCast().getName(),
+                    cm -> cm.getCast().getProfilePath())
+            );
+        } else {
+            throw new IllegalArgumentException("Unsupported media type: " + mediaType);
+        }
+
+        return castPageDTOs;
+    }
+
     private  <T, E> void processCast(
             List<CastApiDTO> castDto,
             T parentEntity,
@@ -158,40 +162,36 @@ public class CastServiceImpl implements CastService {
         return entity;
     }
 
-    @Override
-    public Set<CastPageDTO> getCastByMediaId(String mediaType, long mediaId) {
-        Set<CastPageDTO> castPageDTOs;
-        if ("movie".equals(mediaType)) {
-            castPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
-                    CastPageDTO::new,
-                    castMovieRepository::findCastByMovieId,
-                    CastPageDTO::setId,
-                    CastPageDTO::setCharacter,
-                    CastPageDTO::setName,
-                    CastPageDTO::setProfilePath,
-                    CastMovie::getCastId,
-                    CastMovie::getCharacter,
-                    cm -> cm.getCast().getName(),
-                    cm -> cm.getCast().getProfilePath())
-            );
-        } else if ("tv".equals(mediaType)) {
-            castPageDTOs = new LinkedHashSet<>(this.creditRetrievalUtil.getCreditByMediaId(mediaId,
-                    CastPageDTO::new,
-                    castTvSeriesRepository::findCastByTvSeriesId,
-                    CastPageDTO::setId,
-                    CastPageDTO::setCharacter,
-                    CastPageDTO::setName,
-                    CastPageDTO::setProfilePath,
-                    CastTvSeries::getCastId,
-                    CastTvSeries::getCharacter,
-                    cm -> cm.getCast().getName(),
-                    cm -> cm.getCast().getProfilePath())
-            );
-        } else {
-            throw new IllegalArgumentException("Unsupported media type: " + mediaType);
-        }
+    private Set<Cast> filterAndSave(List<CastApiDTO> castDto) {
+        return creditRetrievalUtil.creditRetrieval(
+                castDto,
+                this.castMapper::mapToCast,
+                CreditApiDTO::getId,
+                Credit::getApiId,
+                this::findAllByApiId,
+                savedCast -> {
+                    this.saveAll(savedCast);
+                    return null;
+                }
+        );
+    }
 
-        return castPageDTOs;
+    private List<CastApiDTO> filterCastApiDto(Set<CastApiDTO> castDTO) {
+        Map<Long, String> uniqueIds = new HashMap<>();
+        return castDTO
+                .stream()
+                .filter(cast -> cast.getName() != null && !cast.getName().isBlank()
+                        && cast.getCharacter() != null && !cast.getCharacter().isBlank())
+                .filter(cast -> {
+                    if (uniqueIds.containsKey(cast.getId()) && uniqueIds.get(cast.getId()).equals(cast.getCharacter())) {
+                        return false;
+                    }
+                    uniqueIds.put(cast.getId(), cast.getCharacter());
+                    return true;
+                })
+                .sorted(Comparator.comparing(CastApiDTO::getOrder))
+                .limit(10)
+                .toList();
     }
 
     private String sanitizeCharacter(String character) {

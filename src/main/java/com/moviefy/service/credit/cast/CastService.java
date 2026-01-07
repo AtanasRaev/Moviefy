@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface CastService {
-    Set<Cast> filterAndSave(List<CastApiDTO> castDto);
-
-    List<CastApiDTO> filterCastApiDto(Set<CastApiDTO> castDTO);
-
     void processTvSeriesCast(Set<CastApiDTO> castDto, TvSeries tvSeries);
 
     void processMovieCast(Set<CastApiDTO> castDto, Movie movie);
