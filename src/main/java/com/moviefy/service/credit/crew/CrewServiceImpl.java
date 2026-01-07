@@ -17,6 +17,7 @@ import com.moviefy.database.repository.credit.crew.JobCrewRepository;
 import com.moviefy.utils.CreditRetrievalUtil;
 import com.moviefy.utils.mappers.CrewMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -45,48 +46,6 @@ public class CrewServiceImpl implements CrewService {
         this.jobCrewRepository = jobCrewRepository;
         this.creditRetrievalUtil = creditRetrievalUtil;
         this.crewMapper = crewMapper;
-    }
-
-    @Override
-    public Set<Crew> filterAndSaveCrew(List<CrewApiDTO> crewDto) {
-        return creditRetrievalUtil.creditRetrieval(
-                crewDto,
-                this.crewMapper::mapToCrew,
-                CreditApiDTO::getId,
-                Credit::getApiId,
-                this::findAllByApiId,
-                savedCrew -> {
-                    this.saveAll(savedCrew);
-                    return null;
-                }
-        );
-    }
-
-    @Override
-    public List<CrewApiDTO> filterCrewApiDto(Set<CrewApiDTO> crewDTO) {
-        Map<Long, String> uniqueIds = new HashMap<>();
-        return crewDTO
-                .stream()
-                .sorted(Comparator.comparing(CrewApiDTO::getPopularity).reversed())
-                .filter(crew ->
-                        (crew.getJob() != null
-                                && (crew.getJob().equals("Director")
-                                || crew.getJob().equals("Writer")
-                                || crew.getJob().equals("Novel")
-                                || crew.getJob().equals("Screenplay")
-                                || crew.getJob().equals("Producer")))
-                                && crew.getName() != null
-                                && !crew.getName().isBlank()
-                )
-                .filter(crew -> {
-                    if (uniqueIds.containsKey(crew.getId()) && uniqueIds.get(crew.getId()).equals(crew.getJob())) {
-                        return false;
-                    }
-                    uniqueIds.put(crew.getId(), crew.getJob());
-                    return true;
-                })
-                .limit(CREW_LIMIT)
-                .toList();
     }
 
     @Override
@@ -129,29 +88,8 @@ public class CrewServiceImpl implements CrewService {
         );
     }
 
-    private <T, E> void processCrew(
-            List<CrewApiDTO> crewDto,
-            T parentEntity,
-            Function<CrewApiDTO, Optional<E>> findFunction,
-            BiFunction<CrewApiDTO, T, E> entityCreator,
-            Function<E, E> saveFunction,
-            Function<CrewApiDTO, String> jobNameFunction,
-            Set<Crew> crewSet
-    ) {
-        crewDto.forEach(c -> {
-            Optional<E> optional = findFunction.apply(c);
-            if (optional.isEmpty()) {
-                String jobName = jobNameFunction.apply(c);
-                JobCrew job = findOrCreateJob(jobName);
-
-                E entity = entityCreator.apply(c, parentEntity);
-                assignCrewAndJob(entity, crewSet, c.getId(), job);
-                saveFunction.apply(entity);
-            }
-        });
-    }
-
     @Override
+    @Transactional(readOnly = true)
     public Set<CrewPageDTO> getCrewByMediaId(String mediaType, long mediaId) {
         Set<CrewPageDTO> crewPageDTOs;
         if ("movie".equals(mediaType)) {
@@ -186,6 +124,68 @@ public class CrewServiceImpl implements CrewService {
         }
 
         return crewPageDTOs;
+    }
+
+    private <T, E> void processCrew(
+            List<CrewApiDTO> crewDto,
+            T parentEntity,
+            Function<CrewApiDTO, Optional<E>> findFunction,
+            BiFunction<CrewApiDTO, T, E> entityCreator,
+            Function<E, E> saveFunction,
+            Function<CrewApiDTO, String> jobNameFunction,
+            Set<Crew> crewSet
+    ) {
+        crewDto.forEach(c -> {
+            Optional<E> optional = findFunction.apply(c);
+            if (optional.isEmpty()) {
+                String jobName = jobNameFunction.apply(c);
+                JobCrew job = findOrCreateJob(jobName);
+
+                E entity = entityCreator.apply(c, parentEntity);
+                assignCrewAndJob(entity, crewSet, c.getId(), job);
+                saveFunction.apply(entity);
+            }
+        });
+    }
+
+    private Set<Crew> filterAndSaveCrew(List<CrewApiDTO> crewDto) {
+        return creditRetrievalUtil.creditRetrieval(
+                crewDto,
+                this.crewMapper::mapToCrew,
+                CreditApiDTO::getId,
+                Credit::getApiId,
+                this::findAllByApiId,
+                savedCrew -> {
+                    this.saveAll(savedCrew);
+                    return null;
+                }
+        );
+    }
+
+    private List<CrewApiDTO> filterCrewApiDto(Set<CrewApiDTO> crewDTO) {
+        Map<Long, String> uniqueIds = new HashMap<>();
+        return crewDTO
+                .stream()
+                .sorted(Comparator.comparing(CrewApiDTO::getPopularity).reversed())
+                .filter(crew ->
+                        (crew.getJob() != null
+                                && (crew.getJob().equals("Director")
+                                || crew.getJob().equals("Writer")
+                                || crew.getJob().equals("Novel")
+                                || crew.getJob().equals("Screenplay")
+                                || crew.getJob().equals("Producer")))
+                                && crew.getName() != null
+                                && !crew.getName().isBlank()
+                )
+                .filter(crew -> {
+                    if (uniqueIds.containsKey(crew.getId()) && uniqueIds.get(crew.getId()).equals(crew.getJob())) {
+                        return false;
+                    }
+                    uniqueIds.put(crew.getId(), crew.getJob());
+                    return true;
+                })
+                .limit(CREW_LIMIT)
+                .toList();
     }
 
     private JobCrew findOrCreateJob(String jobName) {
