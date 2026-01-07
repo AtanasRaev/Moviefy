@@ -12,6 +12,7 @@ import com.moviefy.exceptions.ExpiredVerificationTokenException;
 import com.moviefy.exceptions.InvalidTokenException;
 import com.moviefy.service.auth.email.EmailService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,16 +28,19 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final ApplicationEventPublisher publisher;
 
     @Value("#{'${moviefy.admin.emails:}'.split(',')}")
     private List<String> adminEmails;
 
     public AuthServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
-                           EmailService emailService) {
+                           EmailService emailService,
+                           ApplicationEventPublisher publisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.publisher = publisher;
     }
 
     @Override
@@ -131,6 +135,8 @@ public class AuthServiceImpl implements AuthService {
 
         this.emailService.deletePasswordResetToken(passwordResetToken);
         this.userRepository.save(user);
+
+        this.publisher.publishEvent(new PasswordResetConfirmedEvent(user.getEmail()));
     }
 
     @Override
