@@ -99,7 +99,7 @@ public class MovieServiceImpl implements MovieService {
         genres = this.genreNormalizationUtil.processMovieGenres(genres);
 
         return movieRepository.findByReleaseDateAndGenres(
-                LocalDate.now(),
+                LocalDate.now().minusDays(7),
                 genres,
                 pageable
         );

@@ -103,7 +103,7 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         types = this.tvSeriesTypesNormalizationUtil.processTypes(types);
 
         return this.tvSeriesRepository.findByFirstAirDateAndGenres(
-                LocalDate.now(),
+                LocalDate.now().minusDays(7),
                 genres,
                 types,
                 pageable
