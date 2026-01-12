@@ -2,6 +2,7 @@ package com.moviefy.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moviefy.database.model.dto.response.ApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +36,7 @@ public class SecurityConfig {
         this.objectMapper = objectMapper;
     }
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         HttpSessionCsrfTokenRepository repo = new HttpSessionCsrfTokenRepository();
@@ -49,18 +51,29 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            objectMapper.writeValue(res.getWriter(),
+                                    ApiResponse.error(401, "Unauthorized")
+                            );
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            objectMapper.writeValue(res.getWriter(),
+                                    ApiResponse.error(403, "Forbidden")
+                            );
+                        })
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
-                                "/movies/**",
-                                "/series/**",
-                                "/all/**",
-                                "/cast/**",
-                                "/crew/**",
-                                "/prod/**",
-                                "/ping"
+                                "/movies/**", "/series/**", "/all/**", "/cast/**", "/crew/**", "/prod/**", "/ping"
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -70,32 +83,30 @@ public class SecurityConfig {
                         .loginProcessingUrl("/auth/login")
                         .usernameParameter("email")
                         .passwordParameter("password")
-
                         .successHandler((req, res, auth) -> {
                             res.setStatus(HttpStatus.OK.value());
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                            ApiResponse<Void> body = ApiResponse.success(HttpStatus.OK.value(), "ok", null);
-                            objectMapper.writeValue(res.getWriter(), body);
+                            objectMapper.writeValue(res.getWriter(),
+                                    ApiResponse.success(200, "ok", null)
+                            );
                         })
 
                         .failureHandler((req, res, ex) -> {
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                            ApiResponse<Void> body;
                             int status;
+                            ApiResponse<Void> body;
 
                             if (ex instanceof DisabledException) {
-                                status = HttpStatus.FORBIDDEN.value();
+                                status = 403;
                                 body = ApiResponse.error(status, "Please verify your email before logging in.");
                             } else if (ex instanceof LockedException) {
-                                status = HttpStatus.LOCKED.value();
+                                status = 423;
                                 body = ApiResponse.error(status, "Your account is locked.");
                             } else if (ex instanceof BadCredentialsException) {
-                                status = HttpStatus.UNAUTHORIZED.value();
+                                status = 401;
                                 body = ApiResponse.error(status, "Invalid email or password.");
                             } else {
-                                status = HttpStatus.UNAUTHORIZED.value();
+                                status = 401;
                                 body = ApiResponse.error(status, "Authentication failed.");
                             }
 
@@ -111,9 +122,9 @@ public class SecurityConfig {
                         .logoutSuccessHandler((req, res, auth) -> {
                             res.setStatus(HttpStatus.OK.value());
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-                            ApiResponse<Void> body = ApiResponse.success(HttpStatus.OK.value(), "logged out", null);
-                            objectMapper.writeValue(res.getWriter(), body);
+                            objectMapper.writeValue(res.getWriter(),
+                                    ApiResponse.success(200, "logged out", null)
+                            );
                         })
                 );
 
