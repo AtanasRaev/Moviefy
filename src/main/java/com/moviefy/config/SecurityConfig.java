@@ -45,7 +45,16 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(repo)
-                        .ignoringRequestMatchers("/auth/login", "/auth/logout")
+                        .ignoringRequestMatchers(
+                                "/auth/login",
+                                "/auth/logout",
+                                "/auth/register",
+                                "/auth/verify-email",
+                                "/auth/resend-email",
+                                "/auth/password-reset/request",
+                                "/auth/password-reset/token-check",
+                                "/auth/password-reset/confirm"
+                        )
                 )
                 .addFilterAfter(new CsrfHeaderFilter(), CsrfFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
