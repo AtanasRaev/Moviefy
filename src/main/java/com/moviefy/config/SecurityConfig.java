@@ -12,8 +12,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
@@ -37,7 +37,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/auth/login", "/auth/logout")
+                )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
@@ -67,7 +70,7 @@ public class SecurityConfig {
                             res.setStatus(HttpStatus.OK.value());
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-                            ApiResponse<Void> body = ApiResponse.success(HttpStatus.OK.value(),"ok", null);
+                            ApiResponse<Void> body = ApiResponse.success(HttpStatus.OK.value(), "ok", null);
                             objectMapper.writeValue(res.getWriter(), body);
                         })
 
@@ -104,7 +107,7 @@ public class SecurityConfig {
                             res.setStatus(HttpStatus.OK.value());
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-                            ApiResponse<Void> body = ApiResponse.success(HttpStatus.OK.value(),"logged out", null);
+                            ApiResponse<Void> body = ApiResponse.success(HttpStatus.OK.value(), "logged out", null);
                             objectMapper.writeValue(res.getWriter(), body);
                         })
                 );
@@ -125,7 +128,7 @@ public class SecurityConfig {
         ));
 
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Requested-With"));
+        cfg.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Requested-With", "X-XSRF-TOKEN"));
 
         cfg.setMaxAge(3600L);
 
