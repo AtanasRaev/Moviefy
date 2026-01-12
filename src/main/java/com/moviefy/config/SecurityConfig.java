@@ -169,9 +169,10 @@ public class SecurityConfig {
         s.setCookieName("SESSION");
         s.setCookiePath("/");
         s.setUseHttpOnlyCookie(true);
+        s.setSameSite("Lax");
         s.setUseSecureCookie(true);
         s.setDomainName("moviefy.live");
-        s.setSameSite("Lax");
+        s.setCookieMaxAge(60 * 60 * 24 * 7);
 
         return s;
     }
