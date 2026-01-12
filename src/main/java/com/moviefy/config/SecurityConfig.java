@@ -170,7 +170,7 @@ public class SecurityConfig {
         s.setCookiePath("/");
         s.setUseHttpOnlyCookie(true);
         s.setUseSecureCookie(true);
-        s.setDomainName(".moviefy.live");
+        s.setDomainName("moviefy.live");
         s.setSameSite("Lax");
 
         return s;
