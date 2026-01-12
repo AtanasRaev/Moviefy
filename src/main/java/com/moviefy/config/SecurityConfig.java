@@ -37,9 +37,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        HttpSessionCsrfTokenRepository repo = new HttpSessionCsrfTokenRepository();
+        repo.setHeaderName("X-XSRF-TOKEN");
+
         http
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(new HttpSessionCsrfTokenRepository())
+                        .csrfTokenRepository(repo)
                         .ignoringRequestMatchers("/auth/login", "/auth/logout")
                 )
                 .addFilterAfter(new CsrfHeaderFilter(), CsrfFilter.class)
