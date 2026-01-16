@@ -6,13 +6,16 @@ import com.moviefy.database.model.dto.pageDto.GenrePageDTO;
 import java.time.LocalDate;
 import java.util.List;
 
-public class TvSeriesTrendingPageDTO extends TvSeriesDTO{
+public class TvSeriesTrendingPageDTO extends TvSeriesDTO {
     private String overview;
 
     private String trailer;
 
     @JsonProperty("backdrop_path")
     private String backdropPath;
+
+    @JsonProperty("poster_path")
+    private String posterPath;
 
     private LocalDate firstAirDate;
 
@@ -41,6 +44,14 @@ public class TvSeriesTrendingPageDTO extends TvSeriesDTO{
 
     public void setBackdropPath(String backdropPath) {
         this.backdropPath = backdropPath;
+    }
+
+    public String getPosterPath() {
+        return posterPath;
+    }
+
+    public void setPosterPath(String posterPath) {
+        this.posterPath = posterPath;
     }
 
     public LocalDate getFirstAirDate() {
