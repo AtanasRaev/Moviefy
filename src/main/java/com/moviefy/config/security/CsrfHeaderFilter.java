@@ -1,4 +1,4 @@
-package com.moviefy.config;
+package com.moviefy.config.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -1,4 +1,4 @@
-package com.moviefy.config;
+package com.moviefy.config.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moviefy.database.model.dto.response.ApiResponse;
@@ -15,6 +15,7 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.session.web.http.CookieSerializer;
@@ -28,12 +29,15 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
     private final ObjectMapper objectMapper;
+    private final RateLimitFilter rateLimitFilter;
 
     @Value("${moviefy.frontend.url}")
     private String frontendUrl;
 
-    public SecurityConfig(ObjectMapper objectMapper) {
+    public SecurityConfig(ObjectMapper objectMapper,
+                          RateLimitFilter rateLimitFilter) {
         this.objectMapper = objectMapper;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
 
@@ -56,6 +60,7 @@ public class SecurityConfig {
                                 "/auth/password-reset/confirm"
                         )
                 )
+                .addFilterBefore(this.rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new CsrfHeaderFilter(), CsrfFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
