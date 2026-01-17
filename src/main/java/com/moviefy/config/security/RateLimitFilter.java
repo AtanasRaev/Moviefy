@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -91,6 +93,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
            ========================= */
 
         if (isStrictEndpoint(path, method)) {
+            StreamUtils.copyToByteArray(wrappedRequest.getInputStream());
 
             // Per-IP strict
             String ipKey = "strict-ip:" + clientIp + ":" + path;
@@ -108,8 +111,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             if (STRICT_EMAIL_ENDPOINTS.contains(path)) {
                 String email = extractEmail(wrappedRequest);
 
-                if (email != null && !email.isBlank()) {
-                    String emailKey = "strict-email:" + normalizeEmail(email) + ":" + path;
+                if (email != null) {
+                    String emailKey = "strict-email:" + email + ":" + path;
 
                     Bucket emailBucket = buckets.computeIfAbsent(
                             emailKey,
@@ -292,9 +295,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private String extractEmail(ContentCachingRequestWrapper request) {
-        String emailParam = request.getParameter("email");
+        String emailParam = Objects.toString(request.getParameter("email"), "");
         if (!emailParam.isBlank()) {
-            return emailParam;
+            return normalizeEmail(emailParam);
         }
 
         // JSON fallback
@@ -307,7 +310,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
             String json = new String(body, StandardCharsets.UTF_8);
             JsonNode root = objectMapper.readTree(json);
             JsonNode emailNode = root.get("email");
-            return emailNode != null ? emailNode.asText() : null;
+
+            if (emailNode == null || emailNode.isNull()) {
+                return null;
+            }
+
+            String email = emailNode.asText("");
+            if (email.isBlank()) {
+                return null;
+            }
+
+            return normalizeEmail(email);
         } catch (Exception ignored) {
             return null;
         }
