@@ -14,9 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -51,15 +49,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        ContentCachingRequestWrapper wrappedRequest =
-                new ContentCachingRequestWrapper(request);
-
-        String path = wrappedRequest.getRequestURI();
-        String method = wrappedRequest.getMethod();
+        String path = request.getRequestURI();
+        String method = request.getMethod();
 
         if ("OPTIONS".equalsIgnoreCase(method)) {
-            filterChain.doFilter(wrappedRequest, response);
+            filterChain.doFilter(request, response);
             return;
+        }
+
+        HttpServletRequest reqToUse = request;
+        CachedBodyHttpServletRequest cachedReq = null;
+
+        if (isStrictEndpoint(path, method)) {
+            cachedReq = new CachedBodyHttpServletRequest(request);
+            reqToUse = cachedReq;
         }
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -68,7 +71,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                         auth.isAuthenticated() &&
                         !"anonymousUser".equals(auth.getPrincipal());
 
-        String clientIp = getClientIp(wrappedRequest);
+        String clientIp = getClientIp(reqToUse);
 
         /* =========================
            GENERAL RATE LIMIT
@@ -93,7 +96,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
            ========================= */
 
         if (isStrictEndpoint(path, method)) {
-            StreamUtils.copyToByteArray(wrappedRequest.getInputStream());
 
             // Per-IP strict
             String ipKey = "strict-ip:" + clientIp + ":" + path;
@@ -108,8 +110,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             }
 
             // Per-email strict
-            if (STRICT_EMAIL_ENDPOINTS.contains(path)) {
-                String email = extractEmail(wrappedRequest);
+            if (STRICT_EMAIL_ENDPOINTS.contains(path) && cachedReq != null) {
+                String email = extractEmail(cachedReq);
 
                 if (email != null) {
                     String emailKey = "strict-email:" + email + ":" + path;
@@ -127,11 +129,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             }
         }
 
-        filterChain.doFilter(wrappedRequest, response);
+        filterChain.doFilter(reqToUse, response);
     }
 
     /* =========================
-       BUCKET BUILDERS (no deprecated APIs)
+       BUCKET BUILDERS
        ========================= */
 
     private Bucket createGeneralBucket(boolean authenticated) {
@@ -200,7 +202,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     .build();
         }
 
-        // fallback
         return Bucket.builder()
                 .addLimit(
                         Bandwidth.builder()
@@ -251,7 +252,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     .build();
         }
 
-        // fallback
         return Bucket.builder()
                 .addLimit(
                         Bandwidth.builder()
@@ -294,14 +294,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return request.getRemoteAddr();
     }
 
-    private String extractEmail(ContentCachingRequestWrapper request) {
+    private String extractEmail(CachedBodyHttpServletRequest request) {
         String emailParam = Objects.toString(request.getParameter("email"), "");
         if (!emailParam.isBlank()) {
             return normalizeEmail(emailParam);
         }
 
-        // JSON fallback
-        byte[] body = request.getContentAsByteArray();
+        byte[] body = request.getCachedBody();
         if (body.length == 0) {
             return null;
         }
