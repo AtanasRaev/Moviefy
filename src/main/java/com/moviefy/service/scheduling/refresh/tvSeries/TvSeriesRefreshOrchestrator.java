@@ -9,13 +9,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static com.moviefy.utils.Ansi.*;
+import static com.moviefy.utils.Ansi.BLUE;
+import static com.moviefy.utils.Ansi.PURPLE;
+import static com.moviefy.utils.Ansi.RED;
+import static com.moviefy.utils.Ansi.RESET;
+import static com.moviefy.utils.Ansi.YELLOW;
 
 @Service
 public class TvSeriesRefreshOrchestrator {
@@ -39,7 +47,7 @@ public class TvSeriesRefreshOrchestrator {
         final LocalDateTime start = LocalDateTime.now();
         final List<Long> refreshedToday = new ArrayList<>();
 
-        logger.info(BLUE + "📺 Starting TV SERIES REFRESH (thread={})" + RESET, thread);
+        logger.info(BLUE + "Starting TV SERIES REFRESH (thread={})" + RESET, thread);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -51,7 +59,9 @@ public class TvSeriesRefreshOrchestrator {
         LocalDateTime endDate = now.minusDays(RefreshConfig.DAYS_GUARD);
 
         List<TvSeries> recent = this.tvSeriesRepository.findTvSeriesDueForRefresh(
-                startDate, endDate,now.getYear(), now.getYear() - 1, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - trending.size())
+                startDate, endDate, now.getYear(), now.getYear() - 1, now,
+                RefreshConfig.COOL_DOWN_DAYS,
+                Math.max(0, RefreshConfig.REFRESH_CAP - trending.size())
         );
 
         logger.debug(BLUE + "Selected {} recent TV series [{} .. {}), cap={}, remaining={}" + RESET,
@@ -72,6 +82,7 @@ public class TvSeriesRefreshOrchestrator {
 
         int attempted = 0;
         int updated = 0;
+        int deletedNotFound = 0;
         int nullDto = 0;
         int failed = 0;
 
@@ -94,20 +105,29 @@ public class TvSeriesRefreshOrchestrator {
                 if (refreshed) {
                     updated++;
                     refreshedToday.add(apiId);
-                    logger.info(PURPLE + "✔Refreshed series apiId={} ({})" + RESET, apiId, dto.getName());
+                    logger.info(PURPLE + "Refreshed series apiId={} ({})" + RESET, apiId, dto.getName());
                 } else {
-                    logger.debug(YELLOW + "No changes for tvApiId={} — up to date" + RESET, apiId);
+                    logger.debug(YELLOW + "No changes for tvApiId={} - up to date" + RESET, apiId);
                 }
 
+            } catch (HttpClientErrorException.NotFound ex) {
+                boolean deleted = this.tvSeriesRefreshWorker.deleteMissingTvSeriesByApiId(apiId);
+                if (deleted) {
+                    deletedNotFound++;
+                    logger.warn(YELLOW + "Deleted TV series apiId={} because TMDB returned 404" + RESET, apiId);
+                } else {
+                    failed++;
+                    logger.error(RED + "TMDB returned 404 for tvApiId={}, but delete failed" + RESET, apiId, ex);
+                }
             } catch (Exception ex) {
                 failed++;
-                logger.error(RED + "❌ Failed to refresh tvApiId={}" + RESET, apiId, ex);
+                logger.error(RED + "Failed to refresh tvApiId={}" + RESET, apiId, ex);
             }
         }
 
         Duration elapsed = Duration.between(start, LocalDateTime.now());
-        logger.info(BLUE + "📺 TV series refresh finished: attempted={} • updated={} • nullDTO={} • failed={} • took={}ms" + RESET,
-                attempted, updated, nullDto, failed, elapsed.toMillis());
+        logger.info(BLUE + "TV series refresh finished: attempted={} updated={} deleted404={} nullDTO={} failed={} took={}ms" + RESET,
+                attempted, updated, deletedNotFound, nullDto, failed, elapsed.toMillis());
 
         return CompletableFuture.completedFuture(refreshedToday);
     }
