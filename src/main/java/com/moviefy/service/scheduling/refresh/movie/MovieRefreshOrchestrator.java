@@ -9,13 +9,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static com.moviefy.utils.Ansi.*;
+import static com.moviefy.utils.Ansi.CYAN;
+import static com.moviefy.utils.Ansi.GREEN;
+import static com.moviefy.utils.Ansi.RED;
+import static com.moviefy.utils.Ansi.RESET;
+import static com.moviefy.utils.Ansi.YELLOW;
 
 @Service
 public class MovieRefreshOrchestrator {
@@ -37,7 +45,7 @@ public class MovieRefreshOrchestrator {
     public CompletableFuture<List<Long>> refreshMovies() {
         final String threadName = Thread.currentThread().getName();
         final LocalDateTime start = LocalDateTime.now();
-        logger.info(CYAN + "♻️  Starting MOVIE REFRESH (thread={})" + RESET, threadName);
+        logger.info(CYAN + "Starting MOVIE REFRESH (thread={})" + RESET, threadName);
 
         final List<Long> refreshedToday = new ArrayList<>();
         final LocalDateTime now = LocalDateTime.now();
@@ -49,7 +57,9 @@ public class MovieRefreshOrchestrator {
         LocalDateTime startDate = now.minusDays(RefreshConfig.DAYS_CAP);
         LocalDateTime endDate = now.minusDays(RefreshConfig.DAYS_GUARD);
         List<Movie> allNewMoviesByDate = this.movieRepository.findMoviesDueForRefresh(
-                startDate, endDate, now.getYear(), now.getYear() - 1, now, RefreshConfig.COOL_DOWN_DAYS, Math.max(0, RefreshConfig.REFRESH_CAP - allByPopularityDesc.size())
+                startDate, endDate, now.getYear(), now.getYear() - 1, now,
+                RefreshConfig.COOL_DOWN_DAYS,
+                Math.max(0, RefreshConfig.REFRESH_CAP - allByPopularityDesc.size())
         );
         logger.debug(CYAN + "Selected {} recent candidates between [{} .. {}), cap={} (remaining from {})" + RESET,
                 allNewMoviesByDate.size(), startDate, endDate, RefreshConfig.REFRESH_CAP,
@@ -70,17 +80,20 @@ public class MovieRefreshOrchestrator {
         int attempted = 0;
         int skippedNullDto = 0;
         int updatedCount = 0;
+        int deletedNotFound = 0;
         int failed = 0;
 
         for (Long apiId : apiIdsToRefresh) {
             attempted++;
             try {
-                logger.debug(CYAN + "Fetching details for apiId={} ({}/{})" + RESET, apiId, attempted, apiIdsToRefresh.size());
+                logger.debug(CYAN + "Fetching details for apiId={} ({}/{})" + RESET,
+                        apiId, attempted, apiIdsToRefresh.size());
+
                 MovieApiByIdResponseDTO dto = this.tmdbMoviesEndpointService.getMovieResponseById(apiId);
 
                 if (dto == null) {
                     skippedNullDto++;
-                    logger.debug(YELLOW + "Skip apiId={} — details response is null" + RESET, apiId);
+                    logger.debug(YELLOW + "Skip apiId={} - details response is null" + RESET, apiId);
                     continue;
                 }
 
@@ -88,9 +101,18 @@ public class MovieRefreshOrchestrator {
                 if (updated) {
                     updatedCount++;
                     refreshedToday.add(apiId);
-                    logger.info(GREEN + "✔Refreshed movie apiId={} ({})" + RESET, apiId, dto.getTitle());
+                    logger.info(GREEN + "Refreshed movie apiId={} ({})" + RESET, apiId, dto.getTitle());
                 } else {
-                    logger.debug(YELLOW + "No changes for apiId={} — up to date" + RESET, apiId);
+                    logger.debug(YELLOW + "No changes for apiId={} - up to date" + RESET, apiId);
+                }
+            } catch (HttpClientErrorException.NotFound ex) {
+                boolean deleted = this.movieRefreshWorker.deleteMissingMovieByApiId(apiId);
+                if (deleted) {
+                    deletedNotFound++;
+                    logger.warn(YELLOW + "Deleted movie apiId={} because TMDB returned 404" + RESET, apiId);
+                } else {
+                    failed++;
+                    logger.error(RED + "TMDB returned 404 for apiId={}, but delete failed" + RESET, apiId, ex);
                 }
             } catch (Exception ex) {
                 failed++;
@@ -99,8 +121,8 @@ public class MovieRefreshOrchestrator {
         }
 
         Duration elapsed = Duration.between(start, LocalDateTime.now());
-        logger.info(CYAN + "♻️  Movie refresh finished: attempted={} • updated={} • nullDTO={} • failed={} • took={}ms" + RESET,
-                attempted, updatedCount, skippedNullDto, failed, elapsed.toMillis());
+        logger.info(CYAN + "Movie refresh finished: attempted={} updated={} deleted404={} nullDTO={} failed={} took={}ms" + RESET,
+                attempted, updatedCount, deletedNotFound, skippedNullDto, failed, elapsed.toMillis());
 
         return CompletableFuture.completedFuture(refreshedToday);
     }
