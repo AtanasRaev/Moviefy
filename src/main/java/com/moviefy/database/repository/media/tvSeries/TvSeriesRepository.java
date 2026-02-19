@@ -5,6 +5,7 @@ import com.moviefy.database.model.dto.pageDto.mediaDto.tvSeriesDto.TvSeriesPageW
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -490,6 +491,10 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
             @Param("cooldownDays") int cooldownDays,
             @Param("limit") int limit
     );
+
+    @Modifying
+    @Query(value = "DELETE FROM user_favorite_series WHERE tv_id = :tvId", nativeQuery = true)
+    int deleteFavoritesByTvSeriesId(@Param("tvId") long tvId);
 
     @Query("SELECT tv.apiId FROM TvSeries tv WHERE tv.apiId IN :apiIds")
     Set<Long> findAllApiIdsByApiIdIn(@Param("apiIds") Set<Long> apiIds);

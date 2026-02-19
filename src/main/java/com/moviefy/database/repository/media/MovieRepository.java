@@ -5,6 +5,7 @@ import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGen
 import com.moviefy.database.model.entity.media.Movie;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -420,6 +421,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             @Param("cooldownDays") int cooldownDays,
             @Param("limit") int limit
     );
+
+    @Modifying
+    @Query(value = "DELETE FROM user_favorite_movies WHERE movie_id = :movieId", nativeQuery = true)
+    int deleteFavoritesByMovieId(@Param("movieId") long movieId);
 
     @Query("SELECT m.apiId FROM Movie m WHERE m.apiId IN :apiIds")
     Set<Long> findAllApiIdsByApiIdIn(@Param("apiIds") Set<Long> apiIds);
