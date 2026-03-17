@@ -6,6 +6,7 @@ import com.moviefy.database.model.entity.media.Movie;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,6 +21,21 @@ import java.util.Set;
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
     Optional<Movie> findByApiId(Long apiId);
+
+    @Modifying
+    @Query("UPDATE Movie m SET m.favouriteCount = m.favouriteCount + 1 WHERE m.id = :movieId")
+    int incrementFavouriteCount(@Param("movieId") long movieId);
+
+    @Modifying
+    @Query("""
+            UPDATE Movie m
+            SET m.favouriteCount = CASE
+                WHEN m.favouriteCount > 0 THEN m.favouriteCount - 1
+                ELSE 0
+            END
+            WHERE m.id = :movieId
+            """)
+    int decrementFavouriteCount(@Param("movieId") long movieId);
 
     @Query("select m.apiId from Movie m where m.collection.apiId = :collectionApiId")
     Set<Long> findApiIdsByCollectionApiId(@Param("collectionApiId") Long collectionApiId);

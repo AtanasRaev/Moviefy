@@ -81,28 +81,40 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void addMovie(String email, long movieId) {
         long userId = requireUserId(email);
-        this.userRepository.addMovie(userId, movieId);
+        int inserted = this.userRepository.addMovie(userId, movieId);
+        if (inserted == 1) {
+            ensureCounterUpdated(this.movieRepository.incrementFavouriteCount(movieId), "movie", movieId);
+        }
     }
 
     @Override
     @Transactional
     public void removeMovie(String email, long movieId) {
         long userId = requireUserId(email);
-        this.userRepository.removeMovie(userId, movieId);
+        int removed = this.userRepository.removeMovie(userId, movieId);
+        if (removed == 1) {
+            ensureCounterUpdated(this.movieRepository.decrementFavouriteCount(movieId), "movie", movieId);
+        }
     }
 
     @Override
     @Transactional
     public void addSeries(String email, long tvId) {
         long userId = requireUserId(email);
-        this.userRepository.addSeries(userId, tvId);
+        int inserted = this.userRepository.addSeries(userId, tvId);
+        if (inserted == 1) {
+            ensureCounterUpdated(this.tvSeriesRepository.incrementFavouriteCount(tvId), "tv series", tvId);
+        }
     }
 
     @Override
     @Transactional
     public void removeSeries(String email, long tvId) {
         long userId = requireUserId(email);
-        this.userRepository.removeSeries(userId, tvId);
+        int removed = this.userRepository.removeSeries(userId, tvId);
+        if (removed == 1) {
+            ensureCounterUpdated(this.tvSeriesRepository.decrementFavouriteCount(tvId), "tv series", tvId);
+        }
     }
 
     private AppUser findUserByEmail(String email) {
@@ -116,5 +128,11 @@ public class UserServiceImpl implements UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
         return id;
+    }
+
+    private void ensureCounterUpdated(int updatedRows, String mediaType, long mediaId) {
+        if (updatedRows != 1) {
+            throw new IllegalStateException("Failed to update favorite counter for " + mediaType + " id=" + mediaId);
+        }
     }
 }
