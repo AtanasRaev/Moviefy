@@ -18,8 +18,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
-import org.springframework.session.web.http.CookieSerializer;
-import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -132,7 +130,7 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .invalidateHttpSession(true)
-                        .deleteCookies("SESSION", "JSESSIONID")
+                        .deleteCookies("JSESSIONID")
                         .logoutSuccessHandler((req, res, auth) -> {
                             res.setStatus(HttpStatus.OK.value());
                             res.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -168,17 +166,4 @@ public class SecurityConfig {
         return source;
     }
 
-    @Bean
-    public CookieSerializer cookieSerializer() {
-        DefaultCookieSerializer s = new DefaultCookieSerializer();
-        s.setCookieName("SESSION");
-        s.setCookiePath("/");
-        s.setUseHttpOnlyCookie(true);
-        s.setSameSite("Lax");
-        s.setUseSecureCookie(true);
-        s.setDomainName("moviefy.live");
-        s.setCookieMaxAge(60 * 60 * 24 * 7);
-
-        return s;
-    }
 }
