@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,6 +18,21 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
+    @Modifying
+    @Query("UPDATE TvSeries tv SET tv.favouriteCount = tv.favouriteCount + 1 WHERE tv.id = :tvId")
+    int incrementFavouriteCount(@Param("tvId") long tvId);
+
+    @Modifying
+    @Query("""
+            UPDATE TvSeries tv
+            SET tv.favouriteCount = CASE
+                WHEN tv.favouriteCount > 0 THEN tv.favouriteCount - 1
+                ELSE 0
+            END
+            WHERE tv.id = :tvId
+            """)
+    int decrementFavouriteCount(@Param("tvId") long tvId);
+
     @Query("SELECT COUNT(tv) FROM TvSeries tv WHERE EXTRACT(YEAR FROM tv.firstAirDate) = " +
             "(SELECT MAX(EXTRACT(YEAR FROM tv.firstAirDate)) FROM TvSeries tv)")
     Long countNewestTvSeries();
