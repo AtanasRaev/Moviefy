@@ -5,25 +5,31 @@ import org.springframework.session.Session;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class SessionService {
 
-    private final FindByIndexNameSessionRepository<? extends Session> sessions;
+    private final Optional<FindByIndexNameSessionRepository<? extends Session>> sessions;
 
-    public SessionService(FindByIndexNameSessionRepository<? extends Session> sessions) {
+    public SessionService(Optional<FindByIndexNameSessionRepository<? extends Session>> sessions) {
         this.sessions = sessions;
     }
 
     public void logoutEverywhere(String principalName) {
+        if (sessions.isEmpty()) {
+            return;
+        }
+
+        FindByIndexNameSessionRepository<? extends Session> sessionRepository = sessions.get();
         Map<String, ? extends Session> userSessions =
-                sessions.findByIndexNameAndIndexValue(
+                sessionRepository.findByIndexNameAndIndexValue(
                         FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME,
                         principalName
                 );
 
         for (String sessionId : userSessions.keySet()) {
-            sessions.deleteById(sessionId);
+            sessionRepository.deleteById(sessionId);
         }
     }
 }
