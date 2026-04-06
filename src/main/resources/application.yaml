@@ -1,13 +1,13 @@
 spring:
   session:
-    store-type: redis
+    store-type: none
     timeout: 7d
-    redis:
-      repository-type: indexed
 
   data:
     redis:
       url: ${REDIS_URL}
+      repositories:
+        enabled: false
 
   task:
     scheduling:
