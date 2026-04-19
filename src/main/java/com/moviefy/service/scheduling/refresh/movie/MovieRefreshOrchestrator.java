@@ -1,7 +1,9 @@
 package com.moviefy.service.scheduling.refresh.movie;
 
 import com.moviefy.config.cache.RefreshConfig;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.movieDto.MovieResponseApiDTO;
 import com.moviefy.database.model.entity.media.Movie;
 import com.moviefy.database.repository.media.MovieRepository;
 import com.moviefy.service.api.movie.TmdbMoviesEndpointService;
@@ -18,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.moviefy.utils.Ansi.CYAN;
 import static com.moviefy.utils.Ansi.GREEN;
@@ -66,6 +69,24 @@ public class MovieRefreshOrchestrator {
                 Math.max(0, RefreshConfig.REFRESH_CAP - allByPopularityDesc.size()));
 
         Set<Movie> movies = new LinkedHashSet<>();
+        try {
+            MovieResponseApiDTO tmdbTrending = this.tmdbMoviesEndpointService.getTrendingMovies(1);
+            if (tmdbTrending != null && tmdbTrending.getResults() != null) {
+                Set<Long> dtoIds = tmdbTrending.getResults().stream()
+                        .map(MediaApiDTO::getId)
+                        .collect(Collectors.toSet());
+
+                dtoIds.removeAll(allByPopularityDesc.stream().map(Movie::getApiId).collect(Collectors.toSet()));
+
+                if (!dtoIds.isEmpty()) {
+                    List<Movie> allByApiIdIn = this.movieRepository.findAllByApiIdIn(dtoIds);
+                    movies.addAll(allByApiIdIn);
+                }
+            }
+        } catch (Exception ex) {
+            logger.warn(YELLOW + "TMDB trending fetch failed, proceeding with local candidates only" + RESET, ex);
+        }
+
         movies.addAll(allByPopularityDesc);
         movies.addAll(allNewMoviesByDate);
 

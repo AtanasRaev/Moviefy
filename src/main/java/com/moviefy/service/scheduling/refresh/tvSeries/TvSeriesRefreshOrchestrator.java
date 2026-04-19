@@ -1,7 +1,9 @@
 package com.moviefy.service.scheduling.refresh.tvSeries;
 
 import com.moviefy.config.cache.RefreshConfig;
+import com.moviefy.database.model.dto.apiDto.mediaDto.MediaApiDTO;
 import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesApiByIdResponseDTO;
+import com.moviefy.database.model.dto.apiDto.mediaDto.tvSeriesDto.TvSeriesResponseApiDTO;
 import com.moviefy.database.model.entity.media.tvSeries.TvSeries;
 import com.moviefy.database.repository.media.tvSeries.TvSeriesRepository;
 import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
@@ -18,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.moviefy.utils.Ansi.BLUE;
 import static com.moviefy.utils.Ansi.PURPLE;
@@ -69,6 +72,25 @@ public class TvSeriesRefreshOrchestrator {
                 Math.max(0, RefreshConfig.REFRESH_CAP - trending.size()));
 
         Set<TvSeries> merged = new LinkedHashSet<>();
+
+        try {
+            TvSeriesResponseApiDTO tmdbTrending = this.tmdbTvEndpointService.getTrendingSeries(1);
+            if (tmdbTrending != null && tmdbTrending.getResults() != null) {
+                Set<Long> dtoIds = tmdbTrending.getResults().stream()
+                        .map(MediaApiDTO::getId)
+                        .collect(Collectors.toSet());
+
+                dtoIds.removeAll(trending.stream().map(TvSeries::getApiId).collect(Collectors.toSet()));
+
+                if (!dtoIds.isEmpty()) {
+                    List<TvSeries> allByApiIdIn = this.tvSeriesRepository.findAllByApiIdIn(dtoIds);
+                    merged.addAll(allByApiIdIn);
+                }
+            }
+        } catch (Exception ex) {
+            logger.warn(YELLOW + "TMDB trending fetch failed, proceeding with local candidates only" + RESET, ex);
+        }
+
         merged.addAll(trending);
         merged.addAll(recent);
 
