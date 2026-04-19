@@ -197,9 +197,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                             ORDER BY g2.name
                             LIMIT 1
                         )                             AS genre,
-                        (
-                            (m.vote_count / (m.vote_count + stats.m)) * m.vote_average
-                          + (stats.m      / (m.vote_count + stats.m)) * stats.C
+                        COALESCE(
+                            (m.vote_count / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(m.vote_average, 0)
+                          + (stats.m / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(stats.C, m.vote_average, 0),
+                            COALESCE(m.vote_average, 0)
                         )                             AS score
                     FROM movies m
                     JOIN filtered_ids f ON f.id = m.id
@@ -249,9 +250,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         'movie'                        AS mediaType,
                         m.runtime                      AS runtime,
                         m.trailer                      AS trailer,
-                        (
-                          (m.vote_count / (m.vote_count + stats.m)) * m.vote_average
-                        + (stats.m      / (m.vote_count + stats.m)) * stats.C
+                        COALESCE(
+                          (m.vote_count / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(m.vote_average, 0)
+                        + (stats.m / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(stats.C, m.vote_average, 0),
+                          COALESCE(m.vote_average, 0)
                         )                              AS score
                     FROM movies m
                     JOIN filtered_ids f ON f.id = m.id
@@ -300,9 +302,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         'movie'                        AS mediaType,
                         m.runtime                      AS runtime,
                         m.trailer                      AS trailer,
-                        (
-                          (m.vote_count / (m.vote_count + stats.m)) * m.vote_average
-                        + (stats.m      / (m.vote_count + stats.m)) * stats.C
+                        COALESCE(
+                          (m.vote_count / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(m.vote_average, 0)
+                        + (stats.m / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(stats.C, m.vote_average, 0),
+                          COALESCE(m.vote_average, 0)
                         )                              AS score
                     FROM movies m
                     JOIN filtered_ids f ON f.id = m.id
@@ -351,9 +354,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
                         'movie'                        AS mediaType,
                         m.runtime                      AS runtime,
                         m.trailer                      AS trailer,
-                        (
-                          (m.vote_count / (m.vote_count + stats.m)) * m.vote_average
-                        + (stats.m      / (m.vote_count + stats.m)) * stats.C
+                        COALESCE(
+                          (m.vote_count / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(m.vote_average, 0)
+                        + (stats.m / NULLIF(m.vote_count + stats.m, 0)) * COALESCE(stats.C, m.vote_average, 0),
+                          COALESCE(m.vote_average, 0)
                         )                              AS score
                     FROM movies m
                     JOIN filtered_ids f ON f.id = m.id

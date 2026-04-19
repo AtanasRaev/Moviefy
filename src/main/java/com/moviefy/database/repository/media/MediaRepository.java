@@ -391,9 +391,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                                 ORDER BY g2.name
                                 LIMIT 1
                             )                                                  AS genre,
-                            (
-                                (m.vote_count / (m.vote_count + COALESCE(ms.m, 500))) * m.vote_average
-                              + (COALESCE(ms.m, 500) / (m.vote_count + COALESCE(ms.m, 500))) * COALESCE(ms.C, m.vote_average)
+                            COALESCE(
+                                (m.vote_count / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(m.vote_average, 0)
+                              + (COALESCE(ms.m, 500) / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(ms.C, m.vote_average, 0),
+                                COALESCE(m.vote_average, 0)
                             )                                                  AS score
                         FROM movies m
                         JOIN movie_ids mi ON mi.id = m.id
@@ -424,9 +425,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                                 ORDER BY g2.name
                                 LIMIT 1
                             )                                                    AS genre,
-                            (
-                                (tv.vote_count / (tv.vote_count + COALESCE(ss.m, 500))) * tv.vote_average
-                              + (COALESCE(ss.m, 500) / (tv.vote_count + COALESCE(ss.m, 500))) * COALESCE(ss.C, tv.vote_average)
+                            COALESCE(
+                                (tv.vote_count / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                              + (COALESCE(ss.m, 500) / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(ss.C, tv.vote_average, 0),
+                                COALESCE(tv.vote_average, 0)
                             )                                                    AS score
                         FROM tv_series tv
                         JOIN series_ids si    ON si.id = tv.id
@@ -531,9 +533,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                             m.release_date                                    AS release_date,
                             m.vote_count                                      AS vote_count,
                             m.trailer                                         AS trailer,
-                            (
-                                (m.vote_count / (m.vote_count + COALESCE(ms.m, 500))) * m.vote_average
-                              + (COALESCE(ms.m, 500) / (m.vote_count + COALESCE(ms.m, 500))) * COALESCE(ms.C, m.vote_average)
+                            COALESCE(
+                                (m.vote_count / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(m.vote_average, 0)
+                              + (COALESCE(ms.m, 500) / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(ms.C, m.vote_average, 0),
+                                COALESCE(m.vote_average, 0)
                             )                                                 AS score
                         FROM movies m
                         JOIN movie_ids mi ON mi.id = m.id
@@ -556,9 +559,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                             tv.first_air_date                                   AS release_date,
                             tv.vote_count                                       AS vote_count,
                             tv.trailer                                          AS trailer,
-                            (
-                                (tv.vote_count / (tv.vote_count + COALESCE(ss.m, 500))) * tv.vote_average
-                              + (COALESCE(ss.m, 500) / (tv.vote_count + COALESCE(ss.m, 500))) * COALESCE(ss.C, tv.vote_average)
+                            COALESCE(
+                                (tv.vote_count / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                              + (COALESCE(ss.m, 500) / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(ss.C, tv.vote_average, 0),
+                                COALESCE(tv.vote_average, 0)
                             )                                                   AS score
                         FROM tv_series tv
                         JOIN series_ids si   ON si.id = tv.id
@@ -655,9 +659,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                             m.release_date                                    AS release_date,
                             m.vote_count                                      AS vote_count,
                             m.trailer                                         AS trailer,
-                            (
-                                (m.vote_count / (m.vote_count + COALESCE(ms.m, 500))) * m.vote_average
-                              + (COALESCE(ms.m, 500) / (m.vote_count + COALESCE(ms.m, 500))) * COALESCE(ms.C, m.vote_average)
+                            COALESCE(
+                                (m.vote_count / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(m.vote_average, 0)
+                              + (COALESCE(ms.m, 500) / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(ms.C, m.vote_average, 0),
+                                COALESCE(m.vote_average, 0)
                             )                                                 AS score
                         FROM movies m
                         JOIN movie_ids mi ON mi.id = m.id
@@ -680,9 +685,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                             tv.first_air_date                                   AS release_date,
                             tv.vote_count                                       AS vote_count,
                             tv.trailer                                          AS trailer,
-                            (
-                                (tv.vote_count / (tv.vote_count + COALESCE(ss.m, 500))) * tv.vote_average
-                              + (COALESCE(ss.m, 500) / (tv.vote_count + COALESCE(ss.m, 500))) * COALESCE(ss.C, tv.vote_average)
+                            COALESCE(
+                                (tv.vote_count / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                              + (COALESCE(ss.m, 500) / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(ss.C, tv.vote_average, 0),
+                                COALESCE(tv.vote_average, 0)
                             )                                                   AS score
                         FROM tv_series tv
                         JOIN series_ids si   ON si.id = tv.id
@@ -779,9 +785,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                             m.release_date                                    AS release_date,
                             m.vote_count                                      AS vote_count,
                             m.trailer                                         AS trailer,
-                            (
-                                (m.vote_count / (m.vote_count + COALESCE(ms.m, 500))) * m.vote_average
-                              + (COALESCE(ms.m, 500) / (m.vote_count + COALESCE(ms.m, 500))) * COALESCE(ms.C, m.vote_average)
+                            COALESCE(
+                                (m.vote_count / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(m.vote_average, 0)
+                              + (COALESCE(ms.m, 500) / NULLIF(m.vote_count + COALESCE(ms.m, 500), 0)) * COALESCE(ms.C, m.vote_average, 0),
+                                COALESCE(m.vote_average, 0)
                             )                                                 AS score
                         FROM movies m
                         JOIN movie_ids mi ON mi.id = m.id
@@ -804,9 +811,10 @@ public interface MediaRepository extends JpaRepository<Movie, Long> {
                             tv.first_air_date                                   AS release_date,
                             tv.vote_count                                       AS vote_count,
                             tv.trailer                                          AS trailer,
-                            (
-                                (tv.vote_count / (tv.vote_count + COALESCE(ss.m, 500))) * tv.vote_average
-                              + (COALESCE(ss.m, 500) / (tv.vote_count + COALESCE(ss.m, 500))) * COALESCE(ss.C, tv.vote_average)
+                            COALESCE(
+                                (tv.vote_count / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                              + (COALESCE(ss.m, 500) / NULLIF(tv.vote_count + COALESCE(ss.m, 500), 0)) * COALESCE(ss.C, tv.vote_average, 0),
+                                COALESCE(tv.vote_average, 0)
                             )                                                   AS score
                         FROM tv_series tv
                         JOIN series_ids si   ON si.id = tv.id

@@ -240,9 +240,10 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                             ORDER BY g2.name
                             LIMIT 1
                         )                                                AS genre,
-                        (
-                            (tv.vote_count / (tv.vote_count + COALESCE(stats.m, 500))) * tv.vote_average
-                          + (COALESCE(stats.m, 500) / (tv.vote_count + COALESCE(stats.m, 500))) * stats.C
+                        COALESCE(
+                            (tv.vote_count / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                          + (COALESCE(stats.m, 500) / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(stats.C, tv.vote_average, 0),
+                            COALESCE(tv.vote_average, 0)
                         )                                                AS score
                     FROM tv_series tv
                     JOIN filtered_ids f ON f.id = tv.id
@@ -302,9 +303,10 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         tv.vote_count                                    AS voteCount,
                         sa.seasons_count                                 AS seasonsCount,
                         sa.episodes_count                                AS episodesCount,
-                        (
-                          (tv.vote_count / (tv.vote_count + COALESCE(stats.m, 500))) * tv.vote_average
-                        + (COALESCE(stats.m, 500) / (tv.vote_count + COALESCE(stats.m, 500))) * stats.C
+                        COALESCE(
+                          (tv.vote_count / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                        + (COALESCE(stats.m, 500) / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(stats.C, tv.vote_average, 0),
+                          COALESCE(tv.vote_average, 0)
                         )                                                AS score
                     FROM tv_series tv
                     JOIN filtered_ids f ON f.id = tv.id
@@ -361,9 +363,10 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         tv.vote_count                                    AS voteCount,
                         sa.seasons_count                                 AS seasonsCount,
                         sa.episodes_count                                AS episodesCount,
-                        (
-                          (tv.vote_count / (tv.vote_count + COALESCE(stats.m, 500))) * tv.vote_average
-                        + (COALESCE(stats.m, 500) / (tv.vote_count + COALESCE(stats.m, 500))) * stats.C
+                        COALESCE(
+                          (tv.vote_count / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                        + (COALESCE(stats.m, 500) / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(stats.C, tv.vote_average, 0),
+                          COALESCE(tv.vote_average, 0)
                         )                                                AS score
                     FROM tv_series tv
                     JOIN filtered_ids f ON f.id = tv.id
@@ -420,9 +423,10 @@ public interface TvSeriesRepository extends JpaRepository<TvSeries, Long> {
                         tv.vote_count                                    AS voteCount,
                         sa.seasons_count                                 AS seasonsCount,
                         sa.episodes_count                                AS episodesCount,
-                        (
-                          (tv.vote_count / (tv.vote_count + COALESCE(stats.m, 500))) * tv.vote_average
-                        + (COALESCE(stats.m, 500) / (tv.vote_count + COALESCE(stats.m, 500))) * stats.C
+                        COALESCE(
+                          (tv.vote_count / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(tv.vote_average, 0)
+                        + (COALESCE(stats.m, 500) / NULLIF(tv.vote_count + COALESCE(stats.m, 500), 0)) * COALESCE(stats.C, tv.vote_average, 0),
+                          COALESCE(tv.vote_average, 0)
                         )                                                AS score
                     FROM tv_series tv
                     JOIN filtered_ids f ON f.id = tv.id
