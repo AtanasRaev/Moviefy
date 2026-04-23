@@ -37,6 +37,7 @@ dependencies {
     implementation 'com.bucket4j:bucket4j-core:8.10.1'
 
     runtimeOnly 'org.postgresql:postgresql'
+    implementation 'org.flywaydb:flyway-core'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mockito:mockito-junit-jupiter:4.8.0'

@@ -14,12 +14,16 @@ spring:
       pool:
         size: 10
 
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+
   jpa:
     properties:
       hibernate:
         format_sql: 'TRUE'
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: 'false'
 
   sql:
