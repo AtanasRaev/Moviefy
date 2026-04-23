@@ -6,6 +6,7 @@ import com.moviefy.database.model.dto.apiDto.mediaDto.TrailerResponseApiDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -55,6 +56,9 @@ public class TmdbCommonEndpointServiceImpl implements TmdbCommonEndpointService 
 
         try {
             return this.restClient.get().uri(uri).retrieve().body(ReviewResponseApiDTO.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            logger.warn("Reviews not found on TMDB (resource likely deleted). mediaType={}, apiId={}", mediaType, apiId);
+            return null;
         } catch (Exception e) {
             logger.error("Error fetching reviews. mediaType={}, apiId={}, page={}, URL={}",
                     mediaType, apiId, page, uri, e);
