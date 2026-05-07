@@ -59,6 +59,43 @@ spring:
           starttls:
             enable: true
 
+moviefy:
+  frontend:
+    url: ${MOVIEFY_FRONTEND_URL}
+  admin:
+    emails: ${MOVIEFY_ADMIN_EMAILS:}
+  logo:
+    url: ${MOVIEFY_LOGO_URL}
+  rate-limit:
+    general:
+      auth-user: ${MOVIEFY_RATE_LIMIT_GENERAL_AUTH_USER:300}
+      anon-ip: ${MOVIEFY_RATE_LIMIT_GENERAL_ANON_IP:60}
+    auth:
+      login:
+        per-ip: ${MOVIEFY_RATE_LIMIT_AUTH_LOGIN_PER_IP:10}
+        per-email: ${MOVIEFY_RATE_LIMIT_AUTH_LOGIN_PER_EMAIL:10}
+      register:
+        per-ip: ${MOVIEFY_RATE_LIMIT_AUTH_REGISTER_PER_IP:5}
+        per-email: ${MOVIEFY_RATE_LIMIT_AUTH_REGISTER_PER_EMAIL:3}
+      password-reset:
+        per-ip: ${MOVIEFY_RATE_LIMIT_AUTH_PASSWORD_RESET_PER_IP:5}
+        per-email: ${MOVIEFY_RATE_LIMIT_AUTH_PASSWORD_RESET_PER_EMAIL:3}
+
+mail:
+  from: ${MAIL_FROM}
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: WARN
+        type.descriptor: WARN
+      nodeValue: WARN
+    root: INFO
+    blog: WARN
+    runtime: INFO
+    instance class: INFO
+
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
@@ -69,3 +106,8 @@ server:
         max-age: 7d
         http-only: true
         secure: true
+
+tmdb:
+  api:
+    url: "https://api.themoviedb.org/3"
+    key: ${TMDB_API_KEY}
