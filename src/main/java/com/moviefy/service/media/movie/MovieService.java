@@ -4,6 +4,7 @@ import com.moviefy.database.model.dto.detailsDto.MovieDetailsDTO;
 import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageProjection;
 import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreDTO;
 import com.moviefy.database.model.dto.pageDto.mediaDto.movieDto.MoviePageWithGenreProjection;
+import com.moviefy.service.media.MediaRefreshResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -31,4 +32,6 @@ public interface MovieService {
     Page<MoviePageProjection> getMoviesByCrewId(long id, Pageable pageable);
 
     Page<MoviePageProjection> getMoviesByProductionCompanyId(long id, Pageable pageable);
+
+    MediaRefreshResult refreshMovieByApiId(long apiId);
 }

@@ -1,6 +1,7 @@
 package com.moviefy.web.media;
 
 import com.moviefy.database.model.dto.detailsDto.MediaDetailsDTO;
+import com.moviefy.service.media.MediaRefreshResult;
 import com.moviefy.service.media.MediaService;
 import com.moviefy.service.media.movie.MovieService;
 import com.moviefy.service.media.tvSeries.TvSeriesService;
@@ -17,10 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -189,6 +187,37 @@ public class MediaController {
         return ResponseEntity.ok(this.mediaService.getReviewsByApiId(mediaType, apiId, page));
     }
 
+    @PutMapping("/{mediaType}/{apiId}")
+    public ResponseEntity<Map<String, Object>> refreshMediaByApiId(
+            @PathVariable String mediaType,
+            @PathVariable long apiId) {
+
+        if (MediaRetrievalUtil.isMediaTypeInvalid(mediaType)) {
+            return getInvalidRequest(mediaType);
+        }
+
+        MediaRefreshResult result = refreshMediaByApiIdDTO(mediaType, apiId);
+
+        return switch (result.status()) {
+            case UPDATED, UNCHANGED -> ResponseEntity.ok(Map.of(mediaType, result.media()));
+            case NOT_FOUND_LOCAL, NOT_FOUND_EXTERNAL -> ErrorResponseUtil.buildErrorResponse(
+                    HttpStatus.NOT_FOUND,
+                    "Resource not found",
+                    String.format("Not found %s with apiId %d", mediaType, apiId)
+            );
+            case NOT_IMPLEMENTED -> ErrorResponseUtil.buildErrorResponse(
+                    HttpStatus.NOT_IMPLEMENTED,
+                    "Not implemented",
+                    String.format("Refresh is not implemented for %s yet.", mediaType)
+            );
+            case FAILED -> ErrorResponseUtil.buildErrorResponse(
+                    HttpStatus.BAD_GATEWAY,
+                    "Refresh failed",
+                    String.format("Could not refresh %s with apiId %d", mediaType, apiId)
+            );
+        };
+    }
+
     private Page<?> getTrendingMediaPage(String mediaType, Pageable pageable, List<String> genres, List<String> types) {
         return "movies".equalsIgnoreCase(mediaType)
                 ? this.movieService.getTrendingMovies(genres, pageable)
@@ -241,5 +270,11 @@ public class MediaController {
                 : "series".equalsIgnoreCase(mediaType)
                 ? this.tvSeriesService.getTopRatedTvSeries(genres, types, pageable)
                 : this.mediaService.getTopRatedMedia(genres, pageable);
+    }
+
+    private MediaRefreshResult refreshMediaByApiIdDTO(String mediaType, long apiId) {
+        return "movies".equalsIgnoreCase(mediaType)
+                ? movieService.refreshMovieByApiId(apiId)
+                : tvSeriesService.refreshTvSeriesByApiId(apiId);
     }
 }

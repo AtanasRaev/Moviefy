@@ -24,7 +24,10 @@ import com.moviefy.service.collection.CollectionService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.movieGenre.MovieGenreService;
+import com.moviefy.service.media.MediaRefreshResult;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.service.scheduling.MediaEventPublisher;
+import com.moviefy.service.scheduling.refresh.movie.MovieRefreshWorker;
 import com.moviefy.utils.GenreNormalizationUtil;
 import com.moviefy.utils.MediaValidationUtil;
 import com.moviefy.utils.mappers.MovieMapper;
@@ -38,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -53,6 +57,8 @@ public class MovieServiceImpl implements MovieService {
     private final CrewService crewService;
     private final CollectionService collectionService;
     private final ProductionCompanyService productionCompanyService;
+    private final MovieRefreshWorker movieRefreshWorker;
+    private final MediaEventPublisher mediaEventPublisher;
     private final ModelMapper modelMapper;
     private final MovieMapper movieMapper;
     private final GenreNormalizationUtil genreNormalizationUtil;
@@ -67,6 +73,8 @@ public class MovieServiceImpl implements MovieService {
                             CrewService crewService,
                             CollectionService collectionService,
                             ProductionCompanyService productionCompanyService,
+                            MovieRefreshWorker movieRefreshWorker,
+                            MediaEventPublisher mediaEventPublisher,
                             ModelMapper modelMapper,
                             MovieMapper movieMapper,
                             GenreNormalizationUtil genreNormalizationUtil) {
@@ -78,6 +86,8 @@ public class MovieServiceImpl implements MovieService {
         this.crewService = crewService;
         this.collectionService = collectionService;
         this.productionCompanyService = productionCompanyService;
+        this.movieRefreshWorker = movieRefreshWorker;
+        this.mediaEventPublisher = mediaEventPublisher;
         this.modelMapper = modelMapper;
         this.movieMapper = movieMapper;
         this.genreNormalizationUtil = genreNormalizationUtil;
@@ -249,6 +259,38 @@ public class MovieServiceImpl implements MovieService {
     @Transactional(readOnly = true)
     public Page<MoviePageProjection> getMoviesByProductionCompanyId(long id, Pageable pageable) {
         return this.movieRepository.findTopRatedMoviesByProductionCompanyId(id, pageable);
+    }
+
+    @Override
+    public MediaRefreshResult refreshMovieByApiId(long apiId) {
+        Optional<Movie> existingMovie = this.movieRepository.findMovieByApiId(apiId);
+        if (existingMovie.isEmpty()) {
+            return MediaRefreshResult.notFoundLocal();
+        }
+
+        MovieApiByIdResponseDTO movieResponseById = this.tmdbMoviesEndpointService.getMovieResponseById(apiId);
+
+        if (movieResponseById == null) {
+            return MediaRefreshResult.notFoundExternal();
+        }
+
+        final LocalDateTime now = LocalDateTime.now();
+        boolean isUpdated = this.movieRefreshWorker.refreshOneMovie(apiId, movieResponseById, now);
+
+        if (!isUpdated) {
+            return MediaRefreshResult.unchanged(mapToMovieDetailsDTO(existingMovie.get()));
+        }
+
+        MovieDetailsDTO updatedMovie = this.movieRepository.findMovieByApiId(apiId)
+                .map(this::mapToMovieDetailsDTO)
+                .orElse(null);
+
+        if (updatedMovie == null) {
+            return MediaRefreshResult.failed();
+        }
+
+        this.mediaEventPublisher.publishMoviesDetailsChangedEvent(List.of(apiId));
+        return MediaRefreshResult.updated(updatedMovie);
     }
 
     private MovieDetailsDTO mapToMovieDetailsDTO(Movie movie) {

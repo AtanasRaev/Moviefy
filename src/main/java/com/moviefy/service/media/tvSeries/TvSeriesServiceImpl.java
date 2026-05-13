@@ -21,8 +21,11 @@ import com.moviefy.service.api.tvSeries.TmdbTvEndpointService;
 import com.moviefy.service.credit.cast.CastService;
 import com.moviefy.service.credit.crew.CrewService;
 import com.moviefy.service.genre.seriesGenre.SeriesGenreService;
+import com.moviefy.service.media.MediaRefreshResult;
 import com.moviefy.service.media.tvSeries.seasons.SeasonsService;
 import com.moviefy.service.productionCompanies.ProductionCompanyService;
+import com.moviefy.service.scheduling.MediaEventPublisher;
+import com.moviefy.service.scheduling.refresh.tvSeries.TvSeriesRefreshWorker;
 import com.moviefy.utils.GenreNormalizationUtil;
 import com.moviefy.utils.TvSeriesTypesNormalizationUtil;
 import com.moviefy.utils.mappers.TvSeriesMapper;
@@ -37,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +56,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     private final CrewService crewService;
     private final SeasonsService seasonsService;
     private final ProductionCompanyService productionCompanyService;
+    private final TvSeriesRefreshWorker tvSeriesRefreshWorker;
+    private final MediaEventPublisher mediaEventPublisher;
     private final ModelMapper modelMapper;
     private final TvSeriesMapper tvSeriesMapper;
     private final GenreNormalizationUtil genreNormalizationUtil;
@@ -67,6 +73,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
                                CrewService crewService,
                                SeasonsService seasonsService,
                                ProductionCompanyService productionCompanyService,
+                               TvSeriesRefreshWorker tvSeriesRefreshWorker,
+                               MediaEventPublisher mediaEventPublisher,
                                ModelMapper modelMapper,
                                TvSeriesMapper tvSeriesMapper,
                                GenreNormalizationUtil genreNormalizationUtil,
@@ -79,6 +87,8 @@ public class TvSeriesServiceImpl implements TvSeriesService {
         this.crewService = crewService;
         this.seasonsService = seasonsService;
         this.productionCompanyService = productionCompanyService;
+        this.tvSeriesRefreshWorker = tvSeriesRefreshWorker;
+        this.mediaEventPublisher = mediaEventPublisher;
         this.modelMapper = modelMapper;
         this.tvSeriesMapper = tvSeriesMapper;
         this.genreNormalizationUtil = genreNormalizationUtil;
@@ -283,6 +293,38 @@ public class TvSeriesServiceImpl implements TvSeriesService {
     @Transactional(readOnly = true)
     public Page<TvSeriesPageProjection> getTvSeriesByProductionCompanyId(long id, Pageable pageable) {
         return this.tvSeriesRepository.findTopRatedSeriesByProductionCompanyId(id, pageable);
+    }
+
+    @Override
+    public MediaRefreshResult refreshTvSeriesByApiId(long apiId) {
+        Optional<TvSeries> existingTvSeries = this.tvSeriesRepository.findTvSeriesByApiId(apiId);
+        if (existingTvSeries.isEmpty()) {
+            return MediaRefreshResult.notFoundLocal();
+        }
+
+        TvSeriesApiByIdResponseDTO tvSeriesResponseById = this.tmdbTvEndpointService.getTvSeriesResponseById(apiId);
+
+        if (tvSeriesResponseById == null) {
+            return MediaRefreshResult.notFoundExternal();
+        }
+
+        final LocalDateTime now = LocalDateTime.now();
+        boolean isUpdated = this.tvSeriesRefreshWorker.refreshOneTvSeries(apiId, tvSeriesResponseById, now);
+
+        if (!isUpdated) {
+            return MediaRefreshResult.unchanged(mapToTvSeriesDetailsDTO(existingTvSeries.get()));
+        }
+
+        TvSeriesDetailsDTO updatedTvSeries = this.tvSeriesRepository.findTvSeriesByApiId(apiId)
+                .map(this::mapToTvSeriesDetailsDTO)
+                .orElse(null);
+
+        if (updatedTvSeries == null) {
+            return MediaRefreshResult.failed();
+        }
+
+        this.mediaEventPublisher.publishTvSeriesDetailsChangedEvent(List.of(apiId));
+        return MediaRefreshResult.updated(updatedTvSeries);
     }
 
     private TvSeriesDetailsDTO mapToTvSeriesDetailsDTO(TvSeries tvSeries) {
