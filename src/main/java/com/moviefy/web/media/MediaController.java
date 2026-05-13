@@ -187,7 +187,7 @@ public class MediaController {
         return ResponseEntity.ok(this.mediaService.getReviewsByApiId(mediaType, apiId, page));
     }
 
-    @PutMapping("/{mediaType}/{apiId}")
+    @PostMapping("/admin/{mediaType}/{apiId}/refresh")
     public ResponseEntity<Map<String, Object>> refreshMediaByApiId(
             @PathVariable String mediaType,
             @PathVariable long apiId) {
@@ -204,11 +204,6 @@ public class MediaController {
                     HttpStatus.NOT_FOUND,
                     "Resource not found",
                     String.format("Not found %s with apiId %d", mediaType, apiId)
-            );
-            case NOT_IMPLEMENTED -> ErrorResponseUtil.buildErrorResponse(
-                    HttpStatus.NOT_IMPLEMENTED,
-                    "Not implemented",
-                    String.format("Refresh is not implemented for %s yet.", mediaType)
             );
             case FAILED -> ErrorResponseUtil.buildErrorResponse(
                     HttpStatus.BAD_GATEWAY,

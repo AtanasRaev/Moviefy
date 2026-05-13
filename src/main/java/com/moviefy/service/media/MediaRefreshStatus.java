@@ -5,6 +5,5 @@ public enum MediaRefreshStatus {
     UNCHANGED,
     NOT_FOUND_LOCAL,
     NOT_FOUND_EXTERNAL,
-    FAILED,
-    NOT_IMPLEMENTED
+    FAILED
 }

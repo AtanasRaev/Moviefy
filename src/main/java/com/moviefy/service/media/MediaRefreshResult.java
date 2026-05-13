@@ -22,8 +22,4 @@ public record MediaRefreshResult(MediaRefreshStatus status, MediaDetailsDTO medi
     public static MediaRefreshResult failed() {
         return new MediaRefreshResult(MediaRefreshStatus.FAILED, null);
     }
-
-    public static MediaRefreshResult notImplemented() {
-        return new MediaRefreshResult(MediaRefreshStatus.NOT_IMPLEMENTED, null);
-    }
 }
